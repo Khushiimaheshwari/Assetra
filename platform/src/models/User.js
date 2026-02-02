@@ -16,7 +16,7 @@ const UserSchema = new mongoose.Schema({
   Location: { type: String, default: "" },
   AccountStatus: { type: String, enum: ["active", "inactive"], default: "active" },
 }, { timestamps: true });
-
+ 
 const User = mongoose.models.User || mongoose.model("User", UserSchema);
 
 export { User };

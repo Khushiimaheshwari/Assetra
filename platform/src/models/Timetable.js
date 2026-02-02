@@ -11,7 +11,7 @@ const TimetableSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, ref: "Programs", required: true,
   },
   Faculty: {
-    type: mongoose.Schema.Types.ObjectId, ref: "User",
+    type: mongoose.Schema.Types.ObjectId, ref: "User", 
   },
   Day: {
     type: String, enum: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], required: true,

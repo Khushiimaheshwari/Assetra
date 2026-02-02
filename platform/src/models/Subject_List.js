@@ -9,7 +9,7 @@ const SubjectListSchema = new mongoose.Schema({
   Status: {type: String, enum: ["uploaded", "pending"], default: "pending"},
   Programs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Programs" }],
 }, { timestamps: true });
-
+ 
 const SubjectList = mongoose.models.SubjectList || mongoose.model("SubjectList", SubjectListSchema);
 
 export default SubjectList; 

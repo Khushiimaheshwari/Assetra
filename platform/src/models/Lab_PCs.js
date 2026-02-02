@@ -11,4 +11,4 @@ PCSchema.index({ PC_Name: 1, Lab: 1 }, { unique: true });
 
 const PCs = mongoose.models.PCs || mongoose.model("PCs", PCSchema);
 
-export default PCs;
+export default PCs; 
