@@ -6,7 +6,7 @@ const ProgramsSchema = new mongoose.Schema({
   Program_Section: { type: String },
   Program_Semester: { type: String, required: true },
   Program_Group: { type: String },
-  Program_Batch: { type: String, required: true },
+  Program_Batch: { type: String, required: true }, 
   Subject:[{
     Subject_ID: { type: mongoose.Schema.Types.ObjectId, ref: "SubjectList" },
     Number_Of_Hours: { type: String, default: "" },
