@@ -20,8 +20,8 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ error: "Lab not found" }, { status: 404 });
     }
 
-    const newTechId = body.LabTechnician || null;  
-    const newInchargeId = body.LabIncharge || null;
+    const newTechId = LabTechnician || null;  
+    const newInchargeId = LabIncharge || null;
     console.log("Lab Technician" ,newTechId, "Lab Incharge", newInchargeId);
     
     const oldTechId = existingLab.LabTechnician?.[0]?._id?.toString();
@@ -65,8 +65,8 @@ export async function PUT(req, { params }) {
       },
       { new: true }
     )
-      .populate("LabTechnician", "Name Email")
-      .populate("Lab_Incharge", "Name Email");
+      .populate("LabTechnician", "UserDetails")
+      .populate("Lab_Incharge", "UserDetails");
 
     return NextResponse.json({
       message: "Lab updated successfully",

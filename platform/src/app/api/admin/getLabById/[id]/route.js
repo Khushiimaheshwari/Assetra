@@ -3,27 +3,17 @@ import { connectDB } from "../../../../../app/api/utils/db";
 import Lab from "../../../../../models/Labs";
 import LabTechnician from "../../../../../models/Lab_Technician";
 import Faculty from "../../../../../models/Faculty";
-import Timetable from "../../../../../models/Timetable";
 
-export async function GET(req, { params }) {
+export async function GET(req, context) {
   try {
     await connectDB();
-    const { id } = params;
+    const { id } = await context.params;
 
     const lab = await Lab.findById(id
     )
       .populate("LabTechnician", "Name Email ")
       .populate("Lab_Incharge", "Name Email")
-      .populate({
-        path: "TimeTable",
-        select: "_id Subject Program Faculty Day TimeSlot Status",
-        populate: [
-          { path: "Subject", select: "Course_Name Course_Code" },
-          { path: "Program", select: "Program_Name Program_Section Program_Semester Program_Batch Program_Group" },
-          // { path: "Faculty", select: "Name Email" },
-        ],
-      });
-
+    
     return NextResponse.json({ lab });
   } catch (error) {
     console.error("Error fetching labs:", error);

@@ -1,15 +1,13 @@
 "use client";
 import { Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell,  ResponsiveContainer, Tooltip } from 'recharts';
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState({
     totalAssets: 0,
     totalLabs: 0,
-    totalSubjects: 0,
-    totalPrograms: 0,
     totalTechnicians: 0,
     totalFaculty: 0,
   });
@@ -17,7 +15,6 @@ export default function Dashboard() {
   const [labDistributionData, setLabDistributionData] = useState([]);
   const [facultyDistributionData, setFacultyDistributionData] = useState([]);
   const [assetBreakdown, setAssetBreakdown] = useState([]);
-  const [subjectsByProgram, setSubjectsByProgram] = useState([]);
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -68,26 +65,9 @@ export default function Dashboard() {
     }
   }
 
-  async function fetchSubjectsByProgram() {
-    try {
-      const res = await fetch("/api/admin/getDashboardProgram");
-
-      const data = await res.json();
-
-      if (data.programs) {
-        console.log(data);
-        setSubjectsByProgram(data.programs)
-      };
-
-    } catch (err) {
-      console.error("Failed to fetch subjects by program:", err);
-    }
-  }
-
   useEffect(() => {
     fetchMetrics();
     fetchAssetBreakdown();
-    fetchSubjectsByProgram();
   }, []);
 
   const [isMobile, setIsMobile] = useState(false);
@@ -126,7 +106,7 @@ export default function Dashboard() {
     container: {
       width: isMobile ? '100%' : 'calc(100% - 255px)',
       minHeight: '100vh',
-      backgroundColor: '#f9fafb',
+      backgroundColor: '#EBF4F6',
       padding: isMobile ? '1rem' : '2rem',
       boxSizing: 'border-box',
       marginLeft: isMobile ? '0' : '255px',
@@ -138,149 +118,176 @@ export default function Dashboard() {
       alignItems: 'center',
       minHeight: '100vh',
       width: '100%',
-      backgroundColor: '#f9fafb',
+      backgroundColor: '#EBF4F6',
       flexDirection: 'column',
       gap: '1rem',
     },
     loaderText: {
-      color: '#6b7280',
+      color: '#176B87',
       fontSize: '16px',
-      fontWeight: '500',
+      fontWeight: '600',
     }
   }
 
   const containerStyle = {
     width: isMobile ? '100%' : 'calc(100% - 255px)',
     minHeight: '100vh',
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#EBF4F6',
     padding: isMobile ? '1rem' : '2rem',
     marginLeft: isMobile ? '0' : '255px',
     boxSizing: 'border-box',
     transition: 'all 0.3s ease'
   };
 
-  const headerStyle = { marginBottom: '1.5rem' };
+  const headerStyle = { 
+    marginBottom: '2rem',
+    paddingBottom: '1rem',
+    borderBottom: '3px solid #088395'
+  };
+  
   const titleStyle = { 
-    fontSize: isMobile ? '1.5rem' : '2rem', 
-    fontWeight: 'bold', 
-    color: '#1f2937', 
-    margin: 0 
+    fontSize: isMobile ? '1.75rem' : '2.25rem', 
+    fontWeight: '800', 
+    color: '#176B87', 
+    margin: 0,
+    letterSpacing: '-0.5px'
   };
 
   const metricsGridStyle = {
     display: 'grid',
     gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-    gap: '1rem',
-    marginBottom: '1.5rem'
+    gap: '1.25rem',
+    marginBottom: '2rem'
   };
 
   const metricCardStyle = {
     backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: isMobile ? '1rem' : '1.25rem',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+    borderRadius: '16px',
+    padding: isMobile ? '1.25rem' : '1.5rem',
+    boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)',
+    border: '1px solid rgba(8, 131, 149, 0.1)',
+    transition: 'all 0.3s ease',
+    cursor: 'pointer'
+  };
+
+  const metricCardHoverStyle = {
+    transform: 'translateY(-4px)',
+    boxShadow: '0 10px 15px -3px rgba(8, 131, 149, 0.2), 0 4px 6px -2px rgba(8, 131, 149, 0.1)'
   };
 
   const metricHeaderStyle = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: '0.75rem'
+    marginBottom: '1rem'
   };
 
   const metricTitleStyle = { 
-    color: '#6b7280', 
-    fontSize: isMobile ? '0.75rem' : '0.875rem', 
-    fontWeight: '500' 
+    color: '#176B87', 
+    fontSize: isMobile ? '0.8rem' : '0.9rem', 
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
   };
   
   const metricValueStyle = { 
-    fontSize: isMobile ? '1.5rem' : '1.875rem', 
-    fontWeight: 'bold', 
-    color: '#1f2937', 
-    marginBottom: '0.5rem' 
-  };
-  
-  const metricChangeStyle = { 
-    fontSize: isMobile ? '0.7rem' : '0.875rem', 
-    color: '#6b7280' 
+    fontSize: isMobile ? '1.75rem' : '2.25rem', 
+    fontWeight: '800', 
+    color: '#088395', 
+    marginBottom: '0.5rem',
+    letterSpacing: '-1px'
   };
 
   const chartsGridStyle = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '1rem',
-    marginBottom: '1.5rem'
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '1.25rem',
+    marginBottom: '2rem'
   };
 
   const chartCardStyle = {
     backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: isMobile ? '1rem' : '1.25rem',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-    minHeight: isMobile ? '320px' : '400px'
+    borderRadius: '16px',
+    padding: isMobile ? '1.25rem' : '1.5rem',
+    boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)',
+    border: '1px solid rgba(8, 131, 149, 0.1)',
+    minHeight: isMobile ? '340px' : '420px'
   };
 
-  const chartHeaderStyle = { marginBottom: '1rem' };
-  const chartTitleStyle = { 
-    fontSize: isMobile ? '1rem' : '1.125rem', 
-    fontWeight: 'bold', 
-    color: '#1f2937', 
-    marginBottom: '0.25rem' 
+  const chartHeaderStyle = { 
+    marginBottom: '1.25rem',
+    paddingBottom: '0.75rem',
+    borderBottom: '2px solid #D1F8EF'
   };
+  
+  const chartTitleStyle = { 
+    fontSize: isMobile ? '1.1rem' : '1.25rem', 
+    fontWeight: '700', 
+    color: '#176B87', 
+    marginBottom: '0.35rem' 
+  };
+  
   const chartSubtitleStyle = { 
-    fontSize: isMobile ? '0.75rem' : '0.875rem', 
-    color: '#6b7280' 
+    fontSize: isMobile ? '0.8rem' : '0.9rem', 
+    color: '#3674B5',
+    fontWeight: '500'
   };
 
   const detailsSectionStyle = {
     backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: isMobile ? '1rem' : '1.25rem',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-    marginBottom: '1.5rem'
+    borderRadius: '16px',
+    padding: isMobile ? '1.25rem' : '1.5rem',
+    boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)',
+    border: '1px solid rgba(8, 131, 149, 0.1)',
+    marginBottom: '2rem'
   };
 
   const tableStyle = { 
     width: '100%', 
     borderCollapse: 'collapse', 
-    fontSize: isMobile ? '0.75rem' : '0.875rem' 
+    fontSize: isMobile ? '0.8rem' : '0.9rem' 
   };
-  const theadStyle = { backgroundColor: '#f9fafb' };
+  
+  const theadStyle = { 
+    backgroundColor: '#D1F8EF',
+    borderRadius: '8px'
+  };
+  
   const thStyle = { 
-    padding: isMobile ? '0.5rem' : '0.75rem 1rem', 
+    padding: isMobile ? '0.75rem' : '1rem 1.25rem', 
     textAlign: 'left', 
-    fontWeight: '600', 
-    color: '#374151', 
-    borderBottom: '2px solid #e5e7eb' 
+    fontWeight: '700', 
+    color: '#176B87', 
+    borderBottom: '2px solid #088395',
+    textTransform: 'uppercase',
+    fontSize: isMobile ? '0.75rem' : '0.85rem',
+    letterSpacing: '0.5px'
   };
+  
   const tdStyle = { 
-    padding: isMobile ? '0.5rem' : '0.75rem 1rem', 
-    color: '#6b7280', 
-    borderBottom: '1px solid #f3f4f6' 
+    padding: isMobile ? '0.75rem' : '1rem 1.25rem', 
+    color: '#176B87', 
+    borderBottom: '1px solid #D1F8EF',
+    fontWeight: '500'
   };
 
-  const programGridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-    gap: '1rem',
-    marginTop: '1rem'
-  };
+  const iconSize = isMobile ? '40px' : '48px';
 
-  const programCardStyle = {
-    backgroundColor: '#f9fafb',
-    borderRadius: '8px',
-    padding: '1rem',
-    borderLeft: '4px solid #10b981'
-  };
-
-  const iconSize = isMobile ? '32px' : '40px';
+  // Color configurations for metric cards
+  const metricColors = [
+    { bg: '#D1F8EF', icon: '#088395' }, // Mint bg, Primary icon
+    { bg: 'rgba(134, 182, 246, 0.2)', icon: '#3674B5' }, // Sky blue bg, Ocean blue icon
+    { bg: 'rgba(8, 131, 149, 0.15)', icon: '#176B87' }, // Primary tint bg, Dark teal icon
+    { bg: 'rgba(54, 116, 181, 0.15)', icon: '#086788' }, // Ocean blue tint bg, Custom dark
+    { bg: '#D1F8EF', icon: '#088395' }, // Mint bg, Primary icon
+    { bg: 'rgba(134, 182, 246, 0.2)', icon: '#3674B5' }, // Sky blue bg, Ocean blue icon
+  ];
 
   if (loading) {
     return (
       <div style={styles.container}>
         <div style={styles.loaderContainer}>
-          <Loader2 size={48} className="animate-spin" color="#10b981" />
+          <Loader2 size={48} className="animate-spin" color="#088395" />
           <p style={styles.loaderText}>Loading data...</p>
         </div>
       </div>
@@ -290,28 +297,47 @@ export default function Dashboard() {
   return (
     <div style={containerStyle}>
       <header style={headerStyle}>
-        <h1 style={titleStyle}>Overview</h1>
+        <h1 style={titleStyle}>Dashboard Overview</h1>
       </header>
 
       <div style={metricsGridStyle}>
-        <div style={metricCardStyle}>
+        <div 
+          style={metricCardStyle}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(8, 131, 149, 0.2), 0 4px 6px -2px rgba(8, 131, 149, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)';
+          }}
+        >
           <div style={metricHeaderStyle}>
             <div style={metricTitleStyle}>Total Assets</div>
-            <div style={{ width: iconSize, height: iconSize, borderRadius: '10px', backgroundColor: '#d1fae5', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width={isMobile ? "16" : "20"} height={isMobile ? "16" : "20"} viewBox="0 0 20 20" fill="currentColor">
+            <div style={{ width: iconSize, height: iconSize, borderRadius: '12px', backgroundColor: metricColors[0].bg, color: metricColors[0].icon, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width={isMobile ? "20" : "24"} height={isMobile ? "20" : "24"} viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm0 2h10v10H5V5z" clipRule="evenodd" />
               </svg>
             </div>
           </div>
           <div style={metricValueStyle}>{metrics.totalAssets.toLocaleString()}</div>
-         
         </div>
 
-        <div style={metricCardStyle}>
+        <div 
+          style={metricCardStyle}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(8, 131, 149, 0.2), 0 4px 6px -2px rgba(8, 131, 149, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)';
+          }}
+        >
           <div style={metricHeaderStyle}>
             <div style={metricTitleStyle}>Total Labs</div>
-            <div style={{ width: iconSize, height: iconSize, borderRadius: '10px', backgroundColor: '#dbeafe', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width={isMobile ? "16" : "20"} height={isMobile ? "16" : "20"} viewBox="0 0 20 20" fill="currentColor">
+            <div style={{ width: iconSize, height: iconSize, borderRadius: '12px', backgroundColor: metricColors[1].bg, color: metricColors[1].icon, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width={isMobile ? "20" : "24"} height={isMobile ? "20" : "24"} viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm8 8v2h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-2h-1a1 1 0 110-2h1V9h1a1 1 0 110 2h-1v2h1a1 1 0 110 2h-1z" clipRule="evenodd" />
               </svg>
             </div>
@@ -319,56 +345,48 @@ export default function Dashboard() {
           <div style={metricValueStyle}>{metrics.totalLabs}</div>
         </div>
 
-        <div style={metricCardStyle}>
-          <div style={metricHeaderStyle}>
-            <div style={metricTitleStyle}>Total Subjects</div>
-            <div style={{ width: iconSize, height: iconSize, borderRadius: '10px', backgroundColor: '#ede9fe', color: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width={isMobile ? "16" : "20"} height={isMobile ? "16" : "20"} viewBox="0 0 20 20" fill="currentColor">
-                <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
-              </svg>
-            </div>
-          </div>
-          <div style={metricValueStyle}>{metrics.totalSubjects}</div>
-          
-        </div>
-
-        <div style={metricCardStyle}>
-          <div style={metricHeaderStyle}>
-            <div style={metricTitleStyle}>Total Programs</div>
-            <div style={{ width: iconSize, height: iconSize, borderRadius: '10px', backgroundColor: '#fed7aa', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width={isMobile ? "16" : "20"} height={isMobile ? "16" : "20"} viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
-              </svg>
-            </div>
-          </div>
-          <div style={metricValueStyle}>{metrics.totalPrograms}</div>
-         
-        </div>
-
-        <div style={metricCardStyle}>
+        <div 
+          style={metricCardStyle}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(8, 131, 149, 0.2), 0 4px 6px -2px rgba(8, 131, 149, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)';
+          }}
+        >
           <div style={metricHeaderStyle}>
             <div style={metricTitleStyle}>Lab Technicians</div>
-            <div style={{ width: iconSize, height: iconSize, borderRadius: '10px', backgroundColor: '#d1fae5', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width={isMobile ? "16" : "20"} height={isMobile ? "16" : "20"} viewBox="0 0 20 20" fill="currentColor">
+            <div style={{ width: iconSize, height: iconSize, borderRadius: '12px', backgroundColor: metricColors[4].bg, color: metricColors[4].icon, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width={isMobile ? "20" : "24"} height={isMobile ? "20" : "24"} viewBox="0 0 20 20" fill="currentColor">
                 <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
               </svg>
             </div>
           </div>
           <div style={metricValueStyle}>{metrics.totalTechnicians}</div>
-          
         </div>
 
-        <div style={metricCardStyle}>
+        <div 
+          style={metricCardStyle}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(8, 131, 149, 0.2), 0 4px 6px -2px rgba(8, 131, 149, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)';
+          }}
+        >
           <div style={metricHeaderStyle}>
             <div style={metricTitleStyle}>Total Faculty</div>
-            <div style={{ width: iconSize, height: iconSize, borderRadius: '10px', backgroundColor: '#dbeafe', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width={isMobile ? "16" : "20"} height={isMobile ? "16" : "20"} viewBox="0 0 20 20" fill="currentColor">
+            <div style={{ width: iconSize, height: iconSize, borderRadius: '12px', backgroundColor: metricColors[5].bg, color: metricColors[5].icon, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width={isMobile ? "20" : "24"} height={isMobile ? "20" : "24"} viewBox="0 0 20 20" fill="currentColor">
                 <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
               </svg>
             </div>
           </div>
           <div style={metricValueStyle}>{metrics.totalFaculty}</div>
-          
         </div>
       </div>
 
@@ -381,18 +399,39 @@ export default function Dashboard() {
           <div style={{ width: '100%', height: isMobile ? '220px' : '280px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={assetCategoryData} cx="50%" cy="50%" labelLine={false} label={renderCustomLabel} outerRadius={isMobile ? 70 : 90} innerRadius={isMobile ? 40 : 55} dataKey="value" animationBegin={0} animationDuration={1500}>
+                <Pie 
+                  data={assetCategoryData} 
+                  cx="50%" 
+                  cy="50%" 
+                  labelLine={false} 
+                  label={renderCustomLabel} 
+                  outerRadius={isMobile ? 70 : 90} 
+                  innerRadius={isMobile ? 40 : 55} 
+                  dataKey="value" 
+                  animationBegin={0} 
+                  animationDuration={1500}
+                >
                   {assetCategoryData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                 </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', fontSize: '12px' }} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '2px solid #088395', 
+                    borderRadius: '12px', 
+                    boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.2)', 
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    color: '#176B87'
+                  }} 
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '12px', flexWrap: 'wrap' }}>
             {assetCategoryData.map((item) => (
-              <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: item.color }}></div>
-                <span style={{ fontSize: isMobile ? '11px' : '13px', color: '#6b7280' }}>{item.name} ({item.value}%)</span>
+              <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: item.color }}></div>
+                <span style={{ fontSize: isMobile ? '11px' : '13px', color: '#176B87', fontWeight: '600' }}>{item.name} ({item.value}%)</span>
               </div>
             ))}
           </div>
@@ -406,18 +445,39 @@ export default function Dashboard() {
           <div style={{ width: '100%', height: isMobile ? '220px' : '280px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={labDistributionData} cx="50%" cy="50%" labelLine={false} label={renderCustomLabel} outerRadius={isMobile ? 70 : 90} innerRadius={isMobile ? 40 : 55} dataKey="value" animationBegin={0} animationDuration={1500}>
+                <Pie 
+                  data={labDistributionData} 
+                  cx="50%" 
+                  cy="50%" 
+                  labelLine={false} 
+                  label={renderCustomLabel} 
+                  outerRadius={isMobile ? 70 : 90} 
+                  innerRadius={isMobile ? 40 : 55} 
+                  dataKey="value" 
+                  animationBegin={0} 
+                  animationDuration={1500}
+                >
                   {labDistributionData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                 </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', fontSize: '12px' }} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '2px solid #088395', 
+                    borderRadius: '12px', 
+                    boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.2)', 
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    color: '#176B87'
+                  }} 
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '12px', flexWrap: 'wrap' }}>
             {labDistributionData.map((item) => (
-              <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: item.color }}></div>
-                <span style={{ fontSize: isMobile ? '10px' : '12px', color: '#6b7280' }}>{item.name} ({item.value}%)</span>
+              <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: item.color }}></div>
+                <span style={{ fontSize: isMobile ? '10px' : '12px', color: '#176B87', fontWeight: '600' }}>{item.name} ({item.value}%)</span>
               </div>
             ))}
           </div>
@@ -433,18 +493,39 @@ export default function Dashboard() {
           <div style={{ width: '100%', height: isMobile ? '220px' : '280px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={facultyDistributionData} cx="50%" cy="50%" labelLine={false} label={renderCustomLabel} outerRadius={isMobile ? 70 : 90} innerRadius={isMobile ? 40 : 55} dataKey="value" animationBegin={0} animationDuration={1500}>
+                <Pie 
+                  data={facultyDistributionData} 
+                  cx="50%" 
+                  cy="50%" 
+                  labelLine={false} 
+                  label={renderCustomLabel} 
+                  outerRadius={isMobile ? 70 : 90} 
+                  innerRadius={isMobile ? 40 : 55} 
+                  dataKey="value" 
+                  animationBegin={0} 
+                  animationDuration={1500}
+                >
                   {facultyDistributionData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                 </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', fontSize: '12px' }} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '2px solid #088395', 
+                    borderRadius: '12px', 
+                    boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.2)', 
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    color: '#176B87'
+                  }} 
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '12px', flexWrap: 'wrap' }}>
             {facultyDistributionData.map((item) => (
-              <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: item.color }}></div>
-                <span style={{ fontSize: isMobile ? '11px' : '13px', color: '#6b7280' }}>{item.name} ({item.value}%)</span>
+              <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: item.color }}></div>
+                <span style={{ fontSize: isMobile ? '11px' : '13px', color: '#176B87', fontWeight: '600' }}>{item.name} ({item.value}%)</span>
               </div>
             ))}
           </div>
@@ -462,46 +543,28 @@ export default function Dashboard() {
               <tr>
                 <th style={thStyle}>Category</th>
                 <th style={thStyle}>Total</th>
-              
                 <th style={thStyle}>HP</th>
                 <th style={thStyle}>Lenovo</th>
                 <th style={thStyle}>Mac</th>
-               
               </tr>
             </thead>
             <tbody>
-              {assetBreakdown.map((item) => (
-                <tr key={item.category} style={{ cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                  <td style={{ ...tdStyle, fontWeight: '600', color: '#1f2937' }}>{item.category}</td>
-                  <td style={{ ...tdStyle, fontWeight: '600', color: '#10b981' }}>{item.total}</td>
-                  
+              {assetBreakdown.map((item, index) => (
+                <tr 
+                  key={item.category} 
+                  style={{ cursor: 'pointer', transition: 'all 0.2s ease' }} 
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#D1F8EF'} 
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#FFFFFF' : '#EBF4F6'}
+                >
+                  <td style={{ ...tdStyle, fontWeight: '700', color: '#176B87' }}>{item.category}</td>
+                  <td style={{ ...tdStyle, fontWeight: '700', color: '#088395', fontSize: isMobile ? '0.85rem' : '0.95rem' }}>{item.total}</td>
                   <td style={tdStyle}>{item.hp}</td>
                   <td style={tdStyle}>{item.lenovo}</td>
                   <td style={tdStyle}>{item.imac}</td>
-                  
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-      </div>
-
-      <div style={detailsSectionStyle}>
-        <div style={chartHeaderStyle}>
-          <div style={chartTitleStyle}>Programs</div>
-          <div style={chartSubtitleStyle}>Subject distribution across programs</div>
-        </div>
-        <div style={programGridStyle}>
-          {subjectsByProgram.map((item) => (
-            <div key={item.program} style={programCardStyle}>
-              <div style={{ fontWeight: '600', color: '#1f2937', marginBottom: '0.5rem', fontSize: isMobile ? '0.875rem' : '0.9375rem' }}>
-                {item.program}
-              </div>
-              <div style={{ color: '#10b981', fontWeight: '500', fontSize: isMobile ? '0.8125rem' : '0.875rem' }}>
-                {item.subjects} Subjects
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </div>

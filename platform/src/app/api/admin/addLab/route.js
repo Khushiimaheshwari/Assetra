@@ -54,7 +54,7 @@ export async function POST(req) {
 
     if(incharge && incharge.trim() !== "") {
       await Faculty.findByIdAndUpdate(incharge, {
-        $push: { Labs: newLab._id },
+        $push: { Incharge_Labs: newLab._id },
       });
     }
 

@@ -1,6 +1,4 @@
-import mongoose from "mongoose";
-import { connectDB } from "../app/api/utils/db.js";
-import Faculty from "./Faculty.js";
+import mongoose from "mongoose"; 
  
 const AssetSchema = new mongoose.Schema({
   Asset_Name: { type: String, required: true },
@@ -15,6 +13,7 @@ const AssetSchema = new mongoose.Schema({
       FacultyDetails: { type: mongoose.Schema.Types.ObjectId, ref: "Faculty" },
       IssueDescription: { type: String, default: "" },
       Status: { type: String, enum: ["pending", "resolved by technician", "approved"], default: "pending" },
+      Assigned_To: { type: mongoose.Schema.Types.ObjectId, ref: "LabTechnician" },
       ResolveDescription: { type: String, default: "" },
     }
   ], 
@@ -24,7 +23,7 @@ const AssetSchema = new mongoose.Schema({
       To_Lab: { type: mongoose.Schema.Types.ObjectId, ref: "Lab" },
       From_PC: { type: mongoose.Schema.Types.ObjectId, ref: "PCs" },
       To_PC: { type: mongoose.Schema.Types.ObjectId, ref: "PCs" },
-      Moved_By: { type: mongoose.Schema.Types.ObjectId, ref: "Faculty" },
+      Moved_By: { type: mongoose.Schema.Types.ObjectId, ref: "LabTechnician" },
       Reason: { type: String, default: "" },
       Date: { type: Date, default: Date.now }
     }

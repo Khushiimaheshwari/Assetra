@@ -4,10 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Upload, ChevronDown, ChevronUp, Loader2, X, Edit, Trash2, Calendar, Clock, AlertCircle } from 'lucide-react';
 import { useParams } from 'next/navigation';
 
-const LabTimetablePage = () => {
+const LabInfo = () => {
   const { id } = useParams();  
   const [currentWeek, setCurrentWeek] = useState(new Date());
-  const [view, setView] = useState('week');
   const [labData, setLabData] = useState([]);
   const [showMoreInfo, setShowMoreInfo] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -23,16 +22,12 @@ const LabTimetablePage = () => {
     ]
   });
   const [expandedId, setExpandedId] = useState(null);
-  const [subjects, setSubjects] = useState([]);
   const [timetableData, setTimetableData] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [programs, setPrograms] = useState([]);
   const [faculties, setFaculties] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    Subject: "",
-    Program: "",
     Faculty: "",
     Day: "",
     StartTimeSlot: "",
@@ -41,7 +36,6 @@ const LabTimetablePage = () => {
     Lab: id, 
   });
   const [visibleEventIndex, setVisibleEventIndex] = useState({});
-  const [filteredSubjects, setFilteredSubjects] = useState([]);
   const [filteredFaculties, setFilteredFaculties] = useState([]);
   const [showNotifyForm, setShowNotifyForm] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -55,42 +49,11 @@ const LabTimetablePage = () => {
 
   const fetchLab = async () => {
     try {
+      console.log(id);
       const res = await fetch(`/api/admin/getLabById/${id}`);
       const data = await res.json();
       if (res.ok) {
         setLabData(data.lab);
-
-        const labsArray = Array.isArray(data.labs)
-          ? data.labs
-          : [data.lab || data.labs];
-
-        const formattedData = labsArray.flatMap((lab) =>
-          (lab?.TimeTable || []).map((item, index) => {
-            const [start, end] = item.TimeSlot.split(" - ");
-            return {
-              id: item._id,
-              day: item.Day,
-              subject: item.Subject?.Course_Name || "Unnamed Subject",
-              course: `${item.Program?.Program_Section || ""}  ${item.Program?.Program_Name || ""} ${
-                item.Program?.Program_Semester
-                  ? "Sem " + item.Program.Program_Semester
-                  : ""
-              } ${item.Program?.Program_Batch || ""} ${item.Program?.Program_Group || ""}`,
-              faculty:
-                typeof item.Faculty === "string"
-                  ? item.Faculty === "Not Assigned"
-                    ? ""
-                    : item.Faculty
-                  : item.Faculty?.Name || "",
-              startTime: start.trim(),
-              endTime: end.trim(),
-              status: item.Status,
-              color: colors[index % colors.length],
-            };
-          })
-        );
-
-        setTimetableData(formattedData);
 
         const notifyEvents = data.lab?.NotifyEvent || [];
 
@@ -120,7 +83,6 @@ const LabTimetablePage = () => {
       try {
         await Promise.all([
           fetchLab(),
-          fetchSubject()
         ]);
       } catch (error) {
         console.error("Error loading data:", error);
@@ -269,76 +231,6 @@ const LabTimetablePage = () => {
 
   const handleUpdateInfo = async () => {};
 
-  const fetchSubject = async () => {
-    try {
-      const labID = id;
-      const res = await fetch(`/api/admin/getLabSubject?labId=${labID}`);
-      const data = await res.json();
-      if (res.ok) {
-        setSubjects(data.subjects);
-
-        const allPrograms = data.subjects.flatMap((s) => s.Programs);
-
-        const uniquePrograms = allPrograms.filter(
-          (p, i, self) => i === self.findIndex((x) => x._id === p._id)
-        );
-        setPrograms(uniquePrograms);		
-
-        const facultiesArr = data.subjects.flatMap((s) =>
-          s.Programs.flatMap((p) =>
-            p.Subject.map((ps) => ({
-              Faculty_ID: ps.Faculty_Assigned || "Not Assigned",
-              Faculty_Name: ps.Faculty_Assigned || "Not Assigned",
-            }))
-          )
-        );
-
-        const uniqueFaculties = facultiesArr.filter(
-          (f, i, self) => i === self.findIndex((x) => x.Faculty_ID === f.Faculty_ID)
-        );
-
-        setFaculties(uniqueFaculties);
-        console.log(data);
-        
-      } else {
-        console.error("Failed to fetch subject:", data.error);
-      }
-    } catch (err) {
-      console.error("Error fetching subject:", err);
-    }
-  };
-
-  const handleProgramChange = (programId) => {
-    setNotifyFormData({ ...formData, Program: programId });
-
-    const relatedSubjects = subjects
-      .map((subj) => {
-        const matchedProgram = subj.Programs.find((p) => p._id === programId);
-        if (matchedProgram) {
-          return {
-            ...subj,
-            Programs: [matchedProgram], 
-          };
-        }
-        return null;
-      })
-      .filter(Boolean); 
-
-    const relatedFaculties = relatedSubjects.flatMap((subj) =>
-      subj.Programs.flatMap((p) =>
-        p.Subject.map((ps) => ({
-          Faculty_ID: ps.Faculty_Assigned._id || "Not Assigned",
-          Faculty_Name: ps.Faculty_Assigned.Name || "Not Assigned",
-        }))
-      )
-    );
-
-    console.log(relatedSubjects);
-    console.log(relatedFaculties);
-    
-    setFilteredSubjects(relatedSubjects);
-    setFilteredFaculties(relatedFaculties);
-  };
 
   const toggleExpand = (id) => {
     setExpandedId(expandedId === id ? null : id);
@@ -547,10 +439,6 @@ const LabTimetablePage = () => {
 	setShowForm(true);
   };
 
-  const filteredPrograms = programs.filter(program =>
-    program.Subject?.some(sub => sub.Lab_Allocated === id)
-  );
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 	
@@ -658,19 +546,19 @@ const LabTimetablePage = () => {
       alignItems: 'center',
       minHeight: '100vh',
       width: '100%',
-      backgroundColor: '#f9fafb',
+      backgroundColor: '#EBF4F6',
       flexDirection: 'column',
       gap: '1rem',
     },
     loaderText: {
-      color: '#6b7280',
+      color: '#176B87',
       fontSize: '16px',
-      fontWeight: '500',
+      fontWeight: '600',
     },
     container: {
       width: isMobile ? '100%' : isTablet ? 'calc(100% - 200px)' : 'calc(100% - 255px)',
       minHeight: '100vh',
-      backgroundColor: '#f9fafb',
+      backgroundColor: '#EBF4F6',
       padding: isMobile ? '0.75rem' : isTablet ? '1.5rem' : '2rem',
       boxSizing: 'border-box',
       marginLeft: isMobile ? '0' : isTablet ? '200px' : '255px',
@@ -687,48 +575,51 @@ const LabTimetablePage = () => {
     addNotifyBtn: {
       display: 'flex',
       alignItems: 'center',
-      gap: '8px',
-      padding: '12px 24px',
-      backgroundColor: '#00c97b',
+      gap: '10px',
+      padding: '14px 28px',
+      background: 'linear-gradient(135deg, #088395 0%, #0a9fb5 100%)',
       color: 'white',
       border: 'none',
-      borderRadius: '10px',
-      fontSize: '14px',
-      fontWeight: 600,
+      borderRadius: '12px',
+      fontSize: '15px',
+      fontWeight: 700,
       cursor: 'pointer',
       transition: 'all 0.3s ease',
-      boxShadow: '0 4px 12px rgba(0, 201, 123, 0.3)'
+      boxShadow: '0 4px 12px rgba(8, 131, 149, 0.3)',
+      letterSpacing: '0.3px'
     },
     notificationBanner: {
       background: 'linear-gradient(135deg, rgba(253, 164, 175, 0.95) 0%, rgba(251, 113, 133, 0.95) 100%)',
       backdropFilter: 'blur(20px)',
       borderRadius: '16px',
-      padding: '20px',
-      marginBottom: '16px',
-      boxShadow: '0 8px 24px rgba(251, 113, 133, 0.25)',
+      padding: '24px',
+      marginBottom: '20px',
+      boxShadow: '0 8px 24px rgba(239, 68, 68, 0.25)',
       color: 'white',
-      position: 'relative'
+      position: 'relative',
+      border: '1px solid rgba(255, 255, 255, 0.2)'
     },
     notifHeader: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      marginBottom: '12px'
+      marginBottom: '14px'
     },
     notifType: {
-      fontSize: '18px',
-      fontWeight: 700,
+      fontSize: '20px',
+      fontWeight: 800,
       display: 'flex',
       alignItems: 'center',
-      gap: '8px'
+      gap: '10px',
+      letterSpacing: '-0.3px'
     },
     notifyCloseBtn: {
       background: 'rgba(255, 255, 255, 0.2)',
       border: 'none',
       color: 'white',
       borderRadius: '50%',
-      width: '28px',
-      height: '28px',
+      width: '32px',
+      height: '32px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -738,21 +629,23 @@ const LabTimetablePage = () => {
     notifDetails: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '8px'
+      gap: '10px'
     },
     notifRow: {
       display: 'flex',
       alignItems: 'center',
-      gap: '8px',
-      fontSize: '14px',
-      opacity: 0.95
+      gap: '10px',
+      fontSize: '15px',
+      opacity: 0.95,
+      fontWeight: '500'
     },
     notifDescription: {
-      marginTop: '8px',
-      fontSize: '14px',
-      lineHeight: '1.6',
-      paddingTop: '12px',
-      borderTop: '1px solid rgba(255, 255, 255, 0.3)'
+      marginTop: '10px',
+      fontSize: '15px',
+      lineHeight: '1.7',
+      paddingTop: '14px',
+      borderTop: '1px solid rgba(255, 255, 255, 0.3)',
+      fontWeight: '400'
     },
     notifyModalOverlay: {
       position: 'fixed',
@@ -760,7 +653,8 @@ const LabTimetablePage = () => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: 'rgba(23, 107, 135, 0.5)',
+      backdropFilter: 'blur(4px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -769,277 +663,309 @@ const LabTimetablePage = () => {
     },
     notifyModalContent: {
       background: 'white',
-      borderRadius: '16px',
-      padding: '32px',
-      maxWidth: '500px',
+      borderRadius: '20px',
+      padding: '36px',
+      maxWidth: '540px',
       width: '100%',
       maxHeight: '90vh',
       overflowY: 'auto',
-      boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+      boxShadow: '0 20px 60px rgba(8, 131, 149, 0.3)',
+      border: '1px solid rgba(8, 131, 149, 0.1)'
     },
     notifyModalHeader: {
-      fontSize: '24px',
-      fontWeight: 700,
-      color: '#2d3748',
-      marginBottom: '24px'
+      fontSize: '26px',
+      fontWeight: 800,
+      color: '#176B87',
+      marginBottom: '28px',
+      paddingBottom: '16px',
+      borderBottom: '2px solid #D1F8EF',
+      letterSpacing: '-0.5px'
     },
     notifyFormGroup: {
-      marginBottom: '20px'
+      marginBottom: '24px'
     },
     notifyLabel: {
       display: 'block',
       fontSize: '14px',
-      fontWeight: 600,
-      color: '#4a5568',
-      marginBottom: '8px'
+      fontWeight: 700,
+      color: '#176B87',
+      marginBottom: '10px',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px'
     },
     notifyInput: {
       width: '100%',
-      padding: '12px',
-      border: '2px solid #e2e8f0',
-      borderRadius: '8px',
-      fontSize: '14px',
+      padding: '14px',
+      border: '2px solid rgba(8, 131, 149, 0.2)',
+      borderRadius: '10px',
+      fontSize: '15px',
       transition: 'all 0.3s ease',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      fontWeight: '500',
+      color: '#176B87'
     },
     notifyTextarea: {
       width: '100%',
-      padding: '12px',
-      border: '2px solid #e2e8f0',
-      borderRadius: '8px',
-      fontSize: '14px',
-      minHeight: '100px',
+      padding: '14px',
+      border: '2px solid rgba(8, 131, 149, 0.2)',
+      borderRadius: '10px',
+      fontSize: '15px',
+      minHeight: '120px',
       resize: 'vertical',
       fontFamily: 'inherit',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      fontWeight: '500',
+      color: '#176B87'
     },
     notifyTimeInputs: {
       display: 'grid',
       gridTemplateColumns: '1fr 1fr',
-      gap: '12px'
+      gap: '14px'
     },
     notifyButtonGroup: {
       display: 'flex',
-      gap: '12px',
-      marginTop: '24px'
+      gap: '14px',
+      marginTop: '28px',
+      paddingTop: '20px',
+      borderTop: '1px solid rgba(8, 131, 149, 0.1)'
     },
     notifySubmitBtn: {
       flex: 1,
-      padding: '12px',
-      backgroundColor: '#00c97b',
+      padding: '14px',
+      background: 'linear-gradient(135deg, #088395 0%, #0a9fb5 100%)',
       color: 'white',
       border: 'none',
-      borderRadius: '8px',
-      fontSize: '14px',
-      fontWeight: 600,
+      borderRadius: '10px',
+      fontSize: '15px',
+      fontWeight: 700,
       cursor: 'pointer',
-      transition: 'all 0.3s ease'
+      transition: 'all 0.3s ease',
+      boxShadow: '0 4px 6px rgba(8, 131, 149, 0.3)',
+      letterSpacing: '0.3px'
     },
     notifyCancelBtn: {
       flex: 1,
-      padding: '12px',
-      backgroundColor: '#e2e8f0',
-      color: '#4a5568',
-      border: 'none',
-      borderRadius: '8px',
-      fontSize: '14px',
-      fontWeight: 600,
+      padding: '14px',
+      backgroundColor: 'white',
+      color: '#176B87',
+      border: '2px solid rgba(8, 131, 149, 0.3)',
+      borderRadius: '10px',
+      fontSize: '15px',
+      fontWeight: 700,
       cursor: 'pointer',
-      transition: 'all 0.3s ease'
+      transition: 'all 0.3s ease',
+      letterSpacing: '0.3px'
     },
     labInfoCard: {
-      background: 'rgba(255, 255, 255, 0.95)',
+      background: 'white',
       backdropFilter: 'blur(20px)',
       borderRadius: '16px',
-      padding: '24px',
+      padding: '28px',
       marginBottom: '24px',
-      boxShadow: '0 4px 20px rgba(0, 201, 123, 0.08)'
+      boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)',
+      border: '1px solid rgba(8, 131, 149, 0.1)'
     },
     labHeader: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '20px',
+      marginBottom: '24px',
       flexWrap: 'wrap',
-      gap: '12px'
+      gap: '14px',
+      paddingBottom: '16px',
+      borderBottom: '2px solid #D1F8EF'
     },
     labTitle: {
-      fontSize: '28px',
-      fontWeight: 700,
-      color: '#2d3748',
-      margin: 0
+      fontSize: '30px',
+      fontWeight: 800,
+      color: '#176B87',
+      margin: 0,
+      letterSpacing: '-0.5px'
     },
     statusBadge: {
-      padding: '6px 16px',
+      padding: '8px 20px',
       borderRadius: '20px',
-      fontSize: '14px',
-      fontWeight: 600,
-      background: 'rgba(0, 201, 123, 0.1)',
-      color: '#00c97b'
+      fontSize: '15px',
+      fontWeight: 700,
+      background: '#D1F8EF',
+      color: '#088395',
+      border: '1px solid #088395',
+      letterSpacing: '0.5px'
     },
     infoGrid: {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-      gap: '16px',
-      marginTop: '16px'
+      gap: '20px',
+      marginTop: '20px'
     },
     infoItem: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '4px'
+      gap: '6px'
     },
     infoLabel: {
       fontSize: '12px',
-      color: '#718096',
-      fontWeight: 600,
+      color: '#3674B5',
+      fontWeight: 700,
       textTransform: 'uppercase',
       letterSpacing: '0.5px'
     },
     infoValue: {
-      fontSize: '15px',
-      color: '#2d3748',
-      fontWeight: 500
+      fontSize: '16px',
+      color: '#176B87',
+      fontWeight: 600
     },
     moreInfoSection: {
-      marginTop: '24px',
-      borderTop: '2px solid rgba(0, 201, 123, 0.1)',
-      paddingTop: '24px'
+      marginTop: '28px',
+      borderTop: '2px solid #D1F8EF',
+      paddingTop: '28px'
     },
     moreInfoHeader: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '20px',
+      marginBottom: '24px',
       cursor: 'pointer'
     },
     moreInfoTitle: {
-      fontSize: '20px',
-      fontWeight: 700,
-      color: '#2d3748',
+      fontSize: '22px',
+      fontWeight: 800,
+      color: '#176B87',
       margin: 0,
       display: 'flex',
       alignItems: 'center',
-      gap: '10px'
+      gap: '12px',
+      letterSpacing: '-0.3px'
     },
     toggleIcon: {
       fontSize: '20px',
-      color: '#00c97b',
+      color: '#088395',
       transition: 'transform 0.3s ease'
     },
     moreInfoContent: {
       display: showMoreInfo ? 'block' : 'none'
     },
     infoSectionTitle: {
-      fontSize: '16px',
-      fontWeight: 600,
-      color: '#2d3748',
+      fontSize: '18px',
+      fontWeight: 700,
+      color: '#176B87',
       marginBottom: '20px',
-      marginTop: '20px',
+      marginTop: '24px',
       display: 'flex',
       justifyContent: 'space-between',
-      alignItems: 'center'
+      alignItems: 'center',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px'
     },
     addButton: {
-      background: '#00c97b',
+      background: 'linear-gradient(135deg, #088395 0%, #0a9fb5 100%)',
       color: 'white',
       border: 'none',
-      borderRadius: '8px',
-      padding: '8px 16px',
-      fontSize: '14px',
-      fontWeight: 600,
+      borderRadius: '10px',
+      padding: '10px 20px',
+      fontSize: '15px',
+      fontWeight: 700,
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
-      gap: '6px',
-      transition: 'all 0.3s ease'
+      gap: '8px',
+      transition: 'all 0.3s ease',
+      boxShadow: '0 4px 6px rgba(8, 131, 149, 0.3)',
+      letterSpacing: '0.3px'
     },
     deviceCard: {
       background: 'white',
       borderRadius: '12px',
-      padding: '16px',
+      padding: '20px',
       marginBottom: '20px',
-      border: '1px solid rgba(0, 201, 123, 0.15)',
-      boxShadow: '0 2px 8px rgba(0, 201, 123, 0.08)',
+      border: '2px solid rgba(8, 131, 149, 0.15)',
+      boxShadow: '0 2px 8px rgba(8, 131, 149, 0.08)',
       transition: 'all 0.3s ease'
     },
     deviceCardHeader: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '16px',
-      paddingBottom: '12px',
-      borderBottom: '1px solid rgba(0, 201, 123, 0.1)'
+      marginBottom: '18px',
+      paddingBottom: '14px',
+      borderBottom: '2px solid #D1F8EF'
     },
     deviceType: {
-      fontSize: '16px',
-      fontWeight: 700,
-      color: '#2d3748'
+      fontSize: '18px',
+      fontWeight: 800,
+      color: '#176B87',
+      letterSpacing: '-0.3px'
     },
     deviceQuantity: {
-      fontSize: '13px',
-      fontWeight: 600,
-      color: '#00c97b',
-      background: 'rgba(0, 201, 123, 0.1)',
-      padding: '4px 12px',
-      borderRadius: '12px'
+      fontSize: '14px',
+      fontWeight: 700,
+      color: '#088395',
+      background: '#D1F8EF',
+      padding: '6px 14px',
+      borderRadius: '12px',
+      border: '1px solid #088395'
     },
     deviceCardBody: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '12px'
+      gap: '14px'
     },
     deviceDetail: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      gap: '8px'
+      gap: '10px'
     },
     deviceDetailLabel: {
-      fontSize: '12px',
-      color: '#718096',
-      fontWeight: 600,
+      fontSize: '13px',
+      color: '#3674B5',
+      fontWeight: 700,
       textTransform: 'uppercase',
       letterSpacing: '0.5px',
-      minWidth: '80px'
+      minWidth: '90px'
     },
     deviceDetailValue: {
-      fontSize: '14px',
-      color: '#2d3748',
-      fontWeight: 500,
+      fontSize: '15px',
+      color: '#176B87',
+      fontWeight: 600,
       textAlign: 'right',
       flex: 1
     },
     specsBox: {
-      background: 'rgba(0, 201, 123, 0.05)',
+      background: '#D1F8EF',
       borderRadius: '12px',
-      padding: '20px',
+      padding: '24px',
       marginBottom: '20px',
-      border: '1px solid rgba(0, 201, 123, 0.15)'
+      border: '2px solid rgba(8, 131, 149, 0.15)'
     },
     specsContent: {
-      fontSize: '14px',
-      color: '#4a5568',
+      fontSize: '15px',
+      color: '#176B87',
       lineHeight: '1.8',
       whiteSpace: 'pre-line',
-      fontFamily: 'monospace'
+      fontFamily: 'monospace',
+      fontWeight: '500'
     },
     remarksBox: {
-      background: 'rgba(0, 201, 123, 0.05)',
+      background: '#D1F8EF',
       borderRadius: '12px',
-      padding: '20px',
-      marginTop: '16px',
-      border: '1px solid rgba(0, 201, 123, 0.15)'
+      padding: '24px',
+      marginTop: '20px',
+      border: '2px solid rgba(8, 131, 149, 0.15)'
     },
     remarksText: {
-      fontSize: '14px',
-      color: '#4a5568',
-      lineHeight: '1.6'
+      fontSize: '15px',
+      color: '#176B87',
+      lineHeight: '1.7',
+      fontWeight: '500'
     },
     emptyState: {
       textAlign: 'center',
-      padding: '40px 20px',
-      color: '#718096',
-      fontSize: '14px'
+      padding: '44px 24px',
+      color: '#3674B5',
+      fontSize: '15px',
+      fontWeight: '600',
+      fontStyle: 'italic'
     },
     modal: {
       position: 'fixed',
@@ -1047,7 +973,8 @@ const LabTimetablePage = () => {
       left: 0,
       right: 0,
       bottom: 0,
-      background: 'rgba(0, 0, 0, 0.5)',
+      background: 'rgba(23, 107, 135, 0.5)',
+      backdropFilter: 'blur(4px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -1055,110 +982,133 @@ const LabTimetablePage = () => {
     },
     modalContent: {
       background: 'white',
-      borderRadius: '16px',
-      padding: '28px 30px',
+      borderRadius: '20px',
+      padding: '32px 36px',
       width: '90%',
-      maxWidth: '600px',
+      maxWidth: '640px',
       maxHeight: '95vh',
-      overflowY: 'auto'
+      overflowY: 'auto',
+      boxShadow: '0 20px 60px rgba(8, 131, 149, 0.3)',
+      border: '1px solid rgba(8, 131, 149, 0.1)'
     },
     modalHeader: {
-      fontSize: '24px',
-      fontWeight: 700,
-      color: '#2d3748',
-      marginBottom: '20px',
-      marginTop: 0
+      fontSize: '26px',
+      fontWeight: 800,
+      color: '#176B87',
+      marginBottom: '24px',
+      marginTop: 0,
+      paddingBottom: '16px',
+      borderBottom: '2px solid #D1F8EF',
+      letterSpacing: '-0.5px'
     },
     formGroup: {
-      marginBottom: '20px'
+      marginBottom: '24px'
     },
     label: {
       display: 'block',
       fontSize: '14px',
-      fontWeight: 600,
-      color: '#2d3748',
-      marginBottom: '8px'
+      fontWeight: 700,
+      color: '#176B87',
+      marginBottom: '10px',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px'
     },
     input: {
       width: '100%',
-      padding: '12px',
-      border: '2px solid #e2e8f0',
-      borderRadius: '8px',
-      fontSize: '14px',
+      padding: '14px',
+      border: '2px solid rgba(8, 131, 149, 0.2)',
+      borderRadius: '10px',
+      fontSize: '15px',
       transition: 'all 0.3s ease',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      fontWeight: '500',
+      color: '#176B87'
     },
     select: {
       width: '100%',
-      padding: '12px',
-      border: '2px solid #e2e8f0',
-      borderRadius: '8px',
-      fontSize: '14px',
+      padding: '14px',
+      border: '2px solid rgba(8, 131, 149, 0.2)',
+      borderRadius: '10px',
+      fontSize: '15px',
       transition: 'all 0.3s ease',
       boxSizing: 'border-box',
-      background: 'white'
+      background: 'white',
+      fontWeight: '500',
+      color: '#176B87',
+      cursor: 'pointer'
     },
     modalActions: {
       display: 'flex',
-      gap: '12px',
-      marginTop: '24px'
+      gap: '14px',
+      marginTop: '28px',
+      paddingTop: '20px',
+      borderTop: '1px solid rgba(8, 131, 149, 0.1)'
     },
     cancelButton: {
       flex: 1,
-      padding: '12px',
+      padding: '14px',
       background: 'white',
-      color: '#718096',
-      border: '2px solid #e2e8f0',
-      borderRadius: '8px',
-      fontWeight: 600,
+      color: '#176B87',
+      border: '2px solid rgba(8, 131, 149, 0.3)',
+      borderRadius: '10px',
+      fontWeight: 700,
       cursor: 'pointer',
-      fontSize: '14px'
+      fontSize: '15px',
+      transition: 'all 0.3s ease',
+      letterSpacing: '0.3px'
     },
     saveButton: {
       flex: 1,
-      padding: '12px',
-      background: 'linear-gradient(135deg, #00c97b 0%, #00b8d9 100%)',
+      padding: '14px',
+      background: 'linear-gradient(135deg, #088395 0%, #0a9fb5 100%)',
       color: 'white',
       border: 'none',
-      borderRadius: '8px',
-      fontWeight: 600,
+      borderRadius: '10px',
+      fontWeight: 700,
       cursor: 'pointer',
-      fontSize: '14px'
+      fontSize: '15px',
+      transition: 'all 0.3s ease',
+      boxShadow: '0 4px 6px rgba(8, 131, 149, 0.3)',
+      letterSpacing: '0.3px'
     },
     subjectListCard: {
-      background: 'rgba(255, 255, 255, 0.95)',
+      background: 'white',
       backdropFilter: 'blur(20px)',
       borderRadius: '16px',
-      padding: '24px',
+      padding: '28px',
       marginBottom: '24px',
-      boxShadow: '0 4px 20px rgba(0, 201, 123, 0.08)'
+      boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)',
+      border: '1px solid rgba(8, 131, 149, 0.1)'
     },
     subjectListHeader: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '20px'
+      marginBottom: '24px',
+      paddingBottom: '16px',
+      borderBottom: '2px solid #D1F8EF'
     },
     subjectListTitle: {
-      fontSize: '22px',
-      fontWeight: 700,
-      color: '#2d3748',
-      margin: 0
+      fontSize: '24px',
+      fontWeight: 800,
+      color: '#176B87',
+      margin: 0,
+      letterSpacing: '-0.5px'
     },
     cardContainer: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '16px'
+      gap: '18px'
     },
     card: {
       backgroundColor: 'white',
       borderRadius: '12px',
-      border: '1px solid #e5e7eb',
+      border: '1px solid rgba(8, 131, 149, 0.15)',
       overflow: 'hidden',
-      transition: 'box-shadow 0.2s'
+      transition: 'all 0.3s ease'
     },
     cardHeader: {
-      padding: '20px 24px',
+      padding: '22px 26px',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
@@ -1166,78 +1116,83 @@ const LabTimetablePage = () => {
       transition: 'background-color 0.2s'
     },
     cardHeaderHover: {
-      backgroundColor: '#f9fafb'
+      backgroundColor: '#D1F8EF'
     },
     cardLeft: {
       display: 'flex',
       alignItems: 'center',
-      gap: '16px',
+      gap: '18px',
       flex: 1
     },
     avatar: {
-      width: '56px',
-      height: '56px',
+      width: '60px',
+      height: '60px',
       borderRadius: '12px',
-      backgroundColor: '#f3f4f6',
+      background: 'linear-gradient(135deg, #D1F8EF 0%, #B8F3E9 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '14px',
-      fontWeight: '600',
-      color: '#6b7280'
+      fontSize: '16px',
+      fontWeight: '700',
+      color: '#088395'
     },
     cardInfo: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '4px'
+      gap: '6px'
     },
     subjectTitle: {
-      fontSize: '18px',
-      fontWeight: '700',
-      color: '#111827',
-      margin: 0
+      fontSize: '19px',
+      fontWeight: '800',
+      color: '#176B87',
+      margin: 0,
+      letterSpacing: '-0.3px'
     },
     courseCode: {
-      fontSize: '14px',
-      color: '#6b7280'
+      fontSize: '15px',
+      color: '#3674B5',
+      fontWeight: '600'
     },
     cardRight: {
       display: 'flex',
       alignItems: 'center',
-      gap: '12px'
+      gap: '14px'
     },
     uploadBadge: {
-      padding: '6px 12px',
-      borderRadius: '6px',
-      fontSize: '13px',
-      fontWeight: '600'
+      padding: '7px 14px',
+      borderRadius: '8px',
+      fontSize: '14px',
+      fontWeight: '700'
     },
     statusUploaded: {
-      backgroundColor: '#d1fae5',
-      color: '#065f46'
+      backgroundColor: '#D1F8EF',
+      color: '#088395',
+      border: '1px solid #088395'
     },
     statusPending: {
-      backgroundColor: '#fef3c7',
-      color: '#92400e'
+      backgroundColor: '#FFE8CC',
+      color: '#E67E22',
+      border: '1px solid #E67E22'
     },
     programCount: {
-      padding: '6px 12px',
-      borderRadius: '6px',
-      fontSize: '13px',
-      fontWeight: '600',
-      backgroundColor: '#e0e7ff',
-      color: '#3730a3'
+      padding: '7px 14px',
+      borderRadius: '8px',
+      fontSize: '14px',
+      fontWeight: '700',
+      backgroundColor: 'rgba(134, 182, 246, 0.2)',
+      color: '#3674B5',
+      border: '1px solid #3674B5'
     },
     actionButtons: {
       display: "flex",
-      gap: "8px",
+      gap: "10px",
     },
     iconButton: {
-      width: "36px",
-      height: "36px",
+      width: "40px",
+      height: "40px",
       background: "transparent",
       border: "none",
-      borderRadius: "6px",
+      borderRadius: "8px",
       cursor: "pointer",
       display: "flex",
       alignItems: "center",
@@ -1245,218 +1200,231 @@ const LabTimetablePage = () => {
       transition: "all 0.2s ease",
     },
     addSubjectButton: {
-      color: "#0ea5e9", 
+      color: "#3674B5", 
     },
     editButton: {
-      color: "#10b981",
+      color: "#088395",
     },
     deleteButton: {
       color: "#ef4444",
     },
     viewButton: {
-      color: "#00b8d9",
+      color: "#3674B5",
     },
 	redirectButton: {
-      color: '#f3f4f6'
+      color: '#EBF4F6'
     },
     expandButton: {
-      background: "#f3f4f6",
-      color: "#4b5563",
+      background: "#D1F8EF",
+      color: "#088395",
       transition: "all 0.2s ease",
     },
     expandedContent: {
-      borderTop: '1px solid #e5e7eb',
-      padding: '24px',
-      backgroundColor: '#f9fafb'
+      borderTop: '2px solid #D1F8EF',
+      padding: '26px',
+      backgroundColor: '#EBF4F6'
     },
     section: {
-      marginBottom: '24px'
+      marginBottom: '26px'
     },
     sectionTitle: {
-      fontSize: '14px',
-      fontWeight: '700',
-      color: '#374151',
-      marginBottom: '12px',
+      fontSize: '15px',
+      fontWeight: '800',
+      color: '#176B87',
+      marginBottom: '14px',
       textTransform: 'uppercase',
-      letterSpacing: '0.05em'
+      letterSpacing: '0.5px'
     },
     uploadSection: {
       display: 'flex',
       alignItems: 'center',
-      gap: '12px',
-      padding: '16px',
+      gap: '14px',
+      padding: '18px',
       backgroundColor: 'white',
-      borderRadius: '8px',
-      border: '2px dashed #d1d5db'
+      borderRadius: '10px',
+      border: '2px dashed rgba(8, 131, 149, 0.3)'
     },
     uploadButton: {
-      backgroundColor: '#3b82f6',
+      background: 'linear-gradient(135deg, #088395 0%, #0a9fb5 100%)',
       color: 'white',
       border: 'none',
-      borderRadius: '6px',
-      padding: '8px 16px',
-      fontSize: '13px',
-      fontWeight: '600',
+      borderRadius: '8px',
+      padding: '10px 18px',
+      fontSize: '14px',
+      fontWeight: '700',
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
-      gap: '6px'
+      gap: '8px',
+      boxShadow: '0 2px 4px rgba(8, 131, 149, 0.3)',
+      letterSpacing: '0.3px'
     },
     viewButtonStyle: {
-      backgroundColor: "#10b981",     
+      background: 'linear-gradient(135deg, #088395 0%, #0a9fb5 100%)',
       color: "#fff",
       border: "none",
       borderRadius: "8px",
-      padding: "8px 14px",
+      padding: "10px 16px",
       display: "flex",
       alignItems: "center",
-      gap: "6px",
+      gap: "8px",
       cursor: "pointer",
       fontSize: "14px",
-      fontWeight: 500,
+      fontWeight: 700,
       transition: "all 0.25s ease",
-      boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+      boxShadow: "0 2px 5px rgba(8, 131, 149, 0.3)",
+      letterSpacing: '0.3px'
     },
     viewButtonHover: {
-      backgroundColor: "#10a981",     
       transform: "translateY(-1px)",
+      boxShadow: "0 4px 8px rgba(8, 131, 149, 0.4)",
     },
     fileName: {
-      fontSize: '14px',
-      color: '#374151',
-      fontWeight: '500'
+      fontSize: '15px',
+      color: '#176B87',
+      fontWeight: '600'
     },
     programsGrid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-      gap: '16px'
+      gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+      gap: '18px'
     },
     programCard: {
       backgroundColor: 'white',
-      borderRadius: '8px',
-      padding: '16px',
-      border: '1px solid #e5e7eb'
+      borderRadius: '10px',
+      padding: '18px',
+      border: '1px solid rgba(8, 131, 149, 0.15)'
     },
     programHeader: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      marginBottom: '12px'
+      marginBottom: '14px'
     },
     programName: {
-      fontSize: '15px',
-      fontWeight: '700',
-      color: '#111827',
-      marginBottom: '4px'
+      fontSize: '16px',
+      fontWeight: '800',
+      color: '#176B87',
+      marginBottom: '6px',
+      letterSpacing: '-0.3px'
     },
     programBadge: {
-      padding: '4px 8px',
-      borderRadius: '4px',
-      fontSize: '12px',
-      fontWeight: '600',
-      backgroundColor: '#dbeafe',
-      color: '#1e40af'
+      padding: '5px 10px',
+      borderRadius: '6px',
+      fontSize: '13px',
+      fontWeight: '700',
+      backgroundColor: 'rgba(134, 182, 246, 0.2)',
+      color: '#3674B5',
+      border: '1px solid #3674B5'
     },
     programDetails: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '8px'
+      gap: '10px'
     },
     detailRow: {
       display: 'flex',
-      fontSize: '13px',
-      color: '#6b7280'
+      fontSize: '14px',
+      color: '#176B87'
     },
     detailLabel: {
-      fontWeight: '600',
-      minWidth: '100px',
-      color: '#374151'
+      fontWeight: '700',
+      minWidth: '110px',
+      color: '#3674B5'
     },
     detailValue: {
-      color: '#6b7280'
+      color: '#176B87',
+      fontWeight: '600'
     },
     timetableCard: {
-      background: 'rgba(255, 255, 255, 0.95)',
+      background: 'white',
       backdropFilter: 'blur(20px)',
       borderRadius: '16px',
-      padding: '24px',
-      boxShadow: '0 4px 20px rgba(0, 201, 123, 0.08)',
-      overflowX: 'auto'
+      padding: '28px',
+      boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)',
+      overflowX: 'auto',
+      border: '1px solid rgba(8, 131, 149, 0.1)'
     },
     timetableHeader: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '24px'
+      marginBottom: '28px',
+      paddingBottom: '16px',
+      borderBottom: '2px solid #D1F8EF'
     },
     weekNavigation: {
       display: 'flex',
       alignItems: 'center',
-      gap: '16px'
+      gap: '18px'
     },
     navButton: {
-      padding: '8px',
-      background: 'linear-gradient(135deg, #00c97b 0%, #00b8d9 100%)',
+      padding: '10px',
+      background: 'linear-gradient(135deg, #088395 0%, #0a9fb5 100%)',
       color: 'white',
       border: 'none',
-      borderRadius: '8px',
+      borderRadius: '10px',
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      transition: 'all 0.3s ease'
+      transition: 'all 0.3s ease',
+      boxShadow: '0 2px 4px rgba(8, 131, 149, 0.3)'
     },
     weekLabel: {
-      fontSize: '16px',
-      fontWeight: 600,
-      color: '#2d3748'
+      fontSize: '17px',
+      fontWeight: 700,
+      color: '#176B87',
+      letterSpacing: '-0.3px'
     },
     viewToggle: {
       display: 'flex',
-      gap: '8px'
+      gap: '10px'
     },
     toggleButton: {
-      padding: '8px 16px',
-      border: '2px solid #e2e8f0',
+      padding: '10px 18px',
+      border: '2px solid rgba(8, 131, 149, 0.2)',
       background: 'white',
-      color: '#2d3748',
-      borderRadius: '8px',
-      fontWeight: 600,
+      color: '#176B87',
+      borderRadius: '10px',
+      fontWeight: 700,
       cursor: 'pointer',
-      fontSize: '14px',
-      transition: 'all 0.3s ease'
+      fontSize: '15px',
+      transition: 'all 0.3s ease',
+      letterSpacing: '0.3px'
     },
     toggleButtonActive: {
-      backgroundColor: '#e2e8f0',
-      color: 'black',
-      borderColor: 'transparent'
+      backgroundColor: '#D1F8EF',
+      color: '#088395',
+      borderColor: '#088395'
     },
     timetableGrid: {
       display: 'grid',
       gridTemplateColumns: '80px repeat(5, 1fr)',
       gridAutoRows: 'minmax(60px, auto)',
       gap: '1px',
-      background: '#e2e8f0',
-      border: '1px solid #e2e8f0',
-      borderRadius: '8px',
+      background: 'rgba(8, 131, 149, 0.2)',
+      border: '2px solid rgba(8, 131, 149, 0.2)',
+      borderRadius: '12px',
       overflow: 'hidden'
     },
     dayHeader: {
-      background: '#f7fafc',
-      padding: '12px',
+      background: '#D1F8EF',
+      padding: '14px',
       textAlign: 'center',
-      fontWeight: 600,
-      fontSize: '14px',
-      color: '#2d3748'
+      fontWeight: 800,
+      fontSize: '15px',
+      color: '#088395',
+      letterSpacing: '0.3px'
     },
     timeSlot: {
       background: 'white',
-      padding: '12px 6px',
-      fontSize: '12px',
-      color: '#718096',
+      padding: '14px 8px',
+      fontSize: '13px',
+      color: '#3674B5',
       display: 'flex',
       alignItems: 'center',
-      fontWeight: 500
+      fontWeight: 700
     },
     emptyCell: {
       background: 'white',
@@ -1464,29 +1432,32 @@ const LabTimetablePage = () => {
       position: 'relative'
     },
     eventCell: {
-      padding: '8px',
-      borderRadius: '6px',
-      fontSize: '12px',
-      fontWeight: 600,
+      padding: '10px',
+      borderRadius: '8px',
+      fontSize: '13px',
+      fontWeight: 700,
       color: 'white',
       cursor: 'pointer',
       transition: 'all 0.2s ease',
       display: 'flex',
       flexDirection: 'column',
-      gap: '4px'
+      gap: '6px'
     },
     eventTitle: {
-      fontSize: '13px',
-      fontWeight: 700
+      fontSize: '14px',
+      fontWeight: 800,
+      letterSpacing: '-0.2px'
     },
     eventDetails: {
-      fontSize: '11px',
-      opacity: 0.9
+      fontSize: '12px',
+      opacity: 0.95,
+      fontWeight: '600'
     },
     overlay: {
       position: 'fixed',
       inset: 0,
-      backgroundColor: 'rgba(0,0,0,0.3)',
+      backgroundColor: 'rgba(23, 107, 135, 0.5)',
+      backdropFilter: 'blur(4px)',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
@@ -1495,27 +1466,31 @@ const LabTimetablePage = () => {
     modalTT: {
       backgroundColor: '#fff',
       borderRadius: '1rem',
-      boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
+      boxShadow: '0 20px 60px rgba(8, 131, 149, 0.3)',
       padding: '2rem',
-      width: '380px',
+      width: '400px',
       maxWidth: '90%',
+      border: '1px solid rgba(8, 131, 149, 0.1)'
     },
     heading: {
-      fontSize: '1.25rem',
-      fontWeight: '600',
+      fontSize: '1.35rem',
+      fontWeight: '800',
       marginBottom: '1rem',
       textAlign: 'center',
+      color: '#176B87',
+      letterSpacing: '-0.5px'
     },
     subHeading: {
-      fontSize: '0.8rem',
+      fontSize: '0.85rem',
       marginBottom: '1.5rem',
       textAlign: 'center',
-	  color: '#718096'
+	  color: '#3674B5',
+      fontWeight: '600'
     },
     buttonContainer: {
       display: 'flex',
       justifyContent: 'flex-end',
-      gap: '0.75rem',
+      gap: '0.85rem',
     },
     slotOverlay: {
       position: 'fixed',
@@ -1523,7 +1498,8 @@ const LabTimetablePage = () => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: 'rgba(23, 107, 135, 0.5)',
+      backdropFilter: 'blur(4px)',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
@@ -1531,112 +1507,120 @@ const LabTimetablePage = () => {
     },
     slotModal: {
       backgroundColor: '#fff',
-      borderRadius: '16px',
-      boxShadow: '0 4px 20px rgba(0, 201, 123, 0.08)',
-      padding: '28px 30px',
+      borderRadius: '20px',
+      boxShadow: '0 20px 60px rgba(8, 131, 149, 0.3)',
+      padding: '32px 36px',
       width: '90%',
-      maxWidth: '500px',
-      position: 'relative'
+      maxWidth: '540px',
+      position: 'relative',
+      border: '1px solid rgba(8, 131, 149, 0.1)'
     },
     slotModalHeader: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '24px',
-      paddingBottom: '16px',
-      borderBottom: '2px solid rgba(0, 201, 123, 0.1)'
+      marginBottom: '28px',
+      paddingBottom: '18px',
+      borderBottom: '2px solid #D1F8EF'
     },
     slotModalTitle: {
-      fontSize: '24px',
-      fontWeight: 700,
-      color: '#2d3748',
-      margin: 0
+      fontSize: '26px',
+      fontWeight: 800,
+      color: '#176B87',
+      margin: 0,
+      letterSpacing: '-0.5px'
     },
     slotCloseButton: {
       background: 'transparent',
       border: 'none',
-      color: '#718096',
+      color: '#3674B5',
       cursor: 'pointer',
-      padding: '4px',
+      padding: '6px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: '6px',
+      borderRadius: '8px',
       transition: 'all 0.2s ease'
     },
     slotModalContent: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '20px'
+      gap: '22px'
     },
     slotInfoRow: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '6px'
+      gap: '8px'
     },
     slotInfoLabel: {
-      fontSize: '12px',
-      color: '#718096',
-      fontWeight: 600,
+      fontSize: '13px',
+      color: '#3674B5',
+      fontWeight: 700,
       textTransform: 'uppercase',
       letterSpacing: '0.5px'
     },
     slotInfoValue: {
-      fontSize: '15px',
-      color: '#2d3748',
-      fontWeight: 500,
-      padding: '10px',
-      background: '#f7fafc',
-      borderRadius: '8px'
+      fontSize: '16px',
+      color: '#176B87',
+      fontWeight: 600,
+      padding: '12px',
+      background: '#EBF4F6',
+      borderRadius: '10px',
+      border: '1px solid rgba(8, 131, 149, 0.1)'
     },
     slotStatusBadge: {
-      padding: '8px 16px',
+      padding: '10px 20px',
       borderRadius: '20px',
-      fontSize: '14px',
-      fontWeight: 600,
-      background: 'rgba(0, 201, 123, 0.1)',
-      color: '#00c97b',
+      fontSize: '15px',
+      fontWeight: 700,
+      background: '#D1F8EF',
+      color: '#088395',
       display: 'inline-block',
-      width: 'fit-content'
+      width: 'fit-content',
+      border: '1px solid #088395'
     },
     slotModalActions: {
       display: 'flex',
-      gap: '12px',
-      marginTop: '24px',
-      paddingTop: '20px',
-      borderTop: '1px solid #e2e8f0'
+      gap: '14px',
+      marginTop: '28px',
+      paddingTop: '22px',
+      borderTop: '1px solid rgba(8, 131, 149, 0.1)'
     },
     slotEditButton: {
       flex: 1,
-      padding: '12px',
-      background: 'linear-gradient(135deg, #00c97b 0%, #00b8d9 100%)',
+      padding: '14px',
+      background: 'linear-gradient(135deg, #088395 0%, #0a9fb5 100%)',
       color: 'white',
       border: 'none',
-      borderRadius: '8px',
-      fontWeight: 600,
+      borderRadius: '10px',
+      fontWeight: 700,
       cursor: 'pointer',
-      fontSize: '14px',
+      fontSize: '15px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: '8px',
-      transition: 'all 0.3s ease'
+      gap: '10px',
+      transition: 'all 0.3s ease',
+      boxShadow: '0 4px 6px rgba(8, 131, 149, 0.3)',
+      letterSpacing: '0.3px'
     },
     slotDeleteButton: {
       flex: 1,
-      padding: '12px',
+      padding: '14px',
       background: '#ef4444',
       color: 'white',
       border: 'none',
-      borderRadius: '8px',
-      fontWeight: 600,
+      borderRadius: '10px',
+      fontWeight: 700,
       cursor: 'pointer',
-      fontSize: '14px',
+      fontSize: '15px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: '8px',
-      transition: 'all 0.3s ease'
+      gap: '10px',
+      transition: 'all 0.3s ease',
+      boxShadow: '0 4px 6px rgba(239, 68, 68, 0.3)',
+      letterSpacing: '0.3px'
     }
   };
 
@@ -1644,7 +1628,7 @@ const LabTimetablePage = () => {
     return (
       <div style={styles.container}>
         <div style={styles.loaderContainer}>
-          <Loader2 size={48} className="animate-spin" color="#10b981" />
+          <Loader2 size={48} className="animate-spin" color="#088395" />
           <p style={styles.loaderText}>Loading lab data...</p>
         </div>
       </div>
@@ -1661,11 +1645,11 @@ const LabTimetablePage = () => {
           onClick={() => setShowNotifyForm(true)}
           onMouseEnter={(e) => {
             e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = '0 6px 16px rgba(0, 201, 123, 0.4)';
+            e.target.style.boxShadow = '0 6px 16px rgba(8, 131, 149, 0.4)';
           }}
           onMouseLeave={(e) => {
             e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 4px 12px rgba(0, 201, 123, 0.3)';
+            e.target.style.boxShadow = '0 4px 12px rgba(8, 131, 149, 0.3)';
           }}
         >
           <Plus size={20} />
@@ -1678,7 +1662,7 @@ const LabTimetablePage = () => {
         <div key={notif.id} style={styles.notificationBanner}>
           <div style={styles.notifHeader}>
             <div style={styles.notifType}>
-              <AlertCircle size={22} />
+              <AlertCircle size={24} />
               {notif.eventType}
             </div>
             <button 
@@ -1687,16 +1671,16 @@ const LabTimetablePage = () => {
               onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.3)'}
               onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
             >
-              <X size={16} />
+              <X size={18} />
             </button>
           </div>
           <div style={styles.notifDetails}>
             <div style={styles.notifRow}>
-              <Calendar size={16} />
+              <Calendar size={18} />
               <strong>Date:</strong> {new Date(notif.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </div>
             <div style={styles.notifRow}>
-              <Clock size={16} />
+              <Clock size={18} />
               <strong>Time:</strong> {notif.startTime} - {notif.endTime}
             </div>
             <div style={styles.notifDescription}>
@@ -1719,8 +1703,8 @@ const LabTimetablePage = () => {
                 value={notifyFormData.eventType}
                 onChange={handleInputChange}
                 style={styles.notifyInput}
-                onFocus={(e) => (e.target.style.borderColor = "#00c97b")}
-                onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")}
+                onFocus={(e) => (e.target.style.borderColor = "#088395")}
+                onBlur={(e) => (e.target.style.borderColor = "rgba(8, 131, 149, 0.2)")}
               >
                 <option value="">Select event type</option>
                 {eventTypes.map((type) => (
@@ -1739,8 +1723,8 @@ const LabTimetablePage = () => {
                   onChange={handleInputChange}
                   placeholder="Enter event name"
                   style={styles.notifyInput}
-                  onFocus={(e) => (e.target.style.borderColor = "#00c97b")}
-                  onBlur={(e) => (e.target.style.borderColor = "#e2e8f0")}
+                  onFocus={(e) => (e.target.style.borderColor = "#088395")}
+                  onBlur={(e) => (e.target.style.borderColor = "rgba(8, 131, 149, 0.2)")}
                 />
               </div>
             )}
@@ -1753,8 +1737,8 @@ const LabTimetablePage = () => {
                 value={notifyFormData.date}
                 onChange={handleInputChange}
                 style={styles.notifyInput}
-                onFocus={(e) => e.target.style.borderColor = '#00c97b'}
-                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                onFocus={(e) => e.target.style.borderColor = '#088395'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
               />
             </div>
 
@@ -1768,8 +1752,8 @@ const LabTimetablePage = () => {
                     value={notifyFormData.startTime}
                     onChange={handleInputChange}
                     style={styles.notifyInput}
-                    onFocus={(e) => e.target.style.borderColor = '#00c97b'}
-                    onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                    onFocus={(e) => e.target.style.borderColor = '#088395'}
+                    onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
                   />
                 </div>
                 <div>
@@ -1779,8 +1763,8 @@ const LabTimetablePage = () => {
                     value={notifyFormData.endTime}
                     onChange={handleInputChange}
                     style={styles.notifyInput}
-                    onFocus={(e) => e.target.style.borderColor = '#00c97b'}
-                    onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                    onFocus={(e) => e.target.style.borderColor = '#088395'}
+                    onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
                   />
                 </div>
               </div>
@@ -1794,8 +1778,8 @@ const LabTimetablePage = () => {
                 onChange={handleInputChange}
                 style={styles.notifyTextarea}
                 placeholder="Enter event details..."
-                onFocus={(e) => e.target.style.borderColor = '#00c97b'}
-                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                onFocus={(e) => e.target.style.borderColor = '#088395'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
               />
             </div>
 
@@ -1803,16 +1787,28 @@ const LabTimetablePage = () => {
               <button
                 style={styles.notifyCancelBtn}
                 onClick={() => setShowNotifyForm(false)}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#cbd5e0'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#e2e8f0'}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(8, 131, 149, 0.05)';
+                  e.target.style.borderColor = '#088395';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'white';
+                  e.target.style.borderColor = 'rgba(8, 131, 149, 0.3)';
+                }}
               >
                 Cancel
               </button>
               <button
                 style={styles.notifySubmitBtn}
                 onClick={ handleSubmitNotification }
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#00b36e'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#00c97b'}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'translateY(-1px)';
+                  e.target.style.boxShadow = '0 6px 10px rgba(8, 131, 149, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 6px rgba(8, 131, 149, 0.3)';
+                }}
               >
                 Add Notification
               </button>
@@ -1887,8 +1883,17 @@ const LabTimetablePage = () => {
               <div style={{display: 'flex', justifyContent: 'flex-end'}}>
                 <button 
                   style={styles.addButton}
-                  onClick={addMoreInfo}>
-                  <span style={{fontSize: '18px'}}>+</span> Add Information
+                  onClick={addMoreInfo}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 10px rgba(8, 131, 149, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 6px rgba(8, 131, 149, 0.3)';
+                  }}
+                >
+                  <span style={{fontSize: '20px'}}>+</span> Add Information
                 </button>
               </div>
 
@@ -1989,6 +1994,8 @@ const LabTimetablePage = () => {
               value={newInfo.hardwareSpecs}
                 onChange={(e) => setNewInfo({...newInfo, hardwareSpecs: e.target.value})}
                 placeholder="Enter Hardware Specifications"
+                onFocus={(e) => e.target.style.borderColor = '#088395'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
               />
             </div>
 
@@ -2000,6 +2007,8 @@ const LabTimetablePage = () => {
                 value={newInfo.softwareSpecs}
                 onChange={(e) => setNewInfo({...newInfo, softwareSpecs: e.target.value})}
                 placeholder="Enter Software Specifications"
+                onFocus={(e) => e.target.style.borderColor = '#088395'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
               />
             </div>
 
@@ -2022,7 +2031,10 @@ const LabTimetablePage = () => {
                       },
                     ],
                   })
-                }>
+                }
+                onFocus={(e) => e.target.style.borderColor = '#088395'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
+              >
                 <option value="">Select Device_Type</option>
                 {deviceType.map((d, index) => (
                   <option key={index} value={d}>
@@ -2054,6 +2066,8 @@ const LabTimetablePage = () => {
                   })
                 }
                 placeholder="Enter Brand"
+                onFocus={(e) => e.target.style.borderColor = '#088395'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
               />
             </div>
 
@@ -2079,6 +2093,8 @@ const LabTimetablePage = () => {
                   })
                 }
                 placeholder="Enter S/N"
+                onFocus={(e) => e.target.style.borderColor = '#088395'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
               />
             </div>
 
@@ -2093,12 +2109,30 @@ const LabTimetablePage = () => {
                     softwareSpecs: "",
                     device: [{ Device_Type: "", Brand: "", Serial_No: "" }],
                   });
-                }}>
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(8, 131, 149, 0.05)';
+                  e.target.style.borderColor = '#088395';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'white';
+                  e.target.style.borderColor = 'rgba(8, 131, 149, 0.3)';
+                }}
+              >
                 Cancel
               </button>
               <button 
                 style={styles.saveButton}
-                onClick={editing ? handleUpdateInfo : handleAddInfo}>
+                onClick={editing ? handleUpdateInfo : handleAddInfo}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'translateY(-1px)';
+                  e.target.style.boxShadow = '0 6px 10px rgba(8, 131, 149, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 6px rgba(8, 131, 149, 0.3)';
+                }}
+              >
                 {editing ? 'Update Information' : 'Add Information'}
               </button>
             </div>
@@ -2106,434 +2140,10 @@ const LabTimetablePage = () => {
         </div>
       )}
 
-      {/* Subject List Card */}
-      <div style={styles.subjectListCard}>
-        <div style={styles.subjectListHeader}>
-          <h2 style={styles.subjectListTitle}>Subject List</h2>
-          
-        </div>
-        
-        <div style={styles.cardContainer}>
-          {subjects.length === 0 ? (
-            <p style={{ display: "flex", justifyContent: "center" }} >No subjects found for this lab.</p>
-            ) : (
-              <>
-                {subjects.map((subject, index) => (
-                  <div key={subject._id} style={styles.card}>
-                    <div 
-                      style={styles.cardHeader}
-                      onClick={() => toggleExpand(subject._id)}
-                    >
-                      <div style={styles.cardLeft}>
-                        <div style={styles.avatar}>S{index + 1}</div>
-                        <div style={styles.cardInfo}>
-                          <h3 style={styles.subjectTitle}>{(subject.Course_Name).toUpperCase()}</h3>
-                          <div style={styles.courseCode}>Code: {subject.Course_Code}</div>
-                        </div>
-                      </div>
+      
 
-                      <div style={styles.cardRight}>
-                        <span 
-                          style={{
-                            ...styles.uploadBadge,
-                            ...(subject.Status === 'uploaded'
-                              ? styles.statusUploaded
-                              : styles.statusPending)
-                          }}
-                        >
-                          {subject.Status === 'uploaded' ? 'Uploaded' : 'Pending'}
-                        </span>
-                        <span style={styles.programCount}>
-                          {subject.Programs ? (
-                            <>{subject.Programs.length} {subject.Programs.length === 1 ? 'Program' : 'Programs'}</>
-                          ) : (
-                            '0 Programs'
-                          )}
-                        </span>
-                        <div style={styles.actionButtons}>
-                          <button style={{ ...styles.iconButton, ...styles.editButton }}>
-                            <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                            </svg>
-                          </button>
-                          <button style={{ ...styles.iconButton, ...styles.deleteButton }}>
-                            <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
-                          </button>
-                          <button style={{ ...styles.iconButton, ...styles.expandButton }}>
-                            {expandedId === subject._id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {expandedId === subject._id && (
-                      <div style={styles.expandedContent}>
-                        {/* Experiment List Section */}
-                        <div style={styles.section}>
-                          <div style={styles.sectionTitle}>Experiment List</div>
-                          <div style={styles.uploadSection}>
-                            {subject.Experiment_List ? (
-                              <>
-                                <span style={styles.fileName}>{subject.Experiment_List}</span>
-                                <div style={{ display: "flex", gap: "10px" }}>
-                                  <button style={styles.uploadButton} onClick={() => handleFileUpload(subject._id)}>
-                                    <Upload size={14} /> Replace
-                                  </button>
-        
-                                  <button
-                                    style={styles.viewButtonStyle}
-                                    onMouseEnter={(e) => Object.assign(e.target.style, styles.viewButtonHover)}
-                                    onMouseLeave={(e) => Object.assign(e.target.style, styles.viewButtonStyle)}
-                                    onClick={() => window.open(`/ListOfExperiment_uploads/${subject.Experiment_List}`, "_blank")}
-                                  >
-                                    View PDF
-                                  </button>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <span style={styles.noFileText}>No file uploaded</span>
-                                <button style={styles.uploadButton} onClick={() => handleFileUpload(subject._id)}>
-                                  <Upload size={14} /> Upload PDF
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Programs Section */}
-                        <div style={styles.section}>
-                          <div style={styles.sectionTitle}>Assigned Programs</div>
-                          <div style={styles.programsGrid}>
-                            {subject.Programs && subject.Programs.length > 0 ? (
-                              subject.Programs.map((sp) => (
-                                <div key={sp._id} style={styles.programCard}>
-                                  <div style={styles.programHeader}>
-                                    <div>
-                                      <div style={styles.programName}>{sp.Program_Name}</div>
-                                      <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                                        Section {sp.Program_Section} • Semester {sp.Program_Semester} • Batch {sp.Program_Batch}
-                                      </div>
-                                    </div>
-                                    <span style={styles.programBadge}>{sp.Program_Group}</span>
-                                  </div>
-                                  <div style={styles.programDetails}>
-                                    <div style={styles.detailRow}>
-                                      <span style={styles.detailLabel}>Faculty:</span>
-                                      <span style={styles.detailValue}>{(sp.Subject && sp.Subject[0] && sp.Subject[0].Faculty_Assigned?.Name) || "Not Assigned"}</span>
-                                    </div>
-                                    <div style={styles.detailRow}>
-                                      <span style={styles.detailLabel}>Hours/Week:</span>
-                                      <span style={styles.detailValue}>{(sp.Subject && sp.Subject[0] && sp.Subject[0].Number_Of_Hours) || "N/A"}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))
-                            ) : (
-                              <div>No programs assigned.</div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </>
-          )}
-      </div>
-    </div>
-     
-      {/* Timetable Card */}
-      <div style={styles.timetableCard}>
-        <div style={styles.timetableHeader}>
-          <div style={styles.weekNavigation}>
-            <button style={styles.navButton} onClick={previousWeek}>
-              <ChevronLeft size={20} />
-            </button>
-            <span style={styles.weekLabel}>{getWeekDates()}</span>
-            <button style={styles.navButton} onClick={nextWeek}>
-              <ChevronRight size={20} />
-            </button>
-          </div>
-
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <div style={styles.viewToggle}>
-              <button
-                style={{
-                  ...styles.toggleButton,
-                  ...(view === 'week' ? styles.toggleButtonActive : {})
-                }}
-                onClick={() => setView('week')}
-              >
-                Week
-              </button>
-            </div>
-            <button 
-              style={styles.addButton}
-              onClick={() => setShowForm(true)}>
-              <Plus size={16} />
-              New Slot
-            </button>
-          </div>
-        </div> 
-
-        <div style={styles.timetableGrid}>
-          {/* Header Row */}
-          <div style={styles.dayHeader}></div>
-          {days.map((day) => (
-            <div key={day} style={styles.dayHeader}>
-              {day}
-            </div>
-          ))}
-
-          {/* Time Slots and Events */}
-          {timeSlots.map((time) => (
-            <React.Fragment key={time}>
-              <div style={styles.timeSlot}>{time}</div>
-              {days.map((day) => {
-                const events = getEventsForSlot(day, time);
-                const eventKey = `${day}-${time}`;
-
-                if (!events || events.length === 0) {
-                  return <div key={eventKey} style={styles.emptyCell}></div>;
-                }
-
-                const firstEvent = events[0];
-                if (!isEventStart(firstEvent, time)) return null;
-
-                const rowSpan = calculateRowSpan(firstEvent);
-                const visibleIndex = visibleEventIndex[eventKey] || 0;
-                const eventToShow = events[visibleIndex];
-                
-                const colorIndex = getEventColorIndex(eventToShow, day, time);
-
-                return (
-                  <div
-                    key={eventKey}
-                    style={{
-                      ...styles.emptyCell,
-                      ...styles.eventCell,
-                      background: colors[colorIndex],
-                      gridRow: `span ${rowSpan}`,
-                      position: 'relative',
-                    }}
-                  >
-                    <div style={styles.eventTitle}>{eventToShow.subject}</div>
-                    <div style={styles.eventDetails}>{eventToShow.course}</div>
-                    {/* <div style={styles.eventDetails}>{eventToShow.faculty}</div> */}
-                    <div style={styles.eventDetails}>
-                      {formatTime(eventToShow.startTime)} - {formatTime(eventToShow.endTime)}
-                    </div>
-					
-					<div style={{ display: 'flex', justifyContent: 'space-between', alignContent: 'center',  }}>
-
-						<button
-						style={{...styles.iconButton, ...styles.redirectButton}}
-						onClick={() => handleSlotClick(eventToShow)}
-						title="View Details"
-						>
-						<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
-							<path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-							<path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
-						</svg>
-						</button>
-
-						{events.length > 1 && (
-							<div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 8 }}>
-							<button
-							style={styles.arrowButton}
-							onClick={() =>
-								setVisibleEventIndex({
-									...visibleEventIndex,
-									[eventKey]: (visibleIndex - 1 + events.length) % events.length
-								})
-							}
-							>
-							◀
-							</button>
-							<button
-							style={styles.arrowButton}
-							onClick={() =>
-								setVisibleEventIndex({
-									...visibleEventIndex,
-									[eventKey]: (visibleIndex + 1) % events.length
-								})
-							}
-							>
-							▶
-							</button>
-						</div>
-						)}
-					</div>
-                  </div>
-                );
-              })}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-
-      {/* Slot Details Popup */}
-      {selectedSlot && (
-        <div style={styles.slotOverlay} onClick={() => setSelectedSlot(null)}>
-          <div style={styles.slotModal} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.slotModalHeader}>
-              <h2 style={styles.slotModalTitle}>Slot Details</h2>
-              <button 
-                style={styles.slotCloseButton}
-                onClick={() => setSelectedSlot(null)}
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div style={styles.slotModalContent}>
-              <div style={styles.slotInfoRow}>
-                <span style={styles.slotInfoLabel}>Subject</span>
-                <span style={styles.slotInfoValue}>{selectedSlot.subject}</span>
-              </div>
-
-              <div style={styles.slotInfoRow}>
-                <span style={styles.slotInfoLabel}>Program</span>
-                <span style={styles.slotInfoValue}>{selectedSlot.course}</span>
-              </div>
-
-              <div style={styles.slotInfoRow}>
-                <span style={styles.slotInfoLabel}>Time Slot</span>
-                <span style={styles.slotInfoValue}>
-                  {selectedSlot.day}, {formatTime(selectedSlot.startTime)} - {formatTime(selectedSlot.endTime)}
-                </span>
-              </div>
-
-              <div style={styles.slotInfoRow}>
-                <span style={styles.slotInfoLabel}>Status</span>
-                <span style={styles.statusBadge}>{formatStatus(selectedSlot.status)}</span>
-              </div>
-            </div>
-
-            <div style={styles.slotModalActions}>
-              <button style={styles.slotEditButton} onClick={handleEditSlot}>
-                <Edit size={18} />
-                Edit
-              </button>
-              <button style={styles.slotDeleteButton} onClick={handleDeleteSlot}>
-                <Trash2 size={18} />
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Book Timetable Slot */}
-      {showForm && (
-        <div style={styles.overlay}>
-          <div style={styles.modalTT}>
-            <h2 style={styles.heading}>{isEditing ? "Edit Booking" : "New Booking"}</h2>
-			{isEditing ? (
-				<p style={styles.subHeading}>Program, Subject and Faculty can not be edited</p>
-			) : (
-				<></>
-			)}
-
-            <select
-              value={formData.Program}
-              onChange={(e) => handleProgramChange(e.target.value)}
-              style={styles.select}
-			  disabled={isEditing} 
-            >
-              <option value="">Select Program</option>
-              
-              {filteredPrograms.map(p => (               
-                (<option key={p._id} value={p._id}>{ p.Program_Section + " - " + p.Program_Name + " - Sem " + p.Program_Semester + " " + p.Program_Batch + " " + p.Program_Group}</option>)
-              ))}
-            </select>
-
-            <select
-              value={formData.Subject}
-              onChange={(e) => setFormData({ ...formData, Subject: e.target.value })}
-              disabled={!formData.Program || !filteredSubjects.length || isEditing }
-              style={styles.select}
-            >
-              <option value="">Select Subject</option>
-              {filteredSubjects.map(s => (
-                <option key={s._id} value={s._id}>{s.Course_Name}</option>
-              ))}
-            </select>
-
-            <select
-              value={formData.Faculty}
-              onChange={(e) => setFormData({ ...formData, Faculty: e.target.value })}
-              style={styles.select}
-              disabled={!formData.Program || !filteredFaculties.length || isEditing}              
-            >
-              <option value="">Select Faculty</option>
-              {filteredFaculties.map(f => (
-                <option key={f.Faculty_ID} value={f.Faculty_ID}>
-                  {f.Faculty_Name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={formData.Day}
-              onChange={(e) => setFormData({ ...formData, Day: e.target.value })}
-              style={styles.select}
-            >
-              <option value="">Select Day</option>
-              {days.map(d =>
-                <option key={d} value={d}>{d}</option>
-              )}
-            </select>
-
-            <select
-              value={formData.StartTimeSlot}
-              onChange={(e) => setFormData({ ...formData, StartTimeSlot: e.target.value })}
-              style={styles.select}
-            >
-              <option value="">Select Time Slot</option>
-              {startTimeSlots.map(slot => <option key={slot} value={slot}>{slot}</option>)}
-            </select>
-
-            <select
-              value={formData.EndTimeSlot}
-              onChange={(e) => setFormData({ ...formData, EndTimeSlot: e.target.value })}
-              style={styles.select}
-            >
-              <option value="">Select Time Slot</option>
-              {endTimeSlots.map(slot => <option key={slot} value={slot}>{slot}</option>)}
-            </select>
-
-            <select
-              value={formData.Status}
-              onChange={(e) => setFormData({ ...formData, Status: e.target.value })}
-              style={styles.select}
-            >
-              <option value="">Select Status</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="temporary">Temporary</option>
-            </select>
-
-            <div style={styles.buttonContainer}>
-              <button 
-                onClick={() => {
-                  setShowForm(false)
-                  setFormData({ Subject: '', Program: '', Faculty: '', Day: '', TimeSlot: '', Lab: id });
-                  }} 
-                style={styles.cancelButton}>
-                Cancel
-              </button>
-              <button onClick={isEditing ? handleEditSubmit : handleSubmit} style={styles.saveButton}>
-                {isEditing ? "Edit" : "Save"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default LabTimetablePage;
+export default LabInfo;

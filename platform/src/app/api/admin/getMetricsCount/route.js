@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { connectDB } from "../../../../app/api/utils/db";
 import Lab from "../../../../models/Labs";
 import Asset from "../../../../models/Asset";
-import SubjectList from "../../../../models/Subject_List";
-import Programs from "../../../../models/Programs";
 import LabTechnician from "../../../../models/Lab_Technician";
 import Faculty from "../../../../models/Faculty";
 
@@ -13,16 +11,12 @@ export async function GET() {
 
     const totalAssets = await Asset.countDocuments();
     const totalLabs = await Lab.countDocuments();
-    const totalSubjects = await SubjectList.countDocuments();
-    const totalPrograms = await Programs.countDocuments();
     const totalTechnicians = await LabTechnician.countDocuments();
     const totalFaculty = await Faculty.countDocuments();
 
     const metrics = {
       totalAssets,
       totalLabs,
-      totalSubjects,
-      totalPrograms,
       totalTechnicians,
       totalFaculty,
     };
@@ -35,13 +29,12 @@ export async function GET() {
     labs.forEach((lab) => {
       const name = lab.Lab_Name.toLowerCase();
       if (
-        name.includes("computer science") ||
-        name.includes("electronics") ||
-        name.includes("mechanics") ||
-        name.includes("technical") // any other technical keywords
+        name.includes("computer science")
       ) {
         technical += 1;
       } else {
+        name.includes("electronics") ||
+        name.includes("mechanics")
         nonTechnical += 1;
       }
     });

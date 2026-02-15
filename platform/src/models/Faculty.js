@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
  
 const FacultySchema = new mongoose.Schema({
-  UserID: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  UserDetails: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   Designation: { type: String, default: "" },
   Department: { type: String, default: "" },
   Labs: [{ type: mongoose.Schema.Types.ObjectId, ref: "Lab" }],
