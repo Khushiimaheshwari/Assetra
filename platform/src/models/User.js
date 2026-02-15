@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import { connectDB } from "../app/api/utils/db.js";
+import { connectDB } from "../app/api/utils/db.js"; 
  
 const UserSchema = new mongoose.Schema({
   Name: { type: String, required: true },
@@ -9,7 +9,6 @@ const UserSchema = new mongoose.Schema({
   Role: {
     type: String,
     enum: ["admin", "lab_technician", "faculty"],
-    default: "faculty"
   }, 
   ProfileImage: { type: String, default: "" },
   PhoneNumber: { type: String, default: "" },

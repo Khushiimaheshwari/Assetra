@@ -8,7 +8,9 @@ export async function GET() {
   try {
     await connectDB();
 
-    const labs = await Lab.find({}, "_id Lab_ID Lab_Name Block Lab_Room Total_Capacity Status LabTechnician Lab_Incharge Equipment").populate("LabTechnician", "Name").populate("Lab_Incharge", "Name");
+    const labs = await Lab.find({}, "_id Lab_ID Lab_Name Block Lab_Room Total_Capacity Status LabTechnician Lab_Incharge")
+    .populate("LabTechnician", "UserDetails")
+    .populate("Lab_Incharge", "UserDetails");
 
     return NextResponse.json({ labs });
   } catch (error) {

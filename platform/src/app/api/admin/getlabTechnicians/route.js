@@ -7,10 +7,11 @@ export async function GET() {
   try {
     await connectDB();
  
-    const technicians = await LabTechnician.find(
-      {},
-      "_id Name Email ProfileImage PhoneNumber Location AccountStatus Labs"
-    ).populate("Labs", "Lab_ID Lab_Name");
+    const technicians = await LabTechnician.find()
+    .populate("Labs", "Lab_ID Lab_Name Block Lab_Room Total_Capacity Status LabTechnician")
+    .populate("UserDetails", "Name Email ProfileImage PhoneNumber Location AccountStatus")
+    .populate("Issues", "Asset Issue_Description Issue_Status")
+    .lean();
 
     return NextResponse.json({ technicians });
   } catch (error) {
