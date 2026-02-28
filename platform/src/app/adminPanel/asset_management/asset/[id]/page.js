@@ -9,6 +9,7 @@ function AssetsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedType, setSelectedType] = useState("All");
   const [viewingQR, setViewingQR] = useState(null);
+  const [viewingAI, setViewingAI] = useState(null); // NEW: AI Modal state
   const [editingAsset, setEditingAsset] = useState(null);
   const [isMobile, setIsMobile] = useState(false); 
   const [loading, setLoading] = useState(true);
@@ -256,19 +257,19 @@ function AssetsPage() {
       alignItems: 'center',
       minHeight: '100vh',
       width: '100%',
-      backgroundColor: '#f9fafb',
+      backgroundColor: '#EBF4F6',
       flexDirection: 'column',
       gap: '1rem',
     },
     loaderText: {
-      color: '#6b7280',
+      color: '#176B87',
       fontSize: '16px',
       fontWeight: '500',
     },
     container: {
       width: isMobile ? '100%' : 'calc(100% - 255px)',
       minHeight: '100vh',
-      backgroundColor: '#f9fafb',
+      backgroundColor: '#EBF4F6',
       padding: isMobile ? '1rem' : '2rem',
       boxSizing: 'border-box',
       marginLeft: isMobile ? '0' : '255px',
@@ -283,20 +284,20 @@ function AssetsPage() {
       backdropFilter: 'blur(20px)',
       borderRadius: '16px',
       padding: isMobile ? '15px 20px' : '20px 25px',
-      boxShadow: '0 4px 20px rgba(0, 201, 123, 0.08)',
+      boxShadow: '0 4px 20px rgba(8, 131, 149, 0.08)',
       flexWrap: isMobile ? 'wrap' : 'nowrap',
       gap: isMobile ? '1rem' : '0'
     },
     headerTitle: {
       fontSize: isMobile ? '20px' : '28px',
       fontWeight: 700,
-      color: '#2d3748',
+      color: '#176B87',
       margin: 0,
       width: isMobile ? '100%' : 'auto'
     },
     addButton: {
       padding: isMobile ? '10px 20px' : '12px 24px',
-      background: 'linear-gradient(135deg, #00c97b 0%, #00b8d9 100%)',
+      background: '#088395',
       color: 'white',
       border: 'none',
       borderRadius: '12px',
@@ -309,16 +310,16 @@ function AssetsPage() {
       transition: 'all 0.3s ease'
     },
     infoBox: {
-      background: 'rgba(239, 246, 255, 0.95)',
+      background: 'rgba(209, 248, 239, 0.5)',
       backdropFilter: 'blur(20px)',
-      border: '2px solid #93c5fd',
+      border: '2px solid #86B6F6',
       borderRadius: '16px',
       padding: isMobile ? '12px 16px' : '16px 20px',
       marginBottom: '30px',
-      boxShadow: '0 4px 20px rgba(0, 184, 217, 0.08)'
+      boxShadow: '0 4px 20px rgba(8, 131, 149, 0.08)'
     },
     infoText: {
-      color: '#1e3a8a',
+      color: '#176B87',
       fontSize: isMobile ? '13px' : '14px',
       lineHeight: '1.6',
       margin: 0
@@ -328,12 +329,12 @@ function AssetsPage() {
       borderRadius: '12px',
       padding: isMobile ? '1rem' : '1.5rem',
       marginBottom: '2rem',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+      boxShadow: '0 1px 3px rgba(8, 131, 149, 0.05)'
     },
     filterLabel: {
       fontSize: isMobile ? '13px' : '14px',
       fontWeight: 600,
-      color: '#4a5568',
+      color: '#176B87',
       marginBottom: '0.75rem',
       display: 'block'
     },
@@ -344,10 +345,10 @@ function AssetsPage() {
     },
     filterButton: {
       padding: isMobile ? '0.5rem 0.875rem' : '0.5rem 1rem',
-      background: '#f7fafc',
-      color: '#4a5568',
+      background: '#EBF4F6',
+      color: '#176B87',
       border: '2px solid',
-      borderColor: '#e2e8f0',
+      borderColor: '#D1F8EF',
       borderRadius: '8px',
       fontWeight: 500,
       cursor: 'pointer',
@@ -356,9 +357,9 @@ function AssetsPage() {
       textTransform: 'capitalize'
     },
     filterButtonActive: {
-      background: '#10b981',
+      background: '#088395',
       color: 'white',
-      borderColor: '#10b981'
+      borderColor: '#088395'
     },
     assetGrid: {
       display: 'grid',
@@ -369,14 +370,14 @@ function AssetsPage() {
       background: 'white',
       borderRadius: '12px',
       padding: isMobile ? '1.25rem' : '1.5rem',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+      boxShadow: '0 1px 3px rgba(8, 131, 149, 0.05)',
       transition: 'transform 0.2s ease, box-shadow 0.2s ease',
       position: 'relative'
     },
     assetName: {
       fontSize: isMobile ? '16px' : '18px',
       fontWeight: 600,
-      color: '#2d3748',
+      color: '#176B87',
       marginBottom: '1rem'
     },
     assetDetail: {
@@ -387,21 +388,20 @@ function AssetsPage() {
     },
     detailLabel: {
       fontWeight: 600,
-      color: '#4a5568',
+      color: '#176B87',
       minWidth: isMobile ? '100px' : '120px',
       display: 'flex',
       alignItems: 'center',
       gap: '0.5rem'
     },
     detailValue: {
-      color: '#718096',
+      color: '#088395',
       flex: 1
     },
     issueContainer: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      // gap: '0.5rem',
       flex: 1
     },
     issueBlock: {
@@ -417,7 +417,7 @@ function AssetsPage() {
       width: "auto"
     },
     noIssueText: {
-      color: '#718096',
+      color: '#088395',
       fontWeight: 500,
       flex: 1
     },
@@ -453,7 +453,7 @@ function AssetsPage() {
     issueModalHeader: {
       fontSize: '20px',
       fontWeight: 700,
-      color: '#1f2937',
+      color: '#176B87',
       marginBottom: '16px',
       display: 'flex',
       alignItems: 'center',
@@ -480,14 +480,14 @@ function AssetsPage() {
     issueDetailLabel: {
       fontSize: '12px',
       fontWeight: 600,
-      color: '#6b7280',
+      color: '#176B87',
       textTransform: 'uppercase',
       marginBottom: '6px',
       letterSpacing: '0.5px'
     },
     issueDetailValue: {
       fontSize: '15px',
-      color: '#1f2937',
+      color: '#088395',
       lineHeight: '1.6'
     },
     issueStatusBadge: {
@@ -511,24 +511,17 @@ function AssetsPage() {
       cursor: 'pointer',
       background: 'white'
     },
-    issueStatusBadge: {
-      display: 'inline-block',
-      padding: '2px 8px',
-      borderRadius: '6px',
-      fontSize: '12px',
-      fontWeight: 600
-    },
     qrCode: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       gap: '0.5rem',
       padding: '0.5rem',
-      background: '#f7fafc',
+      background: '#EBF4F6',
       borderRadius: '6px',
       fontSize: '13px',
       fontWeight: 600,
-      color: '#10b981'
+      color: '#088395'
     },
     qrCodeThumbnail: {
       display: 'inline-block',
@@ -539,16 +532,28 @@ function AssetsPage() {
       height: '20px',
       display: 'block',
     },
+    // NEW: AI Insights button style
+    aiInsightsButton: {
+      display: 'inline-block',
+      padding: '0.35rem 0.75rem',
+      background: '#EBF4F6',
+      borderRadius: '6px',
+      fontSize: '13px',
+      fontWeight: 600,
+      color: '#088395',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease'
+    },
     actionButtons: {
       display: 'flex',
       gap: '0.5rem',
       marginTop: '1rem',
       paddingTop: '1rem',
-      borderTop: '1px solid #e2e8f0'
+      borderTop: '1px solid #D1F8EF'
     },
     iconButton: {
       padding: isMobile ? '0.625rem' : '0.5rem',
-      background: '#f7fafc',
+      background: '#EBF4F6',
       border: 'none',
       borderRadius: '6px',
       cursor: 'pointer',
@@ -559,7 +564,7 @@ function AssetsPage() {
       flex: 1
     },
     editButton: {
-      color: '#10b981'
+      color: '#088395'
     },
     deleteButton: {
       color: '#ef4444'
@@ -589,7 +594,7 @@ function AssetsPage() {
     modalHeader: {
       fontSize: isMobile ? '20px' : '24px',
       fontWeight: 600,
-      color: '#2d3748',
+      color: '#176B87',
       marginBottom: '1.5rem'
     },
     formGroup: {
@@ -599,13 +604,13 @@ function AssetsPage() {
       display: 'block',
       fontSize: isMobile ? '13px' : '14px',
       fontWeight: 600,
-      color: '#2d3748',
+      color: '#176B87',
       marginBottom: '0.5rem'
     },
     input: {
       width: '100%',
       padding: isMobile ? '0.625rem' : '0.75rem',
-      border: '2px solid #e2e8f0',
+      border: '2px solid #D1F8EF',
       borderRadius: '8px',
       fontSize: '14px',
       transition: 'border-color 0.2s ease',
@@ -614,7 +619,7 @@ function AssetsPage() {
     select: {
       width: '100%',
       padding: isMobile ? '0.625rem' : '0.75rem',
-      border: '2px solid #e2e8f0',
+      border: '2px solid #D1F8EF',
       borderRadius: '8px',
       fontSize: '14px',
       transition: 'border-color 0.2s ease',
@@ -624,7 +629,7 @@ function AssetsPage() {
     textarea: {
       width: '100%',
       padding: isMobile ? '0.625rem' : '0.75rem',
-      border: '2px solid #e2e8f0',
+      border: '2px solid #D1F8EF',
       borderRadius: '8px',
       fontSize: '14px',
       transition: 'border-color 0.2s ease',
@@ -642,8 +647,8 @@ function AssetsPage() {
       flex: 1,
       padding: '0.75rem',
       background: 'white',
-      color: '#718096',
-      border: '2px solid #e2e8f0',
+      color: '#088395',
+      border: '2px solid #D1F8EF',
       borderRadius: '8px',
       fontWeight: 600,
       cursor: 'pointer',
@@ -652,7 +657,7 @@ function AssetsPage() {
     saveButton: {
       flex: 1,
       padding: '0.75rem',
-      background: saving ? '#9ca3af' : '#10b981',
+      background: saving ? '#9ca3af' : '#088395',
       color: 'white',
       border: 'none',
       borderRadius: '8px',
@@ -667,7 +672,7 @@ function AssetsPage() {
     emptyState: {
       textAlign: 'center',
       padding: isMobile ? '2rem' : '3rem',
-      color: '#718096',
+      color: '#088395',
       gridColumn: '1 / -1'
     },
     qrModal: {
@@ -695,7 +700,7 @@ function AssetsPage() {
     qrModalHeader: {
       fontSize: isMobile ? '18px' : '20px',
       fontWeight: 600,
-      color: '#2d3748',
+      color: '#176B87',
       marginBottom: '1.5rem'
     },
     qrModalImage: {
@@ -703,12 +708,12 @@ function AssetsPage() {
       height: isMobile ? '200px' : '250px',
       margin: '0 auto 1.5rem',
       display: 'block',
-      border: '2px solid #e2e8f0',
+      border: '2px solid #D1F8EF',
       borderRadius: '8px'
     },
     downloadButton: {
       padding: '0.75rem 1.5rem',
-      background: '#10b981',
+      background: '#088395',
       color: 'white',
       border: 'none',
       borderRadius: '8px',
@@ -726,7 +731,7 @@ function AssetsPage() {
       position: 'absolute',
       top: '1rem',
       right: '1rem',
-      background: '#f7fafc',
+      background: '#EBF4F6',
       border: 'none',
       borderRadius: '50%',
       width: '32px',
@@ -735,8 +740,50 @@ function AssetsPage() {
       alignItems: 'center',
       justifyContent: 'center',
       cursor: 'pointer',
-      color: '#718096',
+      color: '#088395',
       transition: 'background 0.2s ease'
+    },
+    // NEW: AI Modal styles
+    aiModalContent: {
+      background: 'white',
+      borderRadius: '12px',
+      padding: isMobile ? '1.5rem' : '2rem',
+      maxWidth: '450px',
+      width: isMobile ? '100%' : '90%',
+      position: 'relative'
+    },
+    aiModalHeader: {
+      fontSize: isMobile ? '20px' : '24px',
+      fontWeight: 700,
+      color: '#176B87',
+      marginBottom: '1.5rem',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.75rem'
+    },
+    aiInsightRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: '1rem 0',
+      borderBottom: '1px solid #D1F8EF'
+    },
+    aiInsightLabel: {
+      fontSize: '14px',
+      color: '#176B87',
+      fontWeight: 500
+    },
+    aiInsightValue: {
+      fontSize: '16px',
+      fontWeight: 700,
+      color: '#088395'
+    },
+    noDataMessage: {
+      textAlign: 'center',
+      padding: '2rem',
+      color: '#088395',
+      fontSize: '16px',
+      fontWeight: 500
     }
   };
 
@@ -744,7 +791,7 @@ function AssetsPage() {
     return (
       <div style={styles.container}>
         <div style={styles.loaderContainer}>
-          <Loader2 size={48} className="animate-spin" color="#10b981" />
+          <Loader2 size={48} className="animate-spin" color="#088395" />
           <p style={styles.loaderText}>Loading asset data...</p>
         </div>
       </div>
@@ -758,7 +805,9 @@ function AssetsPage() {
         <h1 style={styles.headerTitle}>{pcData.PC_Name} {pcData.Lab?.Lab_ID}</h1>
         <button 
           style={styles.addButton} 
-          onClick={() => setShowAddModal(true)}>
+          onClick={() => setShowAddModal(true)}
+          onMouseEnter={(e) => e.currentTarget.style.background = '#3674B5'}
+          onMouseLeave={(e) => e.currentTarget.style.background = '#088395'}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/>
           </svg>
@@ -816,13 +865,13 @@ function AssetsPage() {
                 onMouseEnter={(e) => {
                   if (!isMobile) {
                     e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(8, 131, 149, 0.15)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isMobile) {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(8, 131, 149, 0.05)';
                   }
                 }}
               >
@@ -830,7 +879,7 @@ function AssetsPage() {
                 
                 <div style={styles.assetDetail}>
                   <div style={styles.detailLabel}>
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{color: '#10b981'}}>
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{color: '#088395'}}>
                       <path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"/>
                     </svg>
                     Asset Type
@@ -842,7 +891,7 @@ function AssetsPage() {
 
                 <div style={styles.assetDetail}>
                   <div style={styles.detailLabel}>
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{color: '#10b981'}}>
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{color: '#088395'}}>
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
                     </svg>
                     Brand Name
@@ -854,7 +903,7 @@ function AssetsPage() {
 
                 <div style={styles.assetDetail}>
                   <div style={styles.detailLabel}>
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{color: '#10b981'}}>
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{color: '#088395'}}>
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
                     </svg>
                     Status
@@ -870,7 +919,7 @@ function AssetsPage() {
 
                 <div style={styles.assetDetail}>
                   <div style={styles.detailLabel}>
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{color: '#10b981'}}>
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{color: '#088395'}}>
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
                     </svg>
                     Issues 
@@ -889,19 +938,17 @@ function AssetsPage() {
                           e.currentTarget.style.transform = 'translateY(0)';
                         }}
                       >
-
                         {asset.Issue_Reported.length} Issue{asset.Issue_Reported.length !== 1 ? 's' : ''}
                       </div>
                     ) : (
                       <div style={styles.noIssueText}>No Issues</div>
                     )}
-                    
                   </div>
                 </div>
 
                 <div style={styles.assetDetail}>
                   <div style={styles.detailLabel}>
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{color: '#10b981'}}>
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{color: '#088395'}}>
                       <path fillRule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zM3 13a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zM13 3a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2v1h1V5h-1z" clipRule="evenodd"/>
                       <path d="M11 4a1 1 0 10-2 0v1a1 1 0 002 0V4zM10 7a1 1 0 011 1v1h2a1 1 0 110 2h-3a1 1 0 01-1-1V8a1 1 0 011-1zM16 9a1 1 0 100 2 1 1 0 000-2zM9 13a1 1 0 011-1h1a1 1 0 110 2v2a1 1 0 11-2 0v-3zM7 11a1 1 0 100-2H4a1 1 0 100 2h3zM17 13a1 1 0 01-1 1h-2a1 1 0 110-2h2a1 1 0 011 1zM16 17a1 1 0 100-2h-3a1 1 0 100 2h3z"/>
                     </svg>
@@ -920,11 +967,38 @@ function AssetsPage() {
                   </div>
                 </div>
 
+                {/* NEW: AI Insights Row */}
+                <div style={styles.assetDetail}>
+                  <div style={styles.detailLabel}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{color: '#088395'}}>
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    AI Insights
+                  </div>
+                  <div 
+                    style={styles.aiInsightsButton}
+                    onClick={() => setViewingAI(asset)}
+                    title="Click to view AI insights"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#088395';
+                      e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#EBF4F6';
+                      e.currentTarget.style.color = '#088395';
+                    }}
+                  >
+                    View Report
+                  </div>
+                </div>
+
                 <div style={styles.actionButtons}>
                   <button
                     style={{...styles.iconButton, ...styles.editButton}}
                     onClick={() => handleEditAsset(asset)}
                     title="Edit Asset"
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#D1F8EF'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = '#EBF4F6'}
                   >
                     <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
@@ -934,6 +1008,8 @@ function AssetsPage() {
                     style={{...styles.iconButton, ...styles.deleteButton}}
                     onClick={() => handleDeleteAsset(asset.id || asset._id)}
                     title="Delete Asset"
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = '#EBF4F6'}
                   >
                     <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
@@ -970,7 +1046,6 @@ function AssetsPage() {
               </button>
             </div>
 
-            {/* Multiple issues */}
             {viewingIssue.Issue_Reported.length > 1 && (
               <div style={styles.navButtons}>
                 <button 
@@ -989,7 +1064,6 @@ function AssetsPage() {
               </div>
             )}
 
-            {/* Current Issue */}
             {(() => {
               const issue = viewingIssue.Issue_Reported[currentIssueIndex];
               return (
@@ -1043,8 +1117,8 @@ function AssetsPage() {
             <button 
               style={styles.closeButton}
               onClick={() => setViewingQR(null)}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#e2e8f0'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#f7fafc'}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#D1F8EF'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#EBF4F6'}
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
@@ -1062,14 +1136,74 @@ function AssetsPage() {
             <button 
               style={styles.downloadButton}
               onClick={() => handleDownloadQR(viewingQR.QR_Code, viewingQR.Asset_Name)}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#176B87'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#088395'}
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd"/>
               </svg>
               Download QR Code
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* NEW: AI Insights Modal */}
+      {viewingAI && (
+        <div style={styles.qrModal} onClick={() => setViewingAI(null)}>
+          <div style={styles.aiModalContent} onClick={(e) => e.stopPropagation()}>
+            <button 
+              style={styles.closeButton}
+              onClick={() => setViewingAI(null)}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#D1F8EF'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#EBF4F6'}
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
+              </svg>
+            </button>
+            
+            <div style={styles.aiModalHeader}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#088395" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20z"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <path d="M12 17h.01"/>
+              </svg>
+              AI Asset Intelligence Report
+            </div>
+
+            {viewingAI.aiInsights ? (
+              <>
+                <div style={styles.aiInsightRow}>
+                  <span style={styles.aiInsightLabel}>Failure Probability:</span>
+                  <span style={styles.aiInsightValue}>{viewingAI.aiInsights.failureProbability} %</span>
+                </div>
+
+                <div style={styles.aiInsightRow}>
+                  <span style={styles.aiInsightLabel}>Remaining Life:</span>
+                  <span style={styles.aiInsightValue}>{viewingAI.aiInsights.remainingLife} Years</span>
+                </div>
+
+                <div style={styles.aiInsightRow}>
+                  <span style={styles.aiInsightLabel}>Predicted Book Value:</span>
+                  <span style={styles.aiInsightValue}>₹{viewingAI.aiInsights.predictedBookValue}</span>
+                </div>
+
+                <div style={{...styles.aiInsightRow, borderBottom: 'none'}}>
+                  <span style={styles.aiInsightLabel}>Next Year Maintenance Cost:</span>
+                  <span style={styles.aiInsightValue}>₹{viewingAI.aiInsights.maintenanceCost}</span>
+                </div>
+              </>
+            ) : (
+              <div style={styles.noDataMessage}>
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#088395" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{margin: '0 auto 1rem', display: 'block', opacity: 0.5}}>
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                No AI Data Found
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1153,6 +1287,8 @@ function AssetsPage() {
                   setEditingAsset(null);
                   resetForm();
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#EBF4F6'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
               >
                 Cancel
               </button>
@@ -1160,6 +1296,8 @@ function AssetsPage() {
                 style={styles.saveButton}
                 onClick={editingAsset ? handleUpdateAsset : handleAddAsset}
                 disabled={saving}
+                onMouseEnter={(e) => !saving && (e.currentTarget.style.background = '#176B87')}
+                onMouseLeave={(e) => !saving && (e.currentTarget.style.background = '#088395')}
               >
                 {saving ? (
                   <>
