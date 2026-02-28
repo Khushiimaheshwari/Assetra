@@ -4,10 +4,10 @@ import Labs from "../../../../../models/Labs";
 import Assets from "../../../../../models/Asset";
 import PCs from "../../../../../models/Lab_PCs";
 
-export async function GET(req, { params }) {
+export async function GET(req, context) {
   try {
     await connectDB();
-    const { id } = params;
+    const { id } = await context.params;
 
     const pc = await PCs.findById(id)
       .populate("Lab", "Lab_ID")
