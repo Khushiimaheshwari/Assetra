@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "../../../../../app/api/utils/db";
+import { connectDB } from "../../../utils/db";
 import Labs from "../../../../../models/Labs";
 import Assets from "../../../../../models/Asset";
 import PCs from "../../../../../models/Lab_PCs";
@@ -7,7 +7,7 @@ import PCs from "../../../../../models/Lab_PCs";
 export async function GET(req, context) {
   try {
     await connectDB();
-    const { id } = await context.params;
+    const { assetId: id } = await context.params;
 
     const pc = await PCs.findById(id)
       .populate("Lab", "Lab_ID")

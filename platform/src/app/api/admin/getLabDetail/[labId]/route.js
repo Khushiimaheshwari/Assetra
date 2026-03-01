@@ -5,10 +5,10 @@ import PCs from "../../../../../models/Lab_PCs";
 import Assets from "../../../../../models/Asset";
 import mongoose from "mongoose";
 
-export async function GET(req, { params }) {
+export async function GET(req, context) {
   try {
     await connectDB();
-    const { labId } = params;
+    const { labId } = await context.params;
 
     if (!mongoose.Types.ObjectId.isValid(labId)) {
       return NextResponse.json(
