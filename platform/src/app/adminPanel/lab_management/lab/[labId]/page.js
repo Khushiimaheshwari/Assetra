@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Plus, Upload, ChevronDown, ChevronUp, Loader
 import { useParams } from 'next/navigation';
 
 const LabInfo = () => {
-  const { id } = useParams();  
+  const { labId: id } = useParams();  
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [labData, setLabData] = useState([]);
   const [showMoreInfo, setShowMoreInfo] = useState(false);
@@ -46,6 +46,12 @@ const LabInfo = () => {
     endTime: '',
     description: ''
   });
+  const [pcSearch, setPcSearch] = useState("");
+  const [pcAssetFilter, setPcAssetFilter] = useState("all");
+  const [showPcModal, setShowPcModal] = useState(false);
+  const [editingPC, setEditingPC] = useState(null);
+  const [newPC, setNewPC] = useState({ PC_Name: "", Lab: "" });
+  const [savingPC, setSavingPC] = useState(false);
 
   const fetchLab = async () => {
     try {
@@ -413,6 +419,97 @@ const LabInfo = () => {
     const s = status.trim().toLowerCase();
     return s.charAt(0).toUpperCase() + s.slice(1);
 };
+
+  const handleEditPC = (pc) => {
+    setEditingPC(pc);
+    setNewPC({ PC_Name: pc.PC_Name || "", Lab: id });
+    setShowPcModal(true);
+  };
+
+  const handleAddPC = async () => {
+    if (!newPC.PC_Name) {
+      alert("Please enter PC name");
+      return;
+    }
+    setSavingPC(true);
+    try {
+      const res = await fetch("/api/admin/addLabPCs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ PC_Name: newPC.PC_Name, Lab: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Something went wrong!");
+        return;
+      }
+      alert("Lab PC added successfully!");
+      setShowPcModal(false);
+      resetPcForm();
+      fetchLab();
+    } catch (err) {
+      console.error("Add PC Error:", err);
+      alert("Something went wrong while adding PC.");
+    } finally {
+      setSavingPC(false);
+    }
+  };
+
+  const handleUpdatePC = async () => {
+    if (!newPC.PC_Name) {
+      alert("Please enter PC name");
+      return;
+    }
+    setSavingPC(true);
+    try {
+      const pcId = editingPC._id || editingPC.id;
+      const res = await fetch("/api/admin/updateLabPC", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: pcId, PC_Name: newPC.PC_Name, Lab: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Something went wrong!");
+        return;
+      }
+      alert("PC updated successfully!");
+      setShowPcModal(false);
+      setEditingPC(null);
+      resetPcForm();
+      fetchLab();
+    } catch (err) {
+      console.error("Update PC Error:", err);
+      alert("Something went wrong while updating PC.");
+    } finally {
+      setSavingPC(false);
+    }
+  };
+
+  const handleDeletePC = async (pcId) => {
+    if (!window.confirm("Are you sure you want to delete this PC?")) return;
+    try {
+      const res = await fetch("/api/admin/deleteLabPC", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: pcId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to delete PC");
+        return;
+      }
+      alert("PC deleted successfully!");
+      fetchLab();
+    } catch (err) {
+      console.error("Delete PC Error:", err);
+      alert("Something went wrong while deleting PC.");
+    }
+  };
+
+  const resetPcForm = () => {
+    setNewPC({ PC_Name: "", Lab: id });
+  };
 
   const handleDeleteSlot = () => {
     if (selectedSlot) {
@@ -1621,8 +1718,201 @@ const LabInfo = () => {
       transition: 'all 0.3s ease',
       boxShadow: '0 4px 6px rgba(239, 68, 68, 0.3)',
       letterSpacing: '0.3px'
+    },
+    pcSection: {
+      marginTop: '24px',
+      marginBottom: '24px'
+    },
+    pcSectionHeader: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '12px',
+      flexWrap: 'wrap',
+      gap: '12px'
+    },
+    pcSectionTitle: {
+      fontSize: '22px',
+      fontWeight: 800,
+      color: '#176B87',
+      letterSpacing: '-0.3px'
+    },
+    pcSectionSubtitle: {
+      fontSize: '13px',
+      color: '#3674B5',
+      fontWeight: 500
+    },
+    pcControlsRow: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      width: '50%',
+      gap: '12px',
+      marginBottom: '16px',
+      alignItems: 'center'
+    },
+    pcSearchInputWrapper: {
+      flex: 1,
+      minWidth: '220px'
+    },
+    pcSearchInput: {
+      width: '100%',
+      padding: '10px 12px',
+      borderRadius: '10px',
+      border: '2px solid rgba(8, 131, 149, 0.25)',
+      fontSize: '14px',
+      boxSizing: 'border-box',
+      color: '#176B87'
+    },
+    pcFilterButtons: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '8px'
+    },
+    pcFilterButton: {
+      padding: '8px 12px',
+      borderRadius: '999px',
+      border: '1px solid #86B6F6',
+      background: '#EBF4F6',
+      color: '#176B87',
+      fontSize: '12px',
+      fontWeight: 600,
+      cursor: 'pointer',
+      transition: 'all 0.2s ease'
+    },
+    pcFilterButtonActive: {
+      background: '#088395',
+      borderColor: '#088395',
+      color: '#ffffff'
+    },
+    pcList: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px'
+    },
+    pcRow: {
+      background: 'white',
+      borderRadius: '12px',
+      padding: isMobile ? '1rem' : '1.1rem 1.4rem',
+      boxShadow: '0 1px 3px rgba(8, 131, 149, 0.08)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: isMobile ? '0.75rem' : '1.25rem',
+      flexWrap: isMobile ? 'wrap' : 'nowrap',
+      transition: 'box-shadow 0.2s ease'
+    },
+    pcIconBox: {
+      width: isMobile ? '42px' : '50px',
+      height: isMobile ? '42px' : '50px',
+      borderRadius: '10px',
+      background: '#D1F8EF',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    },
+    pcMainInfo: {
+      flex: 1,
+      minWidth: 0
+    },
+    pcCategory: {
+      fontSize: '11px',
+      fontWeight: 600,
+      color: '#088395',
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
+      marginBottom: '4px'
+    },
+    pcName: {
+      fontSize: '16px',
+      fontWeight: 700,
+      color: '#176B87'
+    },
+    pcMetaSection: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: isMobile ? '0.75rem' : '1.5rem',
+      flexWrap: 'wrap'
+    },
+    pcMetaItem: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      fontSize: '13px',
+      color: '#176B87',
+      fontWeight: 500
+    },
+    pcMetaIcon: {
+      color: '#088395',
+      flexShrink: 0
+    },
+    assetsBadge: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      padding: '2px 10px',
+      borderRadius: '999px',
+      fontSize: '12px',
+      fontWeight: 600,
+      background: '#D1F8EF',
+      color: '#088395'
+    },
+    pcActions: {
+      display: 'flex',
+      gap: '0.5rem',
+      alignItems: 'center',
+      flexShrink: 0
+    },
+    pcIconButton: {
+      width: isMobile ? '38px' : '40px',
+      height: isMobile ? '38px' : '40px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: '10px',
+      border: '2px solid transparent',
+      cursor: 'pointer',
+      transition: 'all 0.3s ease'
+    },
+    pcEditButton: {
+      color: '#088395',
+      background: '#D1F8EF'
+    },
+    pcDeleteButton: {
+      color: '#E74C3C',
+      background: '#FADBD8'
+    },
+    pcRedirectButton: {
+      color: '#3674B5',
+      background: 'rgba(134, 182, 246, 0.2)'
+    },
+    pcEmptyState: {
+      padding: '1.75rem',
+      textAlign: 'center',
+      color: '#3674B5',
+      fontSize: '14px',
+      fontWeight: 500,
+      background: 'white',
+      borderRadius: '12px',
+      border: '1px dashed rgba(8, 131, 149, 0.25)'
     }
   };
+
+  const labPCs = labData?.PCs || [];
+  const filteredPCs = labPCs.filter((pc) => {
+    const name = (pc?.PC_Name || '').toLowerCase();
+    const search = pcSearch.toLowerCase();
+    const matchesSearch = !search || name.includes(search);
+
+    const assetCount = Array.isArray(pc?.Assets) ? pc.Assets.length : 0;
+    let matchesFilter = true;
+
+    if (pcAssetFilter === 'withAssets') {
+      matchesFilter = assetCount > 0;
+    } else if (pcAssetFilter === 'withoutAssets') {
+      matchesFilter = assetCount === 0;
+    }
+
+    return matchesSearch && matchesFilter;
+  });
 
   if (loading) {
     return (
@@ -1975,6 +2265,253 @@ const LabInfo = () => {
 
       ) : (
         <p>Loading...</p> 
+      )}
+
+      {/* PC List (Lab-style rows) */}
+      <div style={styles.pcSection}>
+        <div style={styles.pcSectionHeader}>
+          <div>
+            <h2 style={styles.pcSectionTitle}>Lab PCs</h2>
+            <span style={styles.pcSectionSubtitle}>
+              {labPCs.length} PC{labPCs.length === 1 ? '' : 's'} in this lab
+            </span>
+          </div>
+          <button
+            style={styles.addButton}
+            onClick={() => {
+              setEditingPC(null);
+              resetPcForm();
+              setShowPcModal(true);
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 10px rgba(8, 131, 149, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 6px rgba(8, 131, 149, 0.3)';
+            }}
+          >
+            <Plus size={18} />
+            Add New PC
+          </button>
+        </div>
+
+        <div style={styles.pcControlsRow}>
+          <div style={styles.pcSearchInputWrapper}>
+            <input
+              type="text"
+              placeholder="Search PC by name..."
+              value={pcSearch}
+              onChange={(e) => setPcSearch(e.target.value)}
+              style={styles.pcSearchInput}
+              onFocus={(e) => (e.target.style.borderColor = '#088395')}
+              onBlur={(e) => (e.target.style.borderColor = 'rgba(8, 131, 149, 0.25)')}
+            />
+          </div>
+          <div style={styles.pcFilterButtons}>
+            <button
+              type="button"
+              style={{
+                ...styles.pcFilterButton,
+                ...(pcAssetFilter === 'all' ? styles.pcFilterButtonActive : {}),
+              }}
+              onClick={() => setPcAssetFilter('all')}
+            >
+              All PCs
+            </button>
+          </div>
+        </div>
+
+        {filteredPCs.length > 0 ? (
+          <div style={styles.pcList}>
+            {filteredPCs.map((pc) => (
+              <div
+                key={pc._id || pc.id}
+                style={styles.pcRow}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow =
+                    '0 4px 16px rgba(8, 131, 149, 0.13)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow =
+                    '0 1px 3px rgba(8, 131, 149, 0.08)';
+                }}
+              >
+                <div style={styles.pcIconBox}>
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#088395"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                  </svg>
+                </div>
+
+                <div style={styles.pcMainInfo}>
+                  <div style={styles.pcCategory}># {labData?.Lab_Name}</div>
+                  <div style={styles.pcName}>{pc.PC_Name}</div>
+                </div>
+
+                <div style={styles.pcMetaSection}>
+                  <div style={styles.pcMetaItem}>
+                    <svg
+                      style={styles.pcMetaIcon}
+                      width="15"
+                      height="15"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm0 2h10v10H5V5z" clipRule="evenodd" />
+                    </svg>
+                    <span>Assets:&nbsp;</span>
+                    <span style={styles.assetsBadge}>
+                      {(pc.Assets && pc.Assets.length) || 0}{' '}
+                      item{pc.Assets && pc.Assets.length === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={styles.pcActions}>
+                  <button
+                    type="button"
+                    style={{ ...styles.pcIconButton, ...styles.pcEditButton }}
+                    onClick={(e) => { e.stopPropagation(); handleEditPC(pc); }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#088395';
+                      e.currentTarget.style.transform = 'scale(1.08)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'transparent';
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                    title="Edit PC"
+                  >
+                    <Edit size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    style={{ ...styles.pcIconButton, ...styles.pcDeleteButton }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeletePC(pc._id || pc.id);
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#E74C3C';
+                      e.currentTarget.style.transform = 'scale(1.08)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'transparent';
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                    title="Delete PC"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    style={{ ...styles.pcIconButton, ...styles.pcRedirectButton }}
+                    onClick={() => {
+                      const pcId = pc._id;
+                      console.log(pcId);
+                      if (pcId) {
+                        window.location.href = `/adminPanel/lab_management/lab/${id}/asset/${pcId}`;
+                      }
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#3674B5';
+                      e.currentTarget.style.transform = 'scale(1.08)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'transparent';
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                    title="View PC details"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={styles.pcEmptyState}>
+            No PCs found for this lab.
+          </div>
+        )}
+      </div>
+
+      {/* Add/Edit PC Modal */}
+      {showPcModal && (
+        <div style={styles.modal} onClick={() => { setShowPcModal(false); setEditingPC(null); resetPcForm(); }}>
+          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h2 style={styles.modalHeader}>{editingPC ? 'Edit PC' : 'Add New PC'}</h2>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>PC Name *</label>
+              <input
+                type="text"
+                style={styles.input}
+                value={newPC.PC_Name}
+                onChange={(e) => setNewPC({ ...newPC, PC_Name: e.target.value })}
+                placeholder="Enter PC name"
+                onFocus={(e) => e.target.style.borderColor = '#088395'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
+              />
+            </div>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Lab</label>
+              <input
+                type="text"
+                style={{ ...styles.input, backgroundColor: '#EBF4F6', cursor: 'not-allowed' }}
+                value={labData?.Lab_ID || labData?.Lab_Name || 'Current Lab'}
+                readOnly
+              />
+            </div>
+            <div style={styles.modalActions}>
+              <button
+                style={styles.cancelButton}
+                onClick={() => { setShowPcModal(false); setEditingPC(null); resetPcForm(); }}
+                onMouseEnter={(e) => { e.target.style.background = 'rgba(8, 131, 149, 0.05)'; e.target.style.borderColor = '#088395'; }}
+                onMouseLeave={(e) => { e.target.style.background = 'white'; e.target.style.borderColor = 'rgba(8, 131, 149, 0.3)'; }}
+              >
+                Cancel
+              </button>
+              <button
+                style={{
+                  ...styles.saveButton,
+                  background: savingPC ? '#9ca3af' : 'linear-gradient(135deg, #088395 0%, #0a9fb5 100%)',
+                  cursor: savingPC ? 'not-allowed' : 'pointer'
+                }}
+                onClick={editingPC ? handleUpdatePC : handleAddPC}
+                disabled={savingPC}
+                onMouseEnter={(e) => {
+                  if (!savingPC) { e.target.style.transform = 'translateY(-1px)'; e.target.style.boxShadow = '0 6px 10px rgba(8, 131, 149, 0.4)'; }
+                }}
+                onMouseLeave={(e) => {
+                  if (!savingPC) { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 4px 6px rgba(8, 131, 149, 0.3)'; }
+                }}
+              >
+                {savingPC ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    {editingPC ? 'Updating...' : 'Adding...'}
+                  </>
+                ) : (
+                  editingPC ? 'Update PC' : 'Add PC'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Add/Edit Information Modal */}

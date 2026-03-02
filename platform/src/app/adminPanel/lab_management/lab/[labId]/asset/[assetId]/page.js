@@ -4,12 +4,12 @@ import { Loader2 } from 'lucide-react';
 import { useParams } from "next/navigation"; 
 
 function AssetsPage() {
-  const { id } = useParams();
+  const { assetId: id } = useParams();
   const [pcData, setPcData] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedType, setSelectedType] = useState("All");
   const [viewingQR, setViewingQR] = useState(null);
-  const [viewingAI, setViewingAI] = useState(null); // NEW: AI Modal state
+  const [viewingAI, setViewingAI] = useState(null); 
   const [editingAsset, setEditingAsset] = useState(null);
   const [isMobile, setIsMobile] = useState(false); 
   const [loading, setLoading] = useState(true);
