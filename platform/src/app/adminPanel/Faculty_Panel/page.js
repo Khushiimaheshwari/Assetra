@@ -1,42 +1,37 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, ChevronDown, Loader2, GraduationCap, Phone, MapPin, ShieldCheck, BookOpen } from 'lucide-react';
+import { X, ChevronDown, Loader2, GraduationCap, Phone, MapPin, ShieldCheck, BookOpen, FlaskConical } from 'lucide-react';
 import emailjs from "@emailjs/browser";
 
 export default function FacultyManagement() {
   const [faculty, setFaculty] = useState([]);
+  const [allLabs, setAllLabs] = useState([]);
   const [allDepartments, setAllDepartments] = useState([
     { Department: "SOET", Department_id: 1 },
   ]);
-  const [allSubjects, setAllSubjects] = useState([]);
-  const [programs, setPrograms] = useState([]);
-  const [programSubjectPairs, setProgramSubjectPairs] = useState([
-    { programId: "", subjects: [], filteredSubjects: [] },
-  ]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingFaculty, setEditingFaculty] = useState(null);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLabAccessDropdownOpen, setIsLabAccessDropdownOpen] = useState(false);
+  const [isLabInchargeDropdownOpen, setIsLabInchargeDropdownOpen] = useState(false);
   const [expandedCard, setExpandedCard] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const dropdownRef = useRef(null);
+  const labAccessDropdownRef = useRef(null);
+  const labInchargeDropdownRef = useRef(null);
   const [newFaculty, setNewFaculty] = useState({
     name: "",
     email: "",
     password: "",
     department: "",
     designation: "",
-    program: [],
-    subjects: [],
+    labAccess: [],
+    labIncharge: [],
   });
 
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-    
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -45,9 +40,8 @@ export default function FacultyManagement() {
   const fetchFaculty = async () => {
     try {
       const res = await fetch("/api/admin/getFaculty");
-      if(!res.ok) throw new Error("Failed to fetch faculty");
+      if (!res.ok) throw new Error("Failed to fetch faculty");
       const data = await res.json();
-      
       setFaculty(
         data.faculty.map(f => ({
           id: f._id,
@@ -59,18 +53,8 @@ export default function FacultyManagement() {
           designation: f.Designation,
           location: f.Location,
           status: f.AccountStatus,
-          programSubjectPairs: f.ProgramSubjectPairs?.map(sub => ({
-            subjectId: sub.subjectId,
-            subjectName: sub.subjectName,
-            subjectCode: sub.subjectCode,
-            programId: sub.programId,
-            programName: sub.programName,
-            programSemester: sub.programSemester,
-            programSection: sub.programSection,
-            programGroup: sub.programGroup,
-            programBatch: sub.programBatch,
-          })),
-          programsAssigned: f.Programs_Assigned || [],
+          labAccess: f.Labs || [],
+          labIncharge: f.Incharge_Labs || [],
         }))
       );
     } catch (err) {
@@ -78,53 +62,35 @@ export default function FacultyManagement() {
     }
   };
 
+  const fetchLab = async () => {
+    try {
+      const res = await fetch("/api/admin/getLabs");
+      if (!res.ok) throw new Error("Failed to fetch Labs");
+      const data = await res.json();
+      setAllLabs(
+        data.labs.map(l => ({
+          Lab: l.Lab_ID,
+          Lab_id: l._id,
+        }))
+      );
+    } catch (err) {
+      console.error("Fetch Labs Error:", err);
+    }
+  };
+
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true);
       try {
-        await Promise.all([
-          fetchFaculty(),
-          fetchSubjects(),
-          fetchPrograms(),
-        ]);
+        await Promise.all([fetchFaculty(), fetchLab()]);
       } catch (err) {
         console.error("Error loading data:", err);
       } finally {
         setLoading(false);
       }
     };
-    
     fetchAllData();
   }, []);
-
-  const fetchSubjects = async () => {
-    try {
-      const res = await fetch("/api/admin/getSubjects");
-      if(!res.ok) throw new Error("Failed to fetch Subjects");
-      const data = await res.json();
-
-      setAllSubjects(
-        data.subjects.map(s => ({
-          Subject: (s.Course_Name).toUpperCase() + " - " + s.Course_Code,
-          Subject_id: s._id,
-          Programs: s.Programs || [],  
-        }))
-      );
-    } catch (err) {
-      console.error("Fetch Subjects Error:", err);
-    }
-  };
-
-  const fetchPrograms = async () => {
-    try {
-      const res = await fetch("/api/admin/getProgram");
-      if (!res.ok) throw new Error("Failed to fetch programs");
-      const data = await res.json();
-      setPrograms(data.programs);
-    } catch (err) {
-      console.error("Error fetching programs:", err);
-    }
-  };
 
   const resetForm = () => {
     setNewFaculty({
@@ -133,79 +99,19 @@ export default function FacultyManagement() {
       password: "",
       department: "",
       designation: "",
-      program: [],
-      subjects: [],
-    });
-    setProgramSubjectPairs([{ programId: "", subjects: [], filteredSubjects: [] }]);
-  };
-
-  const handleProgramChange = (index, programId) => {
-    const matchedSubjects = allSubjects.filter((sub) =>
-      sub.Programs?.some((p) => p._id === programId)
-    );
-
-    setProgramSubjectPairs((prev) => {
-      const updated = [...prev];
-      updated[index].programId = programId;
-      updated[index].filteredSubjects = matchedSubjects;
-      updated[index].subjects = []; 
-      return updated;
+      labAccess: [],
+      labIncharge: [],
     });
   };
 
-  const getId = (s) => s?._id || s?.Subject_id || s?.id || null;
-
-  const handleSubjectSelect = (pairIndex, selectedSubject) => {
-    setProgramSubjectPairs((prev) => {
-      return prev.map((pair, i) => {
-        if (i !== pairIndex) return pair;
-
-        const subjects = Array.isArray(pair.subjects) ? [...pair.subjects] : [];
-        const selectedId = getId(selectedSubject);
-        if (!selectedId) return pair; 
-
-        const already = subjects.some(s => getId(s) === selectedId);
-        const newSubjects = already
-          ? subjects.filter(s => getId(s) !== selectedId)
-          : [
-              ...subjects,
-              {
-                _id: selectedId,
-                Subject: selectedSubject.Subject || selectedSubject.Course_Name || "Unknown Subject",
-                Course_Code: selectedSubject.Course_Code || "",
-              },
-            ];
-
-        return { ...pair, subjects: newSubjects };
-      });
-    });
-  };
-
-  const handleAddProgramSet = () => {
-    setProgramSubjectPairs((prev) => [
-      ...prev,
-      { programId: "", subjects: [], filteredSubjects: [] },
-    ]);
-  };
-
-  const handleRemoveProgramSet = (index) => {
-    setProgramSubjectPairs((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleRemoveSubject = (index, subId) => {
-    setProgramSubjectPairs((prev) => {
-      const updated = [...prev];
-      updated[index].subjects = updated[index].subjects.filter(
-        (s) => (s._id || s.Subject_id) !== subId && (s.Subject_id || s._id) !== subId
-      );
-      return updated;
-    });
-  };
-
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
+      if (labAccessDropdownRef.current && !labAccessDropdownRef.current.contains(event.target)) {
+        setIsLabAccessDropdownOpen(false);
+      }
+      if (labInchargeDropdownRef.current && !labInchargeDropdownRef.current.contains(event.target)) {
+        setIsLabInchargeDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -213,7 +119,7 @@ export default function FacultyManagement() {
   }, []);
 
   const generateRandomPassword = () => {
-    const length = 10; 
+    const length = 10;
     const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$!";
     let password = "";
     for (let i = 0; i < length; i++) {
@@ -222,11 +128,51 @@ export default function FacultyManagement() {
     return password;
   };
 
+  // ── Lab Access handlers ──
+  const handleLabAccessSelect = (labObj) => {
+    setNewFaculty((prev) => {
+      const alreadySelected = prev.labAccess.some(l => l.Lab_id === labObj.Lab_id);
+      return {
+        ...prev,
+        labAccess: alreadySelected
+          ? prev.labAccess.filter(l => l.Lab_id !== labObj.Lab_id)
+          : [...prev.labAccess, labObj],
+      };
+    });
+  };
+
+  const handleRemoveLabAccess = (labId) => {
+    setNewFaculty((prev) => ({
+      ...prev,
+      labAccess: prev.labAccess.filter(l => l.Lab_id !== labId),
+    }));
+  };
+
+  // ── Lab Incharge handlers ──
+  const handleLabInchargeSelect = (labObj) => {
+    setNewFaculty((prev) => {
+      const alreadySelected = prev.labIncharge.some(l => l.Lab_id === labObj.Lab_id);
+      return {
+        ...prev,
+        labIncharge: alreadySelected
+          ? prev.labIncharge.filter(l => l.Lab_id !== labObj.Lab_id)
+          : [...prev.labIncharge, labObj],
+      };
+    });
+  };
+
+  const handleRemoveLabIncharge = (labId) => {
+    setNewFaculty((prev) => ({
+      ...prev,
+      labIncharge: prev.labIncharge.filter(l => l.Lab_id !== labId),
+    }));
+  };
+
   const handleAddFaculty = async () => {
     if (!newFaculty.name || !newFaculty.email || !newFaculty.password) {
       alert("Please fill all required fields");
       return;
-    } 
+    }
 
     setSaving(true);
     const payload = {
@@ -235,12 +181,8 @@ export default function FacultyManagement() {
       password: newFaculty.password,
       department: newFaculty.department,
       designation: newFaculty.designation,
-      programSubjectPairs: programSubjectPairs.flatMap((p) =>
-        (p.subjects || []).map((s) => ({
-          programId: p.programId,
-          subjectId: s._id || s.Subject_id || s.id,
-        }))
-      ),
+      labAccess: newFaculty.labAccess.map(l => l.Lab_id),
+      labIncharge: newFaculty.labIncharge.map(l => l.Lab_id),
     };
 
     try {
@@ -249,15 +191,10 @@ export default function FacultyManagement() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       const data = await res.json();
+      if (!res.ok) { alert(data.error || "Something went wrong!"); return; }
 
-      if (!res.ok) {
-        alert(data.error || "Something went wrong!");
-        return;
-      }
-
-      // await emailjs.send(
+       // await emailjs.send(
       //   "service_2xk0xdb",  
       //   "template_mq4w3fc",    
       //   {
@@ -279,32 +216,20 @@ export default function FacultyManagement() {
       setSaving(false);
     }
   };
-  
+
   const handleEditFaculty = (user) => {
     setEditingFaculty(user);
     setShowAddModal(true);
-    setNewFaculty(user);
-
-    if (user.programSubjectPairs && user.programSubjectPairs.length > 0) {
-      const mappedPairs = user.programSubjectPairs.map((p) => {
-        const filteredSubs = allSubjects.filter((sub) =>
-          sub.Programs.some(
-            (prog) => prog._id === p.programId || prog.Program_ID === p.programId
-          )
-        );
-
-        return {
-          programId: p.programId,
-          programName: p.programName,
-          subjects: [{ _id: p.subjectId, Subject: p.subjectName }],
-          filteredSubjects: filteredSubs, 
-        };
-      });
-
-      setProgramSubjectPairs(mappedPairs);
-    } else {
-      setProgramSubjectPairs([{ programId: "", subjects: [], filteredSubjects: [] }]);
-    }
+    // Normalize labAccess/labIncharge to array of {Lab, Lab_id} objects
+    setNewFaculty({
+      ...user,
+      labAccess: Array.isArray(user.labAccess)
+        ? user.labAccess.map(l => typeof l === 'object' ? l : { Lab: l, Lab_id: l })
+        : [],
+      labIncharge: Array.isArray(user.labIncharge)
+        ? user.labIncharge.map(l => typeof l === 'object' ? l : { Lab: l, Lab_id: l })
+        : [],
+    });
   };
 
   const handleUpdateFaculty = async () => {
@@ -320,12 +245,8 @@ export default function FacultyManagement() {
       password: newFaculty.password,
       department: newFaculty.department,
       designation: newFaculty.designation,
-      programSubjectPairs: programSubjectPairs.flatMap((p) =>
-        (p.subjects || []).map((s) => ({
-          programId: p.programId,
-          subjectId: s._id || s.Subject_id || s.id,
-        }))
-      ),
+      labAccess: newFaculty.labAccess.map(l => l.Lab_id),
+      labIncharge: newFaculty.labIncharge.map(l => l.Lab_id),
     };
 
     try {
@@ -334,26 +255,19 @@ export default function FacultyManagement() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       const data = await res.json();
+      if (!res.ok) { alert(data.error || "Something went wrong!"); return; }
 
-      if (!res.ok) {
-        alert(data.error || "Something went wrong!");
-        return;
-      }
-
-      if (newFaculty.password && newFaculty.password.trim() !== "") {
-        // await emailjs.send(
-        //   "service_2xk0xdb",  
-        //   "template_mq4w3fc",    
-        //   {
-        //     to_name: newFaculty.name,
-        //     to_email: newFaculty.email,
-        //     password: newFaculty.password,
-        //   },
-        //   "JVeTTsN2NUeZ0UlPA"
-        // );
-      }
+       // await emailjs.send(
+      //   "service_2xk0xdb",  
+      //   "template_mq4w3fc",    
+      //   {
+      //     to_name: newFaculty.name,
+      //     to_email: newFaculty.email,
+      //     password: newFaculty.password,
+      //   },
+      //   "JVeTTsN2NUeZ0UlPA"
+      // );
 
       alert("Faculty updated successfully!");
       setShowAddModal(false);
@@ -369,52 +283,105 @@ export default function FacultyManagement() {
   };
 
   const C = {
-    primary: '#088395',
-    dark: '#176B87',
-    sky: '#86B6F6',
-    ice: '#EBF4F6',
-    ocean: '#3674B5',
-    mint: '#D1F8EF',
+    primary: '#088395', dark: '#176B87', sky: '#86B6F6',
+    ice: '#EBF4F6', ocean: '#3674B5', mint: '#D1F8EF',
   };
 
   const containerStyle = {
     width: isMobile ? '100%' : 'calc(100% - 255px)',
-    minHeight: '100vh',
-    backgroundColor: C.ice,
+    minHeight: '100vh', backgroundColor: C.ice,
     padding: isMobile ? '1rem' : '2rem',
-    boxSizing: 'border-box',
-    marginLeft: isMobile ? '0' : '255px',
-    overflowX: 'hidden',
-    fontFamily: "'Segoe UI', sans-serif",
+    boxSizing: 'border-box', marginLeft: isMobile ? '0' : '255px',
+    overflowX: 'hidden', fontFamily: "'Segoe UI', sans-serif",
   };
 
   const inputStyle = {
-    width: '100%',
-    padding: '10px 14px',
-    border: '2px solid #e2e8f0',
-    borderRadius: '10px',
-    fontSize: '14px',
-    boxSizing: 'border-box',
-    outline: 'none',
-    transition: 'border-color 0.2s',
-    color: '#1f2937',
-    backgroundColor: 'white',
+    width: '100%', padding: '10px 14px',
+    border: '2px solid #e2e8f0', borderRadius: '10px', fontSize: '14px',
+    boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s',
+    color: '#1f2937', backgroundColor: 'white',
   };
 
   const labelStyle = {
-    display: 'block',
-    fontSize: '13px',
-    fontWeight: '700',
-    color: C.dark,
-    marginBottom: '6px',
-    letterSpacing: '0.03em',
+    display: 'block', fontSize: '13px', fontWeight: '700',
+    color: C.dark, marginBottom: '6px', letterSpacing: '0.03em',
   };
 
-  const selectStyle = {
-    ...inputStyle,
-    cursor: 'pointer',
-    appearance: 'none',
-  };
+  const selectStyle = { ...inputStyle, cursor: 'pointer', appearance: 'none' };
+
+  // Reusable multi-select lab dropdown renderer
+  const renderLabDropdown = ({
+    label, selected, onSelect, onRemove,
+    isOpen, setIsOpen, dropdownRef, placeholder,
+  }) => (
+    <div style={{ marginBottom: '1rem' }} ref={dropdownRef}>
+      <label style={labelStyle}>{label}</label>
+      <div style={{ position: 'relative' }}>
+        <div
+          onClick={() => setIsOpen(!isOpen)}
+          style={{
+            minHeight: '44px', padding: '6px 12px',
+            border: `2px solid ${isOpen ? C.primary : '#e2e8f0'}`,
+            borderRadius: '10px', backgroundColor: 'white', cursor: 'pointer',
+            display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center',
+            transition: 'border-color 0.2s',
+          }}
+        >
+          {selected.length === 0 ? (
+            <span style={{ color: '#9ca3af', fontSize: '14px' }}>{placeholder}</span>
+          ) : (
+            selected.map((lab) => {
+              const labName = typeof lab === 'object' ? lab.Lab : lab;
+              const labId = typeof lab === 'object' ? lab.Lab_id : lab;
+              return (
+                <div key={labId} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', backgroundColor: C.primary, color: 'white', padding: '3px 10px', borderRadius: '6px', fontSize: '13px', fontWeight: '500' }}>
+                  <span>{labName}</span>
+                  <button
+                    style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', opacity: 0.85 }}
+                    onClick={(e) => { e.stopPropagation(); onRemove(labId); }}
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {isOpen && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '4px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '10px', boxShadow: '0 4px 16px rgba(8,131,149,0.12)', maxHeight: '200px', overflowY: 'auto', zIndex: 1100 }}>
+            {allLabs.map((labObj) => {
+              const isSelected = selected.some(l => (typeof l === 'object' ? l.Lab_id : l) === labObj.Lab_id);
+              return (
+                <div
+                  key={labObj.Lab_id}
+                  onClick={() => onSelect(labObj)}
+                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = C.ice; }}
+                  onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent'; }}
+                  style={{ padding: '10px 14px', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: isSelected ? C.mint : 'transparent', color: isSelected ? '#065f46' : '#374151', fontWeight: isSelected ? '600' : '400' }}
+                >
+                  {labObj.Lab}
+                  {isSelected && <span style={{ color: C.primary, fontSize: '16px' }}>✓</span>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Summary */}
+      <div style={{ marginTop: '8px', padding: '8px 14px', backgroundColor: C.ice, borderRadius: '8px', fontSize: '13px', color: C.dark, fontWeight: '500' }}>
+        <strong>Selected:</strong>{' '}
+        {selected.length > 0
+          ? selected.map((lab, i) => {
+              const name = typeof lab === 'object' ? lab.Lab : lab;
+              const id = typeof lab === 'object' ? lab.Lab_id : lab;
+              return <span key={id}>{name}{i < selected.length - 1 ? ', ' : ''}</span>;
+            })
+          : 'None'}
+      </div>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -432,17 +399,10 @@ export default function FacultyManagement() {
 
       {/* ── Header ── */}
       <div style={{
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        padding: isMobile ? '1.25rem' : '1.75rem 2rem',
-        marginBottom: '1.5rem',
-        boxShadow: '0 2px 8px rgba(8,131,149,0.08)',
-        borderBottom: `3px solid ${C.primary}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '1rem',
+        backgroundColor: 'white', borderRadius: '16px',
+        padding: isMobile ? '1.25rem' : '1.75rem 2rem', marginBottom: '1.5rem',
+        boxShadow: '0 2px 8px rgba(8,131,149,0.08)', borderBottom: `3px solid ${C.primary}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ width: 48, height: 48, borderRadius: '12px', backgroundColor: C.ice, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -452,7 +412,7 @@ export default function FacultyManagement() {
             <h1 style={{ fontSize: isMobile ? '1.4rem' : '1.875rem', fontWeight: '800', color: C.dark, margin: 0, letterSpacing: '-0.5px' }}>
               Faculty Management
             </h1>
-            <p style={{ color: C.primary, marginTop: '0.2rem', fontSize: '0.875rem', fontWeight: '500', margin: 0 }}>
+            <p style={{ color: C.primary, fontSize: '0.875rem', fontWeight: '500', margin: 0 }}>
               Manage faculty accounts, subjects, and programs
             </p>
           </div>
@@ -461,21 +421,7 @@ export default function FacultyManagement() {
           onClick={() => { setEditingFaculty(null); resetForm(); setShowAddModal(true); }}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.dark}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.primary}
-          style={{
-            padding: '10px 22px',
-            backgroundColor: C.primary,
-            color: 'white',
-            border: 'none',
-            borderRadius: '10px',
-            fontWeight: '700',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '14px',
-            transition: 'background 0.2s',
-            boxShadow: '0 2px 8px rgba(8,131,149,0.25)',
-          }}
+          style={{ padding: '10px 22px', backgroundColor: C.primary, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', transition: 'background 0.2s', boxShadow: '0 2px 8px rgba(8,131,149,0.25)' }}
         >
           <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
@@ -489,26 +435,18 @@ export default function FacultyManagement() {
         {faculty && faculty.length > 0 ? (
           faculty.map((member) => (
             <div key={member.id} style={{
-              backgroundColor: 'white',
-              borderRadius: '14px',
+              backgroundColor: 'white', borderRadius: '14px',
               padding: isMobile ? '1rem' : '1.25rem 1.5rem',
-              boxShadow: '0 2px 8px rgba(8,131,149,0.07)',
-              borderLeft: `4px solid ${C.primary}`,
+              boxShadow: '0 2px 8px rgba(8,131,149,0.07)', borderLeft: `4px solid ${C.primary}`,
             }}>
               {/* Card Header */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
                 {/* Left: avatar + info */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 220 }}>
-                  <div style={{
-                    width: 48, height: 48, borderRadius: '10px', backgroundColor: C.ice,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    overflow: 'hidden', flexShrink: 0,
-                  }}>
-                    {member.profileImage ? (
-                      <img src={member.profileImage} alt="Profile" style={{ width: 48, height: 48, objectFit: 'cover' }} />
-                    ) : (
-                      <GraduationCap size={22} color={C.primary} />
-                    )}
+                  <div style={{ width: 48, height: 48, borderRadius: '10px', backgroundColor: C.ice, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                    {member.profileImage
+                      ? <img src={member.profileImage} alt="Profile" style={{ width: 48, height: 48, objectFit: 'cover' }} />
+                      : <GraduationCap size={22} color={C.primary} />}
                   </div>
                   <div>
                     <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: C.dark }}>{member.name}</p>
@@ -516,69 +454,61 @@ export default function FacultyManagement() {
                   </div>
                 </div>
 
-                {/* Right: designation + status + actions */}
+                {/* Right: designation + labs pills + status + actions */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                  {/* Designation + Department pill */}
+                  {/* Designation + Department */}
                   <div style={{ textAlign: 'right' }}>
                     <p style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: C.dark }}>{member.designation || 'N/A'}</p>
                     <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>{member.department || 'No Department'}</p>
                   </div>
 
+                  {/* Lab Access pill */}
+                  <span style={{ backgroundColor: C.ice, color: C.dark, padding: '0.25rem 0.875rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700' }}>
+                    {member.labAccess && member.labAccess.length > 0
+                      ? `${member.labAccess.length} Lab${member.labAccess.length !== 1 ? 's' : ''}`
+                      : 'No Labs'}
+                  </span>
+
+                  {/* Lab Incharge pill */}
+                  <span style={{ backgroundColor: C.mint, color: '#065f46', padding: '0.25rem 0.875rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700' }}>
+                    {member.labIncharge && member.labIncharge.length > 0
+                      ? `${member.labIncharge.length} Incharge`
+                      : 'No Incharge'}
+                  </span>
+
                   {/* Status badge */}
                   <span style={{
-                    padding: '0.3rem 0.875rem',
-                    borderRadius: '20px',
-                    fontSize: '0.75rem',
-                    fontWeight: '700',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '5px',
+                    padding: '0.3rem 0.875rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700',
+                    display: 'inline-flex', alignItems: 'center', gap: '5px',
                     ...(member.status === 'active'
                       ? { backgroundColor: C.mint, color: '#065f46' }
                       : { backgroundColor: '#fee2e2', color: '#991b1b' }),
                   }}>
                     <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
-                      {member.status === 'active' ? (
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      ) : (
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                      )}
+                      {member.status === 'active'
+                        ? <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        : <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />}
                     </svg>
                     {(member?.status || "").charAt(0).toUpperCase() + (member?.status || "").slice(1)}
                   </span>
 
                   {/* Action buttons */}
                   <div style={{ display: 'flex', gap: '6px' }}>
-                    <button
-                      onClick={() => handleEditFaculty(member)}
+                    <button onClick={() => handleEditFaculty(member)}
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#d1fae5'}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.ice}
-                      style={{ width: 34, height: 34, border: 'none', borderRadius: '8px', backgroundColor: C.ice, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s' }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 20 20" fill={C.primary}>
-                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                      </svg>
+                      style={{ width: 34, height: 34, border: 'none', borderRadius: '8px', backgroundColor: C.ice, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s' }}>
+                      <svg width="16" height="16" viewBox="0 0 20 20" fill={C.primary}><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
                     </button>
                     <button
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.ice}
-                      style={{ width: 34, height: 34, border: 'none', borderRadius: '8px', backgroundColor: C.ice, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s' }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 20 20" fill="#ef4444">
-                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
+                      style={{ width: 34, height: 34, border: 'none', borderRadius: '8px', backgroundColor: C.ice, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s' }}>
+                      <svg width="16" height="16" viewBox="0 0 20 20" fill="#ef4444"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
                     </button>
                     <button
                       onClick={() => setExpandedCard(expandedCard === member.id ? null : member.id)}
-                      style={{
-                        width: 34, height: 34, border: 'none', borderRadius: '8px',
-                        backgroundColor: C.ice, cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'transform 0.2s, background 0.15s',
-                        transform: expandedCard === member.id ? 'rotate(180deg)' : 'rotate(0deg)',
-                        color: C.dark,
-                      }}
-                    >
+                      style={{ width: 34, height: 34, border: 'none', borderRadius: '8px', backgroundColor: C.ice, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.2s, background 0.15s', transform: expandedCard === member.id ? 'rotate(180deg)' : 'rotate(0deg)', color: C.dark }}>
                       <ChevronDown size={16} />
                     </button>
                   </div>
@@ -605,6 +535,56 @@ export default function FacultyManagement() {
                     ))}
                   </div>
 
+                  {/* Lab Access section */}
+                  <div style={{ backgroundColor: C.ice, borderRadius: '10px', padding: '1rem', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                      <FlaskConical size={14} color={C.primary} />
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: C.dark, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lab Access</span>
+                      <span style={{ marginLeft: 'auto', fontSize: '11px', padding: '2px 10px', backgroundColor: C.primary, color: 'white', borderRadius: '20px', fontWeight: '700' }}>
+                        {member.labAccess?.length || 0} lab{member.labAccess?.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {member.labAccess && member.labAccess.length > 0 ? (
+                        member.labAccess.map((lab, index) => (
+                          <span key={index} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 12px', backgroundColor: 'white', color: C.primary, border: `1.5px solid ${C.primary}`, borderRadius: '8px', fontSize: '13px', fontWeight: '600' }}>
+                            <FlaskConical size={12} />
+                            {typeof lab === 'string' ? lab : lab.Lab_ID || lab.Lab || lab}
+                          </span>
+                        ))
+                      ) : (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 12px', backgroundColor: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca', borderRadius: '8px', fontSize: '13px', fontWeight: '600' }}>
+                          No lab access assigned
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Lab Incharge section */}
+                  <div style={{ backgroundColor: C.mint, borderRadius: '10px', padding: '1rem', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                      <ShieldCheck size={14} color="#065f46" />
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#065f46', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lab Incharge</span>
+                      <span style={{ marginLeft: 'auto', fontSize: '11px', padding: '2px 10px', backgroundColor: '#059669', color: 'white', borderRadius: '20px', fontWeight: '700' }}>
+                        {member.labIncharge?.length || 0} lab{member.labIncharge?.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {member.labIncharge && member.labIncharge.length > 0 ? (
+                        member.labIncharge.map((lab, index) => (
+                          <span key={index} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 12px', backgroundColor: 'white', color: '#059669', border: '1.5px solid #10b981', borderRadius: '8px', fontSize: '13px', fontWeight: '600' }}>
+                            <ShieldCheck size={12} />
+                            {typeof lab === 'string' ? lab : lab.Lab_ID || lab.Lab || lab}
+                          </span>
+                        ))
+                      ) : (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 12px', backgroundColor: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca', borderRadius: '8px', fontSize: '13px', fontWeight: '600' }}>
+                          No incharge labs assigned
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Subjects section */}
                   <div style={{ backgroundColor: C.mint, borderRadius: '10px', padding: '1rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
@@ -617,12 +597,7 @@ export default function FacultyManagement() {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       {member.programSubjectPairs && member.programSubjectPairs.length > 0 ? (
                         member.programSubjectPairs.map((sub, index) => (
-                          <div key={index} style={{
-                            display: 'inline-flex', flexDirection: 'column',
-                            padding: '8px 12px', backgroundColor: 'white',
-                            color: '#059669', border: '1.5px solid #10b981',
-                            borderRadius: '8px', fontSize: '12px', fontWeight: '600', gap: '2px',
-                          }}>
+                          <div key={index} style={{ display: 'inline-flex', flexDirection: 'column', padding: '8px 12px', backgroundColor: 'white', color: '#059669', border: '1.5px solid #10b981', borderRadius: '8px', fontSize: '12px', fontWeight: '600', gap: '2px' }}>
                             <span>{sub.subjectName} {sub.subjectCode}</span>
                             <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: '500' }}>
                               "{sub.programSection}" {sub.programName} Sem-{sub.programSemester} {sub.programGroup} Batch: {sub.programBatch}
@@ -652,19 +627,14 @@ export default function FacultyManagement() {
       {showAddModal && (
         <div
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: isMobile ? '1rem' : '0' }}
-          onClick={() => { setShowAddModal(false); setEditingFaculty(null); }}
+          onClick={() => { setShowAddModal(false); setEditingFaculty(null); setIsLabAccessDropdownOpen(false); setIsLabInchargeDropdownOpen(false); }}
         >
           <div
             style={{ backgroundColor: 'white', borderRadius: '16px', padding: isMobile ? '0 1.25rem 1.25rem' : '0 2rem 1.5rem', width: isMobile ? '100%' : '90%', maxWidth: '580px', maxHeight: isMobile ? '95vh' : '92vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(8,131,149,0.2)' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Sticky modal header */}
-            <div style={{
-              position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 10,
-              display: 'flex', alignItems: 'center', gap: '0.75rem',
-              padding: isMobile ? '1.25rem 0 1rem' : '1.5rem 0 1rem',
-              borderBottom: `2px solid ${C.ice}`, marginBottom: '1.25rem',
-            }}>
+            <div style={{ position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 10, display: 'flex', alignItems: 'center', gap: '0.75rem', padding: isMobile ? '1.25rem 0 1rem' : '1.5rem 0 1rem', borderBottom: `2px solid ${C.ice}`, marginBottom: '1.25rem' }}>
               <div style={{ width: 40, height: 40, borderRadius: '10px', backgroundColor: C.ice, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <GraduationCap size={20} color={C.primary} />
               </div>
@@ -726,120 +696,34 @@ export default function FacultyManagement() {
                 onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'} />
             </div>
 
-            {/* Program + Subject pairs */}
-            {programSubjectPairs.map((pair, index) => (
-              <div key={index} style={{
-                border: `2px solid ${C.ice}`,
-                borderRadius: '12px',
-                padding: '1rem',
-                marginBottom: '1rem',
-                backgroundColor: '#fafeff',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '13px', fontWeight: '700', color: C.dark }}>Program Set {index + 1}</span>
-                  {programSubjectPairs.length > 1 && (
-                    <button
-                      onClick={() => handleRemoveProgramSet(index)}
-                      style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}
-                    >
-                      <X size={14} /> Remove
-                    </button>
-                  )}
-                </div>
+            {/* Lab Access Dropdown */}
+            {renderLabDropdown({
+              label: "Lab Access",
+              selected: newFaculty.labAccess,
+              onSelect: handleLabAccessSelect,
+              onRemove: handleRemoveLabAccess,
+              isOpen: isLabAccessDropdownOpen,
+              setIsOpen: setIsLabAccessDropdownOpen,
+              dropdownRef: labAccessDropdownRef,
+              placeholder: "Select lab access",
+            })}
 
-                {/* Program select */}
-                <div style={{ marginBottom: '0.75rem' }}>
-                  <label style={labelStyle}>Program</label>
-                  <select
-                    value={pair.programId}
-                    onChange={(e) => handleProgramChange(index, e.target.value)}
-                    style={selectStyle}
-                    onFocus={(e) => e.target.style.borderColor = C.primary}
-                    onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                  >
-                    <option value="">Select a Program</option>
-                    {programs.map((prog) => (
-                      <option key={prog._id} value={prog._id}>
-                        {`${prog.Program_Name} - Sec ${prog.Program_Section} - Sem ${prog.Program_Semester} (${prog.Program_Group})`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Subject multi-select */}
-                <div ref={dropdownRef}>
-                  <label style={labelStyle}>Subjects</label>
-                  <div style={{ position: 'relative' }}>
-                    <div
-                      onClick={() => setIsDropdownOpen(isDropdownOpen === index ? null : index)}
-                      style={{
-                        minHeight: '44px', padding: '6px 12px',
-                        border: `2px solid ${isDropdownOpen === index ? C.primary : '#e2e8f0'}`,
-                        borderRadius: '10px', backgroundColor: 'white', cursor: 'pointer',
-                        display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center',
-                        transition: 'border-color 0.2s',
-                      }}
-                    >
-                      {pair.subjects.length === 0 ? (
-                        <span style={{ color: '#9ca3af', fontSize: '14px' }}>Select subjects</span>
-                      ) : (
-                        pair.subjects.map((sub, i) => {
-                          const subName = sub?.Course_Code ? `${sub.Course_Code} - ${sub.Course_Name}` : sub?.Subject || "Unknown Subject";
-                          const subId = sub?._id || sub?.Subject_id || sub?.Subject_ID || sub?.id || i;
-                          return (
-                            <div key={subId} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', backgroundColor: C.primary, color: 'white', padding: '3px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '500' }}>
-                              <span>{subName}</span>
-                              <button style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', opacity: 0.85 }}
-                                onClick={(e) => { e.stopPropagation(); handleRemoveSubject(index, subId); }}>
-                                <X size={12} />
-                              </button>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                    {isDropdownOpen === index && (
-                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '4px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '10px', boxShadow: '0 4px 16px rgba(8,131,149,0.12)', maxHeight: '200px', overflowY: 'auto', zIndex: 1000 }}>
-                        {pair.filteredSubjects.map((subObj, subIdx) => {
-                          const isSelected = pair.subjects?.some((sub) => getId(sub) === getId(subObj));
-                          return (
-                            <div key={getId(subObj) || subIdx}
-                              onClick={() => handleSubjectSelect(index, subObj)}
-                              onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = C.ice; }}
-                              onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent'; }}
-                              style={{ padding: '10px 14px', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: isSelected ? C.mint : 'transparent', color: isSelected ? '#065f46' : '#374151', fontWeight: isSelected ? '600' : '400' }}
-                            >
-                              {subObj.Subject}
-                              {isSelected && <span style={{ color: C.primary }}>✓</span>}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {/* Add another program */}
-            <button
-              onClick={handleAddProgramSet}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.primary; e.currentTarget.style.color = C.primary; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#6b7280'; }}
-              style={{
-                width: '100%', padding: '10px', border: '2px dashed #e2e8f0',
-                borderRadius: '10px', backgroundColor: 'transparent', cursor: 'pointer',
-                fontSize: '13px', fontWeight: '600', color: '#6b7280', transition: 'all 0.2s',
-                marginBottom: '1rem',
-              }}
-            >
-              + Add Another Program
-            </button>
+            {/* Lab Incharge Dropdown */}
+            {renderLabDropdown({
+              label: "Lab Incharge",
+              selected: newFaculty.labIncharge,
+              onSelect: handleLabInchargeSelect,
+              onRemove: handleRemoveLabIncharge,
+              isOpen: isLabInchargeDropdownOpen,
+              setIsOpen: setIsLabInchargeDropdownOpen,
+              dropdownRef: labInchargeDropdownRef,
+              placeholder: "Select incharge labs",
+            })}
 
             {/* Modal actions */}
             <div style={{ display: 'flex', gap: '12px', flexDirection: isMobile ? 'column' : 'row' }}>
               <button
-                onClick={() => { setShowAddModal(false); setEditingFaculty(null); resetForm(); }}
+                onClick={() => { setShowAddModal(false); setEditingFaculty(null); setIsLabAccessDropdownOpen(false); setIsLabInchargeDropdownOpen(false); resetForm(); }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.ice}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
                 style={{ flex: 1, padding: '11px', backgroundColor: 'white', color: '#6b7280', border: '2px solid #e2e8f0', borderRadius: '10px', fontWeight: '600', cursor: 'pointer', fontSize: '14px', transition: 'background 0.15s' }}
@@ -851,21 +735,11 @@ export default function FacultyManagement() {
                 disabled={saving}
                 onMouseEnter={(e) => { if (!saving) e.currentTarget.style.backgroundColor = C.dark; }}
                 onMouseLeave={(e) => { if (!saving) e.currentTarget.style.backgroundColor = C.primary; }}
-                style={{
-                  flex: 1, padding: '11px',
-                  backgroundColor: saving ? '#9ca3af' : C.primary,
-                  color: 'white', border: 'none', borderRadius: '10px',
-                  fontWeight: '700', cursor: saving ? 'not-allowed' : 'pointer',
-                  fontSize: '14px', transition: 'background 0.2s',
-                  boxShadow: saving ? 'none' : '0 2px 8px rgba(8,131,149,0.25)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                }}
+                style={{ flex: 1, padding: '11px', backgroundColor: saving ? '#9ca3af' : C.primary, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: saving ? 'not-allowed' : 'pointer', fontSize: '14px', transition: 'background 0.2s', boxShadow: saving ? 'none' : '0 2px 8px rgba(8,131,149,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
               >
-                {saving ? (
-                  <><Loader2 size={16} className="animate-spin" />{editingFaculty ? "Updating..." : "Adding..."}</>
-                ) : (
-                  editingFaculty ? "Update Faculty" : "Add Faculty"
-                )}
+                {saving
+                  ? <><Loader2 size={16} className="animate-spin" />{editingFaculty ? "Updating..." : "Adding..."}</>
+                  : editingFaculty ? "Update Faculty" : "Add Faculty"}
               </button>
             </div>
           </div>

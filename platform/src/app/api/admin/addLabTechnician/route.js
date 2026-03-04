@@ -12,18 +12,20 @@ export async function POST(req) {
 
     const body = await req.json();
     const { name, email, password, labAccess } = body;
-    console.log(body);
-    
 
     if (!name || !email || !password) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "All fields are required" },
+        { status: 400 }
+      );
     }
 
     const existingUser = await User.findOne({ Email: email });
-    const existingTech = await LabTechnician.findOne({ Email: email });
-
-    if (existingUser || existingTech) {
-      return NextResponse.json({ error: "User with this email already exists" }, { status: 409 });
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "User with this email already exists" },
+        { status: 409 }
+      );
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -33,16 +35,17 @@ export async function POST(req) {
       Email: email,
       Password: hashedPassword,
       Role: "lab_technician",
+      AccountStatus: "active",
     });
 
-    const labObjectIds = labAccess.map((id) => new mongoose.Types.ObjectId(id));
+    const labObjectIds = labAccess.map(
+      (id) => new mongoose.Types.ObjectId(id)
+    );
 
     const newTech = await LabTechnician.create({
-      Name: name,
-      Email: email,
-      Password: hashedPassword,
-      Role: "lab_technician",
+      UserDetails: newUser._id,
       Labs: labObjectIds,
+      Issues: [],
     });
 
     await Lab.updateMany(
@@ -60,12 +63,15 @@ export async function POST(req) {
       },
       labTechnician: {
         _id: newTech._id,
-        name: newTech.Name,
         labs: newTech.Labs,
       },
     });
+
   } catch (error) {
     console.error("Error creating lab technician:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

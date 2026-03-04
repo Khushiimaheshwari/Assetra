@@ -10,8 +10,9 @@ export async function POST(req) {
     await connectDB();
 
     const body = await req.json();
-    
-    const { Asset_Name, Asset_Type, Assest_Status, PC, Lab, Brand } = body;
+
+    console.log(body);
+    const { Asset_Name, Asset_Type, Assest_Status, PC, Lab, Brand, Financial_Details } = body;
 
     if (!Asset_Name || !Asset_Type || !Assest_Status, !PC, !Lab) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
@@ -30,6 +31,7 @@ export async function POST(req) {
       PC_Name: [new mongoose.Types.ObjectId(PC)],
       Lab_Name: [new mongoose.Types.ObjectId(Lab)],
       QR_Code: "",
+      Financial_Details,
     });
 
     await Lab_PCs.findByIdAndUpdate(PC, {

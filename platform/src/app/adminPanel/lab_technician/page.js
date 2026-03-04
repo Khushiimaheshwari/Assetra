@@ -34,12 +34,12 @@ export default function LabTechnicianManagement() {
       setUsers(
         data.technicians.map(t => ({
           id: t._id,
-          name: t.Name,
-          email: t.Email,
-          phoneNumber: t.PhoneNumber,
-          profileImage: t.ProfileImage,
-          location: t.Location,
-          status: t.AccountStatus,
+          name: t.UserDetails?.Name || "",
+          email: t.UserDetails?.Email || "",
+          phoneNumber: t.UserDetails?.PhoneNumber || "",
+          profileImage: t.UserDetails?.ProfileImage || "",
+          location: t.UserDetails?.Location || "",
+          status: t.UserDetails?.AccountStatus,
           labAccess: t.Labs?.map(lab => lab.Lab_ID),
         }))
       );

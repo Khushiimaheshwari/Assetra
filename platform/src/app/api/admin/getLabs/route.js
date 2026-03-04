@@ -9,8 +9,20 @@ export async function GET() {
     await connectDB();
 
     const labs = await Lab.find({}, "_id Lab_ID Lab_Name Block Lab_Room Total_Capacity Status LabTechnician Lab_Incharge")
-    .populate("LabTechnician", "UserDetails")
-    .populate("Lab_Incharge", "UserDetails");
+    .populate({
+      path: "LabTechnician",
+      populate: {
+        path: "UserDetails",
+        model: "User",
+      },
+    })
+    .populate({
+      path: "Lab_Incharge",
+      populate: {
+        path: "UserDetails",
+        model: "User",
+      },
+    });
 
     return NextResponse.json({ labs });
   } catch (error) {
