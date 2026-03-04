@@ -10,6 +10,7 @@ function AssetsPage() {
   const [selectedType, setSelectedType] = useState("All");
   const [viewingQR, setViewingQR] = useState(null);
   const [viewingAI, setViewingAI] = useState(null); 
+  const [aiLoading, setAiLoading] = useState(false);
   const [editingAsset, setEditingAsset] = useState(null);
   const [isMobile, setIsMobile] = useState(false); 
   const [loading, setLoading] = useState(true);
@@ -22,8 +23,17 @@ function AssetsPage() {
     Assest_Status: "Yes",
     Brand: "",
     Issue_Reported: "",
-    QR_Code: ""
+    Financial_Details: {
+      purchase_year: "",
+      purchase_cost: "",
+      scrap_value: "",
+      useful_life: "",
+      breakdown_frequency: 0,
+      total_maintenance_cost: 0,
+      usage_frequency: "Low"
+    }
   });
+
   const assetTypes = ["Monitor", "Keyboard", "Mouse", "CPU", "UPS", "Other"];
 
   const [assets, setAssets] = useState([]);
@@ -83,6 +93,15 @@ function AssetsPage() {
           Brand: newAsset.Brand,
           PC: pcData._id,
           Lab: pcData.Lab?._id,
+          Financial_Details: {
+            purchase_year: Number(newAsset.purchase_year),
+            purchase_cost: Number(newAsset.purchase_cost),
+            scrap_value: Number(newAsset.scrap_value),
+            useful_life: Number(newAsset.useful_life),
+            breakdown_frequency: Number(newAsset.breakdown_frequency || 0),
+            total_maintenance_cost: Number(newAsset.total_maintenance_cost || 0),
+            usage_frequency: newAsset.usage_frequency
+          }
         }), 
       });
 
@@ -188,7 +207,15 @@ function AssetsPage() {
       Assest_Status: "Yes",
       Brand: "",
       Issue_Reported: "",
-      QR_Code: ""
+      Financial_Details: {
+        purchase_year: "",
+        purchase_cost: "",
+        scrap_value: "",
+        useful_life: "",
+        breakdown_frequency: "",
+        total_maintenance_cost: "",
+        usage_frequency: ""
+      }
     });
   };
 
@@ -247,6 +274,40 @@ function AssetsPage() {
       case "No": return { bg: '#fee2e2', text: '#991b1b' };
       case "Other": return { bg: '#fef3c7', text: '#92400e' };
       default: return { bg: '#e5e7eb', text: '#374151' };
+    }
+  };
+
+  const handleGenerateAI = async () => {
+    try {
+      setAiLoading(true);
+  
+      const response = await fetch("/api/ai/predict", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          assetId: viewingAI._id
+        })
+      });
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        alert(data.error || "AI generation failed");
+        return;
+      }
+  
+      setViewingAI(prev => ({
+        ...prev,
+        AI_Predictions: data.AI_Predictions
+      }));
+  
+    } catch (error) {
+      console.error("AI generation error:", error);
+      alert("Something went wrong while generating AI report.");
+    } finally {
+      setAiLoading(false);
     }
   };
   
@@ -1148,65 +1209,102 @@ function AssetsPage() {
         </div>
       )}
 
-      {/* NEW: AI Insights Modal */}
+      {/* AI Asset Intelligence Report Modal */}
       {viewingAI && (
-        <div style={styles.qrModal} onClick={() => setViewingAI(null)}>
-          <div style={styles.aiModalContent} onClick={(e) => e.stopPropagation()}>
-            <button 
-              style={styles.closeButton}
-              onClick={() => setViewingAI(null)}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#D1F8EF'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#EBF4F6'}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
-              </svg>
-            </button>
-            
-            <div style={styles.aiModalHeader}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#088395" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20z"/>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                <path d="M12 17h.01"/>
-              </svg>
-              AI Asset Intelligence Report
-            </div>
+      <div style={styles.qrModal} onClick={() => setViewingAI(null)}>
+        <div style={styles.aiModalContent} onClick={(e) => e.stopPropagation()}>
+          
+          <button 
+            style={styles.closeButton}
+            onClick={() => setViewingAI(null)}
+          >
+            ✕
+          </button>
 
-            {viewingAI.aiInsights ? (
-              <>
-                <div style={styles.aiInsightRow}>
-                  <span style={styles.aiInsightLabel}>Failure Probability:</span>
-                  <span style={styles.aiInsightValue}>{viewingAI.aiInsights.failureProbability} %</span>
-                </div>
-
-                <div style={styles.aiInsightRow}>
-                  <span style={styles.aiInsightLabel}>Remaining Life:</span>
-                  <span style={styles.aiInsightValue}>{viewingAI.aiInsights.remainingLife} Years</span>
-                </div>
-
-                <div style={styles.aiInsightRow}>
-                  <span style={styles.aiInsightLabel}>Predicted Book Value:</span>
-                  <span style={styles.aiInsightValue}>₹{viewingAI.aiInsights.predictedBookValue}</span>
-                </div>
-
-                <div style={{...styles.aiInsightRow, borderBottom: 'none'}}>
-                  <span style={styles.aiInsightLabel}>Next Year Maintenance Cost:</span>
-                  <span style={styles.aiInsightValue}>₹{viewingAI.aiInsights.maintenanceCost}</span>
-                </div>
-              </>
-            ) : (
-              <div style={styles.noDataMessage}>
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#088395" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{margin: '0 auto 1rem', display: 'block', opacity: 0.5}}>
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                No AI Data Found
-              </div>
-            )}
+          <div style={styles.aiModalHeader}>
+            AI Asset Intelligence Report
           </div>
+
+          {viewingAI.AI_Predictions ? (
+            <>
+              <div style={styles.aiInsightRow}>
+                <span style={styles.aiInsightLabel}>Failure Probability:</span>
+                <span style={styles.aiInsightValue}>
+                  {(viewingAI.AI_Predictions.failureProbability * 100).toFixed(2)} %
+                </span>
+              </div>
+
+              <div style={styles.aiInsightRow}>
+                <span style={styles.aiInsightLabel}>Failure Prediction:</span>
+                <span style={styles.aiInsightValue}>
+                  {viewingAI.AI_Predictions.failurePrediction === 1 ? "High Risk" : "Low Risk"}
+                </span>
+              </div>
+
+              <div style={styles.aiInsightRow}>
+                <span style={styles.aiInsightLabel}>Remaining Life:</span>
+                <span style={styles.aiInsightValue}>
+                  {viewingAI.AI_Predictions.remainingLifePrediction?.toFixed(1)} Years
+                </span>
+              </div>
+
+              <div style={styles.aiInsightRow}>
+                <span style={styles.aiInsightLabel}>Predicted Book Value:</span>
+                <span style={styles.aiInsightValue}>
+                  ₹{viewingAI.AI_Predictions.depreciationPrediction?.toFixed(0)}
+                </span>
+              </div>
+
+              <div style={styles.aiInsightRow}>
+                <span style={styles.aiInsightLabel}>Next Year Maintenance Cost:</span>
+                <span style={styles.aiInsightValue}>
+                  ₹{viewingAI.AI_Predictions.maintenanceCostPrediction?.toFixed(0)}
+                </span>
+              </div>
+
+              <div style={{ ...styles.aiInsightRow, borderBottom: "none" }}>
+                <span style={styles.aiInsightLabel}>Recommendation:</span>
+                <span style={{
+                  ...styles.aiInsightValue,
+                  color: viewingAI.AI_Predictions.recommendation === "Replace" ? "red" : "green",
+                  fontWeight: "bold"
+                }}>
+                  {viewingAI.AI_Predictions.recommendation}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div style={styles.noDataMessage}>
+              No AI Data Found
+            </div>
+          )}
+
+          {/*  Generate / Regenerate Button */}
+          <div style={{ marginTop: "20px", textAlign: "center" }}>
+            <button
+              onClick={handleGenerateAI}
+              disabled={aiLoading}
+              style={{
+                padding: "10px 20px",
+                background: "#088395",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontWeight: "bold"
+              }}
+            >
+              {aiLoading
+                ? "Processing..."
+                : viewingAI.AI_Predictions
+                  ? "Regenerate AI Report"
+                  : "Generate AI Report"}
+            </button>
+          </div>
+
         </div>
-      )}
+      </div>
+    )}
 
       {/* Add/Edit Modal */}
       {showAddModal && (
@@ -1220,63 +1318,194 @@ function AssetsPage() {
               {editingAsset ? "Edit Asset" : "Add New Asset"}
             </h2>
             
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Asset Name</label>
-              <input
-                type="text"
-                style={styles.input}
-                value={newAsset.Asset_Name}
-                onChange={(e) => setNewAsset({...newAsset, Asset_Name: e.target.value})}
-                placeholder="Enter asset name"
-              />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Asset Name</label>
+                <input
+                  type="text"
+                  style={styles.input}
+                  value={newAsset.Asset_Name}
+                  onChange={(e) => setNewAsset({...newAsset, Asset_Name: e.target.value})}
+                  placeholder="Enter asset name"
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Asset Type</label>
+                <select
+                  style={styles.select}
+                  value={newAsset.Asset_Type}
+                  onChange={(e) => setNewAsset({...newAsset, Asset_Type: e.target.value})}
+                >
+                  {assetTypes.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Brand Name</label>
+                <input
+                  type="text"
+                  style={styles.input}
+                  value={newAsset.Brand}
+                  onChange={(e) => setNewAsset({...newAsset, Brand: e.target.value})}
+                  placeholder="Enter brand name"
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Asset Status</label>
+                <select
+                  style={styles.select}
+                  value={newAsset.Assest_Status}
+                  onChange={(e) => setNewAsset({...newAsset, Assest_Status: e.target.value})}
+                >
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Financial Details Section */}
+            <h3 style={{ marginTop: "20px" }}>Financial Details</h3>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Purchase Year</label>
+                <input
+                  type="number"
+                  style={styles.input}
+                  value={newAsset.Financial_Details.purchase_year}
+                  onChange={(e) =>
+                    setNewAsset({
+                      ...newAsset,
+                      Financial_Details: {
+                        ...newAsset.Financial_Details,
+                        purchase_year: e.target.value
+                      }
+                    })
+                  }
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Purchase Cost</label>
+                <input
+                  type="number"
+                  style={styles.input}
+                  value={newAsset.Financial_Details.purchase_cost}
+                  onChange={(e) =>
+                    setNewAsset({
+                      ...newAsset,
+                      Financial_Details: {
+                        ...newAsset.Financial_Details,
+                        purchase_cost: e.target.value
+                      }
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Scrap Value</label>
+                <input
+                  type="number"
+                  style={styles.input}
+                  value={newAsset.Financial_Details.scrap_value}
+                  onChange={(e) =>
+                    setNewAsset({
+                      ...newAsset,
+                      Financial_Details: {
+                        ...newAsset.Financial_Details,
+                        scrap_value: e.target.value
+                      }
+                    })
+                  }
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Useful Life (Years)</label>
+                <input
+                  type="number"
+                  style={styles.input}
+                  value={newAsset.Financial_Details.useful_life}
+                  onChange={(e) =>
+                    setNewAsset({
+                      ...newAsset,
+                      Financial_Details: {
+                        ...newAsset.Financial_Details,
+                        useful_life: e.target.value
+                      }
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Breakdown Frequency</label>
+                <input
+                  type="number"
+                  style={styles.input}
+                  value={newAsset.Financial_Details.breakdown_frequency}
+                  onChange={(e) =>
+                    setNewAsset({
+                      ...newAsset,
+                      Financial_Details: {
+                        ...newAsset.Financial_Details,
+                        breakdown_frequency: e.target.value
+                      }
+                    })
+                  }
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Maintenance Cost</label>
+                <input
+                  type="number"
+                  style={styles.input}
+                  value={newAsset.Financial_Details.total_maintenance_cost}
+                  onChange={(e) =>
+                    setNewAsset({
+                      ...newAsset,
+                      Financial_Details: {
+                        ...newAsset.Financial_Details,
+                        total_maintenance_cost: e.target.value
+                      }
+                    })
+                  }
+                />
+              </div>
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.label}>Asset Type</label>
+              <label style={styles.label}>Usage Frequency</label>
               <select
                 style={styles.select}
-                value={newAsset.Asset_Type}
-                onChange={(e) => setNewAsset({...newAsset, Asset_Type: e.target.value})}
+                value={newAsset.Financial_Details.usage_frequency}
+                onChange={(e) =>
+                  setNewAsset({
+                    ...newAsset,
+                    Financial_Details: {
+                      ...newAsset.Financial_Details,
+                      usage_frequency: e.target.value
+                    }
+                  })
+                }
               >
-                {assetTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
               </select>
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Brand Name</label>
-              <input
-                type="text"
-                style={styles.input}
-                value={newAsset.Brand}
-                onChange={(e) => setNewAsset({...newAsset, Brand: e.target.value})}
-                placeholder="Enter brand name"
-              />
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Asset Status</label>
-              <select
-                style={styles.select}
-                value={newAsset.Assest_Status}
-                onChange={(e) => setNewAsset({...newAsset, Assest_Status: e.target.value})}
-              >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>QR Code URL (Optional)</label>
-              <input
-                type="text"
-                style={styles.input}
-                value={newAsset.QR_Code}
-                onChange={(e) => setNewAsset({...newAsset, QR_Code: e.target.value})}
-                placeholder="Enter QR code URL"
-              />
             </div>
 
             <div style={styles.modalActions}>

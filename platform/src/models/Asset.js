@@ -8,6 +8,24 @@ const AssetSchema = new mongoose.Schema({
   PC_Name: { type: mongoose.Schema.Types.ObjectId, ref: "PCs", default: null },
   Lab_Name: { type: mongoose.Schema.Types.ObjectId, ref: "Lab", required: true },
   QR_Code: { type: String, default: "" },
+  Financial_Details: {
+    purchase_year: { type: Number },
+    purchase_cost: { type: Number },
+    scrap_value: { type: Number },
+    useful_life: { type: Number },
+    breakdown_frequency: { type: Number, default: 0 },
+    total_maintenance_cost: { type: Number, default: 0 },
+    usage_frequency: { type: String, enum: ["Low", "Medium", "High"] }
+  },
+  AI_Predictions: {
+    failurePrediction: { type: Number },
+    failureProbability: { type: Number },
+    remainingLifePrediction: { type: Number },
+    depreciationPrediction: { type: Number },
+    maintenanceCostPrediction: { type: Number },
+    recommendation: { type: String, enum: ["Repair", "Replace"] },
+    lastPredictedAt: { type: Date }
+  },
   Issue_Reported: [
     { 
       FacultyDetails: { type: mongoose.Schema.Types.ObjectId, ref: "Faculty" },

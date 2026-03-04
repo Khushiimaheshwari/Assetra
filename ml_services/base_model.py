@@ -7,8 +7,6 @@ Original file is located at
     https://colab.research.google.com/drive/109RXBUoMDLe-P-F-HtdeNyRUM7nj4i_P
 """
 
-!pip install xgboost
-
 import pandas as pd
 import numpy as np
 from xgboost import XGBClassifier, XGBRegressor
@@ -16,9 +14,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, mean_absolute_error
 from datetime import datetime
 import joblib
+import os
 
-from google.colab import files
-uploaded = files.upload()
+os.makedirs("models", exist_ok=True)
 
 df = pd.read_csv("Institution_1000_Assets_Invoice_Calibrated.csv")
 df.head()
@@ -249,14 +247,9 @@ def repair_replace_decision(row):
 
 df["Recommendation"] = df.apply(repair_replace_decision, axis=1)
 
-joblib.dump(model_failure, "failure_model.pkl")
-joblib.dump(model_rul, "rul_model.pkl")
-joblib.dump(model_dep, "depreciation_model.pkl")
-joblib.dump(model_cost, "cost_model.pkl")
+joblib.dump(model_failure, "models/failure_model.pkl")
+joblib.dump(model_rul, "models/rul_model.pkl")
+joblib.dump(model_dep, "models/depreciation_model.pkl")
+joblib.dump(model_cost, "models/cost_model.pkl")
 
-from google.colab import files
-
-files.download("failure_model.pkl")
-files.download("rul_model.pkl")
-files.download("depreciation_model.pkl")
-files.download("cost_model.pkl")
+print("Models saved successfully inside models folder ✅")

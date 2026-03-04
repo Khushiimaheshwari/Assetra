@@ -41,10 +41,23 @@ export async function POST(req) {
 
     await generateQRCodeForAsset(newAsset._id, baseUrl);
 
+    const aiResponse = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/ai/predict`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetId: newAsset._id }),
+      }
+    );
+
+    const aiData = await aiResponse.json();
+
     return NextResponse.json({
       message: "Asset added successfully",
       asset: newAsset,
+      AI: aiData,
     });
+
   } catch (error) {
     console.error("Error adding Asset:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
