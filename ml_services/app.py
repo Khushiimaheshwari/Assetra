@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import joblib
 import numpy as np
 from datetime import datetime
+import traceback
 
 app = Flask(__name__)
 
@@ -15,14 +16,15 @@ model_cost = joblib.load("models/cost_model.pkl")
 def preprocess_input(data):
     current_year = datetime.now().year
 
-    purchase_year = data["purchaseYear"]
-    purchase_cost = data["purchaseCost"]
-    scrap_value = data["scrapValue"]
-    useful_life = data["usefulLife"]
-    breakdown_frequency = data["breakdownFrequency"]
-    total_maintenance_cost = data["totalMaintenanceCost"]
+    purchase_year = data["purchase_year"]
+    purchase_cost = data["purchase_cost"]
+    scrap_value = data["scrap_value"]
+    useful_life = data["useful_life"]
+    breakdown_frequency = data["breakdown_frequency"]
+    total_maintenance_cost = data["total_maintenance_cost"]
+
     usage_frequency_map = {"Low": 1, "Medium": 2, "High": 3}
-    usage_frequency = usage_frequency_map.get(data["usageFrequency"], 1)
+    usage_frequency = usage_frequency_map.get(data["usage_frequency"], 1)
 
     asset_age = current_year - purchase_year
     maintenance_ratio = total_maintenance_cost / purchase_cost
@@ -46,6 +48,7 @@ def preprocess_input(data):
 def predict():
     try:
         data = request.json
+        print("Incoming data:", data)
         processed = preprocess_input(data)
 
         # Failure Prediction
@@ -104,6 +107,8 @@ def predict():
         })
 
     except Exception as e:
+        traceback.print_exc()
+        print("ERROR: " ,e)
         return jsonify({"error": str(e)}), 400
 
 

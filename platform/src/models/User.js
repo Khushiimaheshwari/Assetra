@@ -23,7 +23,7 @@ export { User };
 /**
  * Create a new user account
  */
-export async function createAccount({ name, email, password, role }) {
+export async function createAccount({ name, email, password, role="admin" }) {
   await connectDB();
 
   const existing = await User.findOne({ email });

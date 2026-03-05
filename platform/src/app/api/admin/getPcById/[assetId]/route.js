@@ -3,6 +3,7 @@ import { connectDB } from "../../../utils/db";
 import Labs from "../../../../../models/Labs";
 import Assets from "../../../../../models/Asset";
 import PCs from "../../../../../models/Lab_PCs";
+import Faculty from "../../../../../models/Faculty";
 
 export async function GET(req, context) {
   try {
@@ -15,8 +16,11 @@ export async function GET(req, context) {
         path: "Assets",
         populate: {
           path: "Issue_Reported.FacultyDetails",
-          select: "Name Email _id"
-        }
+          populate: {
+            path: "UserDetails",
+            select: "Name Email",
+          },
+        },
       });
 
     if (!pc) {

@@ -96,6 +96,7 @@ export default function LabManagement() {
       const data = await res.json();
       if (res.ok) {
         setLabs(data.labs);
+        console.log(data);
       } else {
         console.error("Failed to fetch lab:", data.error);
       }
@@ -743,7 +744,7 @@ export default function LabManagement() {
                           <span style={{ ...styles.detailValue, fontStyle: 'italic', color: '#86B6F6' }}>Not Assigned</span>
                         ) : (
                           lab.LabTechnician ? (                            
-                            <span style={styles.detailValue}>{lab?.LabTechnician[0]?.Name}</span>
+                            <span style={styles.detailValue}>{lab?.LabTechnician[0]?.UserDetails?.Name}</span>
                             ) : (
                             <span style={{ ...styles.detailValue, fontStyle: 'italic', color: '#86B6F6' }}>Not Assigned</span>
                             )
@@ -922,7 +923,7 @@ export default function LabManagement() {
                   <option value="">Select Lab technician</option>
                   {technicians.map((tech) => (
                     <option key={tech._id} value={tech._id}>
-                      {tech.Name} ({tech.Email})
+                      {tech.UserDetails?.Name} ({tech.UserDetails?.Email})
                     </option>
                   ))}
                 </select>
