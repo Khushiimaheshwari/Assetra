@@ -5,13 +5,13 @@
   align-items: center;
   padding: 15px 40px;
   background: #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(8, 131, 149, 0.1);
   position: sticky;
   top: 0;
   z-index: 1000;
   width: 100%;
   box-sizing: border-box;
-  font-family: "Times New Roman", Times, serif;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
 /* Logo Section */
@@ -21,14 +21,16 @@
   flex-shrink: 0;
   font-weight: 700;
   font-size: 1.3rem;
-  color: #1d2b36;
-  max-width: 150px;
+  color: #176B87;
+  max-width: 160px;
 }
 
 .logo a {
   display: flex;
   align-items: center;
+  gap: 0.6rem;
   line-height: 0;
+  text-decoration: none;
 }
 
 .logo img {
@@ -36,6 +38,14 @@
   height: 40px !important;
   max-height: 40px;
   object-fit: contain;
+}
+
+.logoText {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #176B87;
+  letter-spacing: 0.04em;
+  line-height: 1;
 }
 
 /* Desktop Navigation Links */
@@ -58,7 +68,7 @@
 }
 
 .desktopNavLinks li a:hover {
-  color: #10b981;
+  color: #088395;
 }
 
 /* Desktop Actions */
@@ -71,7 +81,7 @@
 
 .loginBtn {
   padding: 0.65rem 1.5rem;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #088395 0%, #176B87 100%);
   color: white;
   border: none;
   border-radius: 25px;
@@ -79,14 +89,14 @@
   font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 4px 12px rgba(8, 131, 149, 0.25);
   white-space: nowrap;
 }
 
 .loginBtn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 6px 16px rgba(8, 131, 149, 0.35);
+  background: linear-gradient(135deg, #176B87 0%, #0a5a72 100%);
 }
 
 /* Mobile Menu Button */
@@ -103,7 +113,7 @@
 .hamburger {
   width: 25px;
   height: 3px;
-  background-color: #374151;
+  background-color: #176B87;
   border-radius: 2px;
   transition: all 0.3s;
 }
@@ -117,7 +127,7 @@
   width: 70%;
   max-width: 300px;
   background-color: white;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: -2px 0 10px rgba(8, 131, 149, 0.12);
   list-style: none;
   padding: 2rem 0;
   margin: 0;
@@ -134,7 +144,7 @@
 
 .mobileNavLinks li {
   padding: 1rem 2rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid #EBF4F6;
 }
 
 .mobileNavLinks li a {
@@ -146,7 +156,7 @@
 }
 
 .mobileNavLinks li a:hover {
-  color: #10b981;
+  color: #088395;
 }
 
 /* Mobile Overlay */
@@ -157,7 +167,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(8, 131, 149, 0.15);
   z-index: 998;
 }
 
@@ -176,8 +186,16 @@
     display: none;
   }
 
+  .mobileNavLinks {
+    display: block;
+  }
+
+  .mobileOverlay {
+    display: block;
+  }
+
   .logo {
-    max-width: 120px;
+    max-width: 130px;
   }
 
   .logo img {
@@ -205,7 +223,7 @@
   }
 
   .logo {
-    max-width: 100px;
+    max-width: 110px;
   }
 
   .logo img {
