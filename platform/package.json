@@ -10,12 +10,14 @@
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
+    "autoprefixer": "^10.4.27",
     "bcryptjs": "^3.0.3",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.575.0",
     "mongoose": "^9.2.3",
     "next": "16.1.4",
     "next-auth": "^4.24.13",
+    "postcss": "^8.5.8",
     "qrcode": "^1.5.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -25,6 +27,6 @@
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "16.1.4",
-    "tailwindcss": "^4"
+    "tailwindcss": "^4.2.1"
   }
 }

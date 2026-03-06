@@ -22,15 +22,15 @@ export default function Navbar() {
             priority
             style={{ width: "auto", height: "40px" }}
           />
-          <span className={styles.logoText}>ASSETRA</span>
+          
         </Link>
       </div>
 
       {/* Desktop Navigation Links */}
       <ul className={styles.desktopNavLinks}>
         <li><Link href="/">Home</Link></li>
-        <li><Link href="/#problems">Challenges</Link></li>
-        <li><Link href="/#solutions">Modules</Link></li>
+        <li><Link href="/#about">About</Link></li>
+        <li><Link href="/#Pricing">Pricing</Link></li>
         <li><Link href="/#contact">Contact</Link></li>
       </ul>
 
@@ -54,8 +54,8 @@ export default function Navbar() {
       {/* Mobile Menu */}
       <ul className={`${styles.mobileNavLinks} ${menuOpen ? styles.active : ""}`}>
         <li><Link href="/"           onClick={() => setMenuOpen(false)}>Home</Link></li>
-        <li><Link href="/#problems"  onClick={() => setMenuOpen(false)}>Challenges</Link></li>
-        <li><Link href="/#solutions" onClick={() => setMenuOpen(false)}>Modules</Link></li>
+        <li><Link href="/#about"  onClick={() => setMenuOpen(false)}>About</Link></li>
+
         <li><Link href="/#contact"   onClick={() => setMenuOpen(false)}>Contact</Link></li>
         <li><Link href="/login"      onClick={() => setMenuOpen(false)}>Login / Signup</Link></li>
       </ul>
