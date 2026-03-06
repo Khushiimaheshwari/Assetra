@@ -32,8 +32,8 @@ export default function AdminNavbar({ onToggleSidebar }) {
       <div className={styles.logo}>
         <Link href="/adminPanel">
           <Image
-            src="/logo.png"
-            alt="Lab360 Logo"
+            src="/logo2.jpeg"
+            alt="Admin Panel Logo"
             width={120}
             height={40}
             priority
