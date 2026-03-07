@@ -8,7 +8,7 @@ export async function GET() {
   try {
     await connectDB();
 
-    const labs = await Lab.find({}, "_id Lab_ID Lab_Name Block Lab_Room Total_Capacity Status LabTechnician Lab_Incharge")
+    const labs = await Lab.find({}, "_id Lab_ID Lab_Name Block Lab_Room Total_Capacity Status LabTechnician")
     .populate({
       path: "LabTechnician",
       populate: {
@@ -16,13 +16,7 @@ export async function GET() {
         model: "User",
       },
     })
-    .populate({
-      path: "Lab_Incharge",
-      populate: {
-        path: "UserDetails",
-        model: "User",
-      },
-    });
+    .lean();
 
     return NextResponse.json({ labs });
   } catch (error) {

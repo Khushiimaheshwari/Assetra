@@ -1,3 +1,4 @@
+// Fcaulty Panel PC page
 "use client";
 
 import { useEffect, useState } from "react";
