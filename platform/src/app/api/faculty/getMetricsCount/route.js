@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { connectDB } from "../../../../app/api/utils/db";
 import Lab from "../../../../models/Labs";
 import Asset from "../../../../models/Asset";
-import SubjectList from "../../../../models/Subject_List";
-import Programs from "../../../../models/Programs";
 import Faculty from "../../../../models/Faculty";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/authOptions";
@@ -43,14 +41,8 @@ export async function GET(req) {
 
     const baseUrl = req.nextUrl.origin;
 
-    const subjectResponse = await callInternal(`${baseUrl}/api/faculty/getSubjects`);
-    const subjects = subjectResponse.subjects || [];
-
     const labResponse = await callInternal(`${baseUrl}/api/faculty/getLabs`);
     const labs = labResponse.labs || [];
-
-    const programResponse = await callInternal(`${baseUrl}/api/faculty/getProgram`);
-    const programs = programResponse.programs || [];
 
     const assetsResponse = await callInternal(`${baseUrl}/api/faculty/getlabPCs`);
     const labAssets = assetsResponse.pcs || [];
@@ -66,9 +58,7 @@ export async function GET(req) {
 
 
     const metrics = {
-      totalSubjects: subjects.length,
       totalLabs: labs.length,
-      totalPrograms: programs.length,
       totalLabAssets,
     };
 
@@ -130,9 +120,7 @@ export async function GET(req) {
         facultyName: faculty.Name,
         facultyEmail: faculty.Email,
         metrics,
-        subjects,
         labs,
-        programs,
         labAssets,
         assetCategoryData,
         labDistributionData

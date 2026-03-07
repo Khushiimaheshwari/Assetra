@@ -44,15 +44,15 @@ export default function FacultyManagement() {
       const data = await res.json();
       setFaculty(
         data.faculty.map(f => ({
-          id: f._id,
-          name: f.Name,
-          email: f.Email,
-          phoneNumber: f.PhoneNumber,
-          profileImage: f.ProfileImage,
+          id: f.UserDetails?._id,
+          name: f.UserDetails?.Name,
+          email: f.UserDetails?.Email,
+          phoneNumber: f.UserDetails?.PhoneNumber,
+          profileImage: f.UserDetails?.ProfileImage,
           department: f.Department,
           designation: f.Designation,
-          location: f.Location,
-          status: f.AccountStatus,
+          location: f.UserDetails?.Location,
+          status: f.UserDetails?.AccountStatus,
           labAccess: f.Labs || [],
           labIncharge: f.Incharge_Labs || [],
         }))
@@ -413,7 +413,7 @@ export default function FacultyManagement() {
               Faculty Management
             </h1>
             <p style={{ color: C.primary, fontSize: '0.875rem', fontWeight: '500', margin: 0 }}>
-              Manage faculty accounts, subjects, and programs
+              Manage faculty accounts
             </p>
           </div>
         </div>
@@ -580,33 +580,6 @@ export default function FacultyManagement() {
                       ) : (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 12px', backgroundColor: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca', borderRadius: '8px', fontSize: '13px', fontWeight: '600' }}>
                           No incharge labs assigned
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Subjects section */}
-                  <div style={{ backgroundColor: C.mint, borderRadius: '10px', padding: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                      <BookOpen size={14} color="#065f46" />
-                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#065f46', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Subjects Taught</span>
-                      <span style={{ marginLeft: 'auto', fontSize: '11px', padding: '2px 10px', backgroundColor: C.primary, color: 'white', borderRadius: '20px', fontWeight: '700' }}>
-                        {member.programSubjectPairs?.length || 0}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {member.programSubjectPairs && member.programSubjectPairs.length > 0 ? (
-                        member.programSubjectPairs.map((sub, index) => (
-                          <div key={index} style={{ display: 'inline-flex', flexDirection: 'column', padding: '8px 12px', backgroundColor: 'white', color: '#059669', border: '1.5px solid #10b981', borderRadius: '8px', fontSize: '12px', fontWeight: '600', gap: '2px' }}>
-                            <span>{sub.subjectName} {sub.subjectCode}</span>
-                            <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: '500' }}>
-                              "{sub.programSection}" {sub.programName} Sem-{sub.programSemester} {sub.programGroup} Batch: {sub.programBatch}
-                            </span>
-                          </div>
-                        ))
-                      ) : (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '6px 12px', backgroundColor: '#fef2f2', color: '#dc2626', border: '1.5px solid #fecaca', borderRadius: '8px', fontSize: '13px', fontWeight: '600' }}>
-                          No subjects assigned
                         </span>
                       )}
                     </div>
