@@ -132,7 +132,6 @@ export default function OnboardingPage() {
                 <path d="M18 13L18 22M13 18L18 22L23 18" stroke="rgba(209,248,239,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            
           </div>
 
           <h2 className={styles.title}>Complete Your Profile</h2>
@@ -209,21 +208,19 @@ export default function OnboardingPage() {
         >
           <div className={styles.formBefore}></div>
 
-          {/* Logo */}
-          <div className={styles.formLogo}>
+          {/* ── Logo + Back button in same row ── */}
+          <div className={styles.formLogoRow}>
+            <button type="button" onClick={handleBackStep} className={styles.arrowBtn}>
+              ← Back
+            </button>
             <div className={styles.formLogoIcon}>
               <svg width="20" height="20" viewBox="0 0 36 40" fill="none">
                 <path d="M18 2L33 11V29L18 38L3 29V11L18 2Z" stroke="white" strokeWidth="2"/>
                 <path d="M18 13L18 22M13 18L18 22L23 18" stroke="rgba(209,248,239,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            
-          </div>
-
-          <div className={styles.arrowContainer}>
-            <button type="button" onClick={handleBackStep} className={styles.arrowBtn}>
-              ← Back
-            </button>
+            {/* Spacer to keep logo centered */}
+            <div style={{ width: "70px" }} />
           </div>
 
           <h2 className={styles.title}>Choose Your Avatar</h2>
