@@ -1,136 +1,135 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import AdminSidebar from "@/app/adminPanel/components/Admin_Sidebar"; // ← ADDED
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 const mockContracts = [
-  { id: "LAB16-PC3",  category: "Computer",     vendor: "Microtek",    start: "2024-01-10", end: "2025-03-24", cost: 18000, contact: "9876543210" },
-  { id: "SCI12-PR1",  category: "Printer",      vendor: "HP Services", start: "2024-03-01", end: "2025-08-01", cost: 12000, contact: "9812345670" },
-  { id: "LAB08-SC2",  category: "Scanner",      vendor: "Canon Care",  start: "2023-07-15", end: "2024-12-31", cost: 9500,  contact: "9900112233" },
-  { id: "ADMIN-AC5",  category: "AC Unit",       vendor: "BlueStar",    start: "2024-02-01", end: "2025-04-10", cost: 22000, contact: "9988776655" },
-  { id: "LAB02-SV1",  category: "Server",        vendor: "Dell Tech",   start: "2024-06-01", end: "2026-05-31", cost: 85000, contact: "9111223344" },
-  { id: "PHY05-OS1",  category: "Oscilloscope", vendor: "Tektronix",   start: "2023-11-01", end: "2025-03-30", cost: 31000, contact: "9222334455" },
+  { id: "LAB16-PC3",  category: "Computer",     vendor: "Microtek",    type: "Comprehensive",     start: "2024-01-10", end: "2025-03-24", cost: 18000, contact: "9876543210" },
+  { id: "SCI12-PR1",  category: "Printer",      vendor: "HP Services", type: "Non-Comprehensive",  start: "2024-03-01", end: "2025-08-01", cost: 12000, contact: "9812345670" },
+  { id: "LAB08-SC2",  category: "Scanner",      vendor: "Canon Care",  type: "Comprehensive",     start: "2023-07-15", end: "2024-12-31", cost: 9500,  contact: "9900112233" },
+  { id: "ADMIN-AC5",  category: "AC Unit",      vendor: "BlueStar",    type: "Comprehensive",     start: "2024-02-01", end: "2025-04-10", cost: 22000, contact: "9988776655" },
+  { id: "LAB02-SV1",  category: "Server",       vendor: "Dell Tech",   type: "Comprehensive",     start: "2024-06-01", end: "2026-05-31", cost: 85000, contact: "9111223344" },
+  { id: "PHY05-OS1",  category: "Oscilloscope", vendor: "Tektronix",   type: "Non-Comprehensive",  start: "2023-11-01", end: "2025-03-30", cost: 31000, contact: "9222334455" },
 ];
 
 const mockHistory = [
-  { assetId: "LAB16-PC3",  date: "2025-01-15", issue: "Fan replacement & cleaning",       tech: "Ravi Kumar",   cost: 1200 },
-  { assetId: "SCI12-PR1",  date: "2025-02-03", issue: "Cartridge jam + roller fix",        tech: "Anita Shah",   cost: 850  },
-  { assetId: "LAB08-SC2",  date: "2024-11-20", issue: "Sensor calibration",                tech: "Deepak Nair",  cost: 2000 },
-  { assetId: "ADMIN-AC5",  date: "2025-01-28", issue: "Gas refill & compressor check",     tech: "Suresh Patel", cost: 3500 },
+  { assetId: "LAB16-PC3",  date: "2025-01-15", issue: "Fan replacement & cleaning",      tech: "Ravi Kumar",   cost: 1200 },
+  { assetId: "SCI12-PR1",  date: "2025-02-03", issue: "Cartridge jam + roller fix",       tech: "Anita Shah",   cost: 850  },
+  { assetId: "LAB08-SC2",  date: "2024-11-20", issue: "Sensor calibration",               tech: "Deepak Nair",  cost: 2000 },
+  { assetId: "ADMIN-AC5",  date: "2025-01-28", issue: "Gas refill & compressor check",    tech: "Suresh Patel", cost: 3500 },
   { assetId: "PHY05-OS1",  date: "2025-02-22", issue: "Display flicker – board replaced", tech: "Meena Joshi",  cost: 7800 },
 ];
 
-const alertAssets = [
-  { id: "LAB16-PC3",  vendor: "Microtek",    days: 18, end: "2025-03-24" },
-  { id: "PHY05-OS1",  vendor: "Tektronix",   days: 24, end: "2025-03-30" },
-  { id: "ADMIN-AC5",  vendor: "BlueStar",    days: 35, end: "2025-04-10" },
-];
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function daysLeft(end) {
-  const ms = new Date(end) - new Date();
-  return Math.ceil(ms / 86400000);
-}
-
+function daysLeft(end) { return Math.ceil((new Date(end) - new Date()) / 86400000); }
 function getStatus(end) {
   const d = daysLeft(end);
-  if (d < 0)  return "Expired";
+  if (d < 0)   return "Expired";
   if (d <= 30) return "Expiring Soon";
   return "Active";
 }
 
-const statusStyle = {
-  Active:        "bg-emerald-100 text-emerald-700 border border-emerald-300",
-  "Expiring Soon":"bg-amber-100  text-amber-700  border border-amber-300",
-  Expired:       "bg-red-100    text-red-700    border border-red-300",
-};
-
 // ─── Icons (inline SVG) ───────────────────────────────────────────────────────
-const Icons = {
-  Assets:   () => <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg>,
-  Contract: () => <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
-  Clock:    () => <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  Expired:  () => <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  Bell:     () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>,
-  Eye:      () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>,
-  Edit:     () => <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
-  Plus:     () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>,
-  History:  () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-};
+const BellIcon = ({ size = 20 }) => (
+  <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+  </svg>
+);
+const PlusIcon = ({ size = 18 }) => (
+  <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
+  </svg>
+);
+const EyeIcon = ({ size = 14 }) => (
+  <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+  </svg>
+);
+const EditIcon = ({ size = 14 }) => (
+  <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+  </svg>
+);
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-function SummaryCard({ label, value, icon: Icon, accent, bg }) {
+// ─── InputField ───────────────────────────────────────────────────────────────
+function InputField({ label, name, type = "text", value, onChange, options, isMobile }) {
+  const inputStyle = {
+    width: '100%',
+    borderRadius: '10px',
+    border: '1px solid rgba(8, 131, 149, 0.25)',
+    backgroundColor: '#EBF4F6',
+    padding: '10px 14px',
+    fontSize: isMobile ? '13px' : '14px',
+    color: '#176B87',
+    outline: 'none',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+    boxSizing: 'border-box',
+  };
+  const labelStyle = {
+    fontSize: '11px',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    color: '#176B87',
+    marginBottom: '6px',
+    display: 'block',
+  };
   return (
-    <div className="relative overflow-hidden rounded-2xl shadow-md p-5 flex flex-col gap-3 border border-white/60"
-         style={{ background: bg }}>
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold tracking-wide uppercase" style={{ color: "#176B87" }}>{label}</span>
-        <div className="rounded-xl p-2" style={{ background: accent + "22" }}>
-          <div style={{ color: accent }}><Icon /></div>
-        </div>
-      </div>
-      <p className="text-4xl font-extrabold" style={{ color: "#088395", fontFamily: "'DM Serif Display', Georgia, serif" }}>{value}</p>
-      <div className="absolute -bottom-4 -right-4 w-20 h-20 rounded-full opacity-10" style={{ background: accent }} />
-    </div>
-  );
-}
-
-function SectionHeader({ title, icon: Icon }) {
-  return (
-    <div className="flex items-center gap-3 mb-5">
-      <div className="rounded-lg p-2 shadow-sm" style={{ background: "#D1F8EF", color: "#088395" }}>
-        <Icon />
-      </div>
-      <h2 className="text-xl font-bold tracking-tight" style={{ color: "#176B87", fontFamily: "'DM Serif Display', Georgia, serif" }}>
-        {title}
-      </h2>
-    </div>
-  );
-}
-
-function InputField({ label, name, type = "text", value, onChange, options }) {
-  const base = "w-full rounded-xl border border-[#a8cdd5] bg-white/80 px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#088395]/40 focus:border-[#088395] transition-all placeholder-gray-400";
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold uppercase tracking-wide text-[#176B87]">{label}</label>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <label style={labelStyle}>{label}</label>
       {options ? (
-        <select name={name} value={value} onChange={onChange} className={base}>
+        <select name={name} value={value} onChange={onChange} style={inputStyle}>
           <option value="">Select…</option>
           {options.map(o => <option key={o}>{o}</option>)}
         </select>
       ) : (
         <input type={type} name={name} value={value} onChange={onChange}
-               placeholder={`Enter ${label.toLowerCase()}`} className={base} />
+               placeholder={`Enter ${label.toLowerCase()}`} style={inputStyle} />
       )}
     </div>
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function AMCDashboard() {
-  const [contracts, setContracts]   = useState(mockContracts);
-  const [formOpen,  setFormOpen]    = useState(false);
+  const [contracts, setContracts] = useState(mockContracts);
+  const [formOpen,  setFormOpen]  = useState(false);
+  const [search,    setSearch]    = useState("");
+  const [isMobile,  setIsMobile]  = useState(false);
+  const [hoveredRow, setHoveredRow] = useState(null);
+  const [hoveredBtn, setHoveredBtn] = useState(null);
   const [form, setForm] = useState({
-    id: "", category: "", vendor: "", type: "", start: "", end: "", cost: "", contact: ""
+    id: "", category: "", vendor: "", type: "",
+    start: "", end: "", cost: "", contact: "",
   });
-  const [search, setSearch] = useState("");
 
-  // Summary stats
-  const total       = contracts.length;
-  const active      = contracts.filter(c => getStatus(c.end) === "Active").length;
-  const expiring    = contracts.filter(c => getStatus(c.end) === "Expiring Soon").length;
-  const expired     = contracts.filter(c => getStatus(c.end) === "Expired").length;
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  // ── Derived values ──
+  const total    = contracts.length;
+  const active   = contracts.filter(c => getStatus(c.end) === "Active").length;
+  const expiring = contracts.filter(c => getStatus(c.end) === "Expiring Soon").length;
+  const expired  = contracts.filter(c => getStatus(c.end) === "Expired").length;
 
   const filtered = contracts.filter(c =>
-    c.id.toLowerCase().includes(search.toLowerCase()) ||
-    c.vendor.toLowerCase().includes(search.toLowerCase()) ||
-    c.category.toLowerCase().includes(search.toLowerCase())
+    [c.id, c.vendor, c.category].some(v =>
+      v.toLowerCase().includes(search.toLowerCase())
+    )
   );
 
-  function handleChange(e) {
-    setForm(p => ({ ...p, [e.target.name]: e.target.value }));
-  }
+  const alertList = contracts
+    .map(c => ({ ...c, days: daysLeft(c.end) }))
+    .filter(c => c.days >= 0 && c.days <= 30)
+    .sort((a, b) => a.days - b.days);
 
+  function handleChange(e) { setForm(p => ({ ...p, [e.target.name]: e.target.value })); }
   function handleSubmit() {
     if (!form.id || !form.vendor || !form.start || !form.end) return;
     setContracts(p => [{ ...form, cost: Number(form.cost) }, ...p]);
@@ -138,250 +137,362 @@ export default function AMCDashboard() {
     setFormOpen(false);
   }
 
-  const alertList = contracts
-    .map(c => ({ ...c, days: daysLeft(c.end) }))
-    .filter(c => c.days >= 0 && c.days <= 30)
-    .sort((a, b) => a.days - b.days);
+  // ── Styles (matching existing Dashboard pattern exactly) ──
+  const containerStyle = {
+    width: isMobile ? '100%' : 'calc(100% - 255px)',
+    minHeight: '100vh',
+    backgroundColor: '#EBF4F6',
+    padding: isMobile ? '1rem' : '2rem',
+    marginLeft: isMobile ? '0' : '255px',
+    boxSizing: 'border-box',
+    transition: 'all 0.3s ease',
+    overflowX: 'hidden',
+  };
 
+  const headerStyle = {
+    marginBottom: '2rem',
+    paddingBottom: '1rem',
+    borderBottom: '3px solid #088395',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: '1rem',
+  };
+
+  const titleStyle = {
+    fontSize: isMobile ? '1.75rem' : '2.25rem',
+    fontWeight: '800',
+    color: '#176B87',
+    margin: 0,
+    letterSpacing: '-0.5px',
+  };
+
+  const summaryGridStyle = {
+    display: 'grid',
+    gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+    gap: '1.25rem',
+    marginBottom: '2rem',
+  };
+
+  const cardBase = {
+    backgroundColor: 'white',
+    borderRadius: '16px',
+    padding: isMobile ? '1.25rem' : '1.5rem',
+    boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)',
+    border: '1px solid rgba(8, 131, 149, 0.1)',
+    transition: 'all 0.3s ease',
+    cursor: 'default',
+    position: 'relative',
+    overflow: 'hidden',
+  };
+
+  const sectionCardStyle = {
+    backgroundColor: 'white',
+    borderRadius: '16px',
+    padding: isMobile ? '1.25rem' : '1.5rem',
+    boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)',
+    border: '1px solid rgba(8, 131, 149, 0.1)',
+    marginBottom: '1.5rem',
+    overflowX: 'auto',
+  };
+
+  const sectionTitleStyle = {
+    fontSize: isMobile ? '1.1rem' : '1.25rem',
+    fontWeight: '700',
+    color: '#176B87',
+    marginBottom: '0.35rem',
+  };
+
+  const sectionHeaderStyle = {
+    marginBottom: '1.25rem',
+    paddingBottom: '0.75rem',
+    borderBottom: '2px solid #D1F8EF',
+  };
+
+  const tableStyle = {
+    width: '100%',
+    borderCollapse: 'collapse',
+    fontSize: isMobile ? '0.8rem' : '0.9rem',
+  };
+
+  const thStyle = {
+    padding: isMobile ? '0.75rem' : '1rem 1.25rem',
+    textAlign: 'left',
+    fontWeight: '700',
+    color: '#176B87',
+    borderBottom: '2px solid #088395',
+    textTransform: 'uppercase',
+    fontSize: isMobile ? '0.7rem' : '0.8rem',
+    letterSpacing: '0.5px',
+    backgroundColor: '#D1F8EF',
+    whiteSpace: 'nowrap',
+  };
+
+  const tdStyle = {
+    padding: isMobile ? '0.75rem' : '1rem 1.25rem',
+    color: '#176B87',
+    borderBottom: '1px solid #D1F8EF',
+    fontWeight: '500',
+    whiteSpace: 'nowrap',
+  };
+
+  const iconSize = isMobile ? '40px' : '48px';
+
+  const summaryCards = [
+    { label: 'Total Assets Under AMC', value: total,    bg: '#D1F8EF',                    icon: '#088395',
+      svg: <svg width={isMobile?"20":"24"} height={isMobile?"20":"24"} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm0 2h10v10H5V5z" clipRule="evenodd"/></svg> },
+    { label: 'Active AMC Contracts',   value: active,   bg: 'rgba(134,182,246,0.2)',      icon: '#3674B5',
+      svg: <svg width={isMobile?"20":"24"} height={isMobile?"20":"24"} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"/></svg> },
+    { label: 'AMC Expiring Soon',      value: expiring, bg: 'rgba(251,191,36,0.15)',      icon: '#d97706',
+      svg: <svg width={isMobile?"20":"24"} height={isMobile?"20":"24"} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/></svg> },
+    { label: 'Expired AMC',            value: expired,  bg: 'rgba(239,68,68,0.12)',       icon: '#dc2626',
+      svg: <svg width={isMobile?"20":"24"} height={isMobile?"20":"24"} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/></svg> },
+  ];
+
+  const statusStyle = (st) => {
+    const base = { fontSize: '11px', fontWeight: '700', padding: '4px 10px', borderRadius: '99px', whiteSpace: 'nowrap' };
+    if (st === "Active")        return { ...base, background: '#d1fae5', color: '#065f46', border: '1px solid #a7f3d0' };
+    if (st === "Expiring Soon") return { ...base, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' };
+    return                             { ...base, background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca' };
+  };
+
+  // ── ADDED: fragment wrapper + <AdminSidebar /> ──
   return (
     <>
-      {/* Google Font import */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-        * { font-family: 'Plus Jakarta Sans', sans-serif; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #EBF4F6; }
-        ::-webkit-scrollbar-thumb { background: #a8cdd5; border-radius: 99px; }
-        .fade-in { animation: fadeUp .4s ease both; }
-        @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
-        .card-hover { transition: transform .2s ease, box-shadow .2s ease; }
-        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(8,131,149,.13); }
-      `}</style>
+      <AdminSidebar />
 
-      <div className="min-h-screen" style={{ background: "linear-gradient(145deg, #EBF4F6 0%, #c8e4ea 40%, #D1F8EF 100%)" }}>
+      <div style={containerStyle}>
 
-        {/* ── Header ────────────────────────────────────────────────── */}
-        <header className="sticky top-0 z-50 border-b border-[#a8cdd5]/40 shadow-sm"
-                style={{ background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)" }}>
-          <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-4">
-              <div className="rounded-2xl p-2.5 shadow" style={{ background: "linear-gradient(135deg,#088395,#176B87)" }}>
-                <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                    d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-2xl font-extrabold leading-tight"
-                    style={{ color: "#088395", fontFamily: "'DM Serif Display', Georgia, serif" }}>
-                  AMC Tracking Dashboard
-                </h1>
-                <p className="text-xs text-[#176B87]/70 font-medium">
-                  Institutional Asset Management System · {new Date().toLocaleDateString("en-IN", { dateStyle: "long" })}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
+        {/* ── Header ─────────────────────────────────────────────────── */}
+        <header style={headerStyle}>
+          <div>
+            <h1 style={titleStyle}>AMC Tracking Dashboard</h1>
+            <p style={{ margin: '4px 0 0', fontSize: isMobile ? '12px' : '13px', color: '#3674B5', fontWeight: '500' }}>
+              Institutional Asset Management System · {new Date().toLocaleDateString("en-IN", { dateStyle: "long" })}
               {alertList.length > 0 && (
-                <div className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold"
-                     style={{ background: "#fff3cd", color: "#856404" }}>
-                  <Icons.Bell />
-                  {alertList.length} expiry alert{alertList.length > 1 ? "s" : ""}
-                </div>
+                <span style={{ marginLeft: '12px', color: '#d97706', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <BellIcon size={14} /> {alertList.length} expiry alert{alertList.length > 1 ? "s" : ""}
+                </span>
               )}
-              <button onClick={() => setFormOpen(o => !o)}
-                className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white shadow transition-all active:scale-95"
-                style={{ background: "linear-gradient(135deg,#088395,#176B87)" }}>
-                <Icons.Plus />
+            </p>
+          </div>
+          <button
+            onClick={() => setFormOpen(o => !o)}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(8,131,149,0.35)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)';   e.currentTarget.style.boxShadow = '0 4px 12px rgba(8,131,149,0.25)'; }}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: isMobile ? '9px 16px' : '10px 20px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg,#088395,#176B87)', color: 'white', fontSize: isMobile ? '13px' : '14px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(8,131,149,0.25)', transition: 'all 0.2s ease' }}
+          >
+            <PlusIcon size={isMobile ? 16 : 18} /> Add Contract
+          </button>
+        </header>
+
+        {/* ── Summary Cards ───────────────────────────────────────────── */}
+        <div style={summaryGridStyle}>
+          {summaryCards.map((c, i) => (
+            <div
+              key={i}
+              style={cardBase}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(8,131,149,0.2), 0 4px 6px -2px rgba(8,131,149,0.1)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)';   e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(8,131,149,0.1), 0 2px 4px -1px rgba(8,131,149,0.06)'; }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                <div style={{ fontSize: isMobile ? '0.75rem' : '0.85rem', fontWeight: '600', color: '#176B87', textTransform: 'uppercase', letterSpacing: '0.5px', maxWidth: '120px', lineHeight: '1.3' }}>{c.label}</div>
+                <div style={{ width: iconSize, height: iconSize, borderRadius: '12px', backgroundColor: c.bg, color: c.icon, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {c.svg}
+                </div>
+              </div>
+              <div style={{ fontSize: isMobile ? '1.75rem' : '2.25rem', fontWeight: '800', color: '#088395', letterSpacing: '-1px' }}>{c.value}</div>
+              {/* decorative circle */}
+              <div style={{ position: 'absolute', bottom: '-16px', right: '-16px', width: '80px', height: '80px', borderRadius: '50%', backgroundColor: c.icon, opacity: 0.07 }} />
+            </div>
+          ))}
+        </div>
+
+        {/* ── Add Contract Form ────────────────────────────────────────── */}
+        {formOpen && (
+          <div style={{ ...sectionCardStyle, marginBottom: '1.5rem' }}>
+            <div style={sectionHeaderStyle}>
+              <div style={sectionTitleStyle}>New AMC Contract</div>
+              <div style={{ fontSize: isMobile ? '0.8rem' : '0.9rem', color: '#3674B5', fontWeight: '500' }}>Fill in the details below</div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(1,1fr)' : 'repeat(4,1fr)', gap: '1rem' }}>
+              <InputField label="Asset ID"       name="id"       value={form.id}       onChange={handleChange} isMobile={isMobile} />
+              <InputField label="Asset Category" name="category" value={form.category} onChange={handleChange} isMobile={isMobile}
+                          options={["Computer","Printer","Scanner","Server","AC Unit","Oscilloscope","Projector","UPS","Other"]} />
+              <InputField label="AMC Vendor"     name="vendor"   value={form.vendor}   onChange={handleChange} isMobile={isMobile} />
+              <InputField label="AMC Type"       name="type"     value={form.type}     onChange={handleChange} isMobile={isMobile}
+                          options={["Comprehensive","Non-Comprehensive"]} />
+              <InputField label="Start Date"     name="start"    value={form.start}    onChange={handleChange} isMobile={isMobile} type="date" />
+              <InputField label="End Date"       name="end"      value={form.end}      onChange={handleChange} isMobile={isMobile} type="date" />
+              <InputField label="Cost (₹)"       name="cost"     value={form.cost}     onChange={handleChange} isMobile={isMobile} type="number" />
+              <InputField label="Vendor Contact" name="contact"  value={form.contact}  onChange={handleChange} isMobile={isMobile} type="tel" />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '1.25rem' }}>
+              <button
+                onClick={() => setFormOpen(false)}
+                style={{ padding: '9px 20px', borderRadius: '10px', border: '1px solid rgba(8,131,149,0.3)', background: 'white', color: '#176B87', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                style={{ padding: '9px 24px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg,#088395,#176B87)', color: 'white', fontSize: '14px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(8,131,149,0.25)', transition: 'all 0.2s' }}
+              >
                 Add Contract
               </button>
             </div>
           </div>
-        </header>
+        )}
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-
-          {/* ── Summary Cards ─────────────────────────────────────── */}
-          <section className="fade-in grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <SummaryCard label="Total Assets Under AMC" value={total}   icon={Icons.Assets}   accent="#088395" bg="linear-gradient(135deg,#D1F8EF,#c8f5ec)" />
-            <SummaryCard label="Active AMC Contracts"   value={active}  icon={Icons.Contract} accent="#3674B5" bg="linear-gradient(135deg,#EBF4F6,#c8e4ea)" />
-            <SummaryCard label="AMC Expiring Soon"      value={expiring} icon={Icons.Clock}   accent="#d97706" bg="linear-gradient(135deg,#fffbeb,#fef3c7)" />
-            <SummaryCard label="Expired AMC"            value={expired} icon={Icons.Expired}  accent="#dc2626" bg="linear-gradient(135deg,#fff5f5,#fee2e2)" />
-          </section>
-
-          {/* ── Add AMC Contract Form ─────────────────────────────── */}
-          {formOpen && (
-            <section className="fade-in rounded-2xl border border-[#a8cdd5]/50 shadow-lg p-6"
-                     style={{ background: "rgba(255,255,255,0.97)" }}>
-              <SectionHeader title="Add AMC Contract" icon={Icons.Plus} />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <InputField label="Asset ID"       name="id"       value={form.id}       onChange={handleChange} />
-                <InputField label="Asset Category" name="category" value={form.category} onChange={handleChange}
-                            options={["Computer","Printer","Scanner","Server","AC Unit","Oscilloscope","Projector","UPS","Other"]} />
-                <InputField label="AMC Vendor"     name="vendor"   value={form.vendor}   onChange={handleChange} />
-                <InputField label="AMC Type"       name="type"     value={form.type}     onChange={handleChange}
-                            options={["Comprehensive","Non-Comprehensive"]} />
-                <InputField label="AMC Start Date" name="start"    value={form.start}    onChange={handleChange} type="date" />
-                <InputField label="AMC End Date"   name="end"      value={form.end}      onChange={handleChange} type="date" />
-                <InputField label="AMC Cost (₹)"   name="cost"     value={form.cost}     onChange={handleChange} type="number" />
-                <InputField label="Vendor Contact"  name="contact"  value={form.contact}  onChange={handleChange} type="tel" />
-              </div>
-              <div className="flex justify-end gap-3 mt-5">
-                <button onClick={() => setFormOpen(false)}
-                  className="px-5 py-2 rounded-xl border border-[#a8cdd5] text-sm font-semibold text-[#176B87] bg-white hover:bg-[#EBF4F6] transition">
-                  Cancel
-                </button>
-                <button onClick={handleSubmit}
-                  className="px-6 py-2 rounded-xl text-sm font-semibold text-white shadow transition active:scale-95"
-                  style={{ background: "linear-gradient(135deg,#088395,#176B87)" }}>
-                  Add AMC Contract
-                </button>
-              </div>
-            </section>
-          )}
-
-          {/* ── Expiry Alert Panel ────────────────────────────────── */}
-          {alertList.length > 0 && (
-            <section className="fade-in rounded-2xl border border-amber-200 shadow-md overflow-hidden">
-              <div className="px-5 py-3 flex items-center gap-3" style={{ background: "#fffbeb" }}>
-                <Icons.Bell />
-                <h2 className="text-base font-bold text-amber-800" style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>
-                  AMC Expiry Alerts
-                </h2>
-              </div>
-              <div className="divide-y divide-amber-100" style={{ background: "rgba(255,251,235,0.6)" }}>
-                {alertList.map(a => (
-                  <div key={a.id} className="flex flex-col sm:flex-row sm:items-center justify-between px-5 py-3 gap-2">
-                    <div className="flex items-center gap-3">
-                      <span className="text-amber-500 text-lg">⚠</span>
-                      <div>
-                        <span className="font-semibold text-amber-900 text-sm">AMC Expiring Soon</span>
-                        <span className="mx-2 text-amber-400">–</span>
-                        <span className="font-bold text-[#176B87] text-sm">{a.id}</span>
-                        <span className="mx-2 text-amber-400">–</span>
-                        <span className="text-sm text-amber-700">Vendor: <strong>{a.vendor}</strong></span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm">
-                      <span className="text-amber-600 text-xs">Expires: {a.end}</span>
-                      <span className="rounded-full px-3 py-0.5 font-bold text-xs"
-                            style={{ background: a.days <= 10 ? "#fee2e2" : "#fef3c7",
-                                     color: a.days <= 10 ? "#dc2626" : "#92400e" }}>
-                        {a.days} day{a.days !== 1 ? "s" : ""} remaining
-                      </span>
-                    </div>
+        {/* ── Expiry Alerts ────────────────────────────────────────────── */}
+        {alertList.length > 0 && (
+          <div style={{ backgroundColor: '#fffbeb', borderRadius: '16px', border: '1px solid #fde68a', marginBottom: '1.5rem', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(8,131,149,0.08)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: isMobile ? '12px 16px' : '14px 20px', borderBottom: '1px solid #fde68a', backgroundColor: '#fef9c3' }}>
+              <BellIcon size={16} />
+              <span style={{ fontSize: isMobile ? '14px' : '15px', fontWeight: '700', color: '#92400e' }}>AMC Expiry Alerts</span>
+              <span style={{ marginLeft: 'auto', background: '#fde68a', color: '#92400e', fontSize: '11px', fontWeight: '700', padding: '2px 10px', borderRadius: '99px' }}>
+                {alertList.length}
+              </span>
+            </div>
+            <div>
+              {alertList.map((a, i) => (
+                <div key={a.id} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', padding: isMobile ? '12px 16px' : '12px 20px', borderBottom: i < alertList.length - 1 ? '1px solid #fef3c7' : 'none', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <span style={{ color: '#d97706', fontSize: '16px' }}>⚠</span>
+                    <span style={{ fontWeight: '700', color: '#176B87', fontSize: isMobile ? '13px' : '14px' }}>{a.id}</span>
+                    <span style={{ color: '#d1d5db' }}>·</span>
+                    <span style={{ color: '#6b7280', fontSize: isMobile ? '12px' : '13px' }}>{a.vendor}</span>
+                    <span style={{ color: '#d1d5db' }}>·</span>
+                    <span style={{ color: '#9ca3af', fontSize: isMobile ? '11px' : '12px' }}>Expires {a.end}</span>
                   </div>
-                ))}
-              </div>
-            </section>
-          )}
+                  <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '99px', background: a.days <= 10 ? '#fee2e2' : '#fef3c7', color: a.days <= 10 ? '#991b1b' : '#92400e', whiteSpace: 'nowrap' }}>
+                    {a.days}d remaining
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-          {/* ── Contracts Table ───────────────────────────────────── */}
-          <section className="fade-in rounded-2xl border border-[#a8cdd5]/40 shadow-md overflow-hidden"
-                   style={{ background: "rgba(255,255,255,0.97)" }}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4 border-b border-[#EBF4F6]">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg p-2" style={{ background: "#D1F8EF", color: "#088395" }}><Icons.Contract /></div>
-                <h2 className="text-xl font-bold" style={{ color: "#176B87", fontFamily: "'DM Serif Display', Georgia, serif" }}>
-                  AMC Contracts
-                </h2>
+        {/* ── Contracts Table ──────────────────────────────────────────── */}
+        <div style={sectionCardStyle}>
+          <div style={sectionHeaderStyle}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: '12px' }}>
+              <div>
+                <div style={sectionTitleStyle}>AMC Contracts</div>
+                <div style={{ fontSize: isMobile ? '0.8rem' : '0.9rem', color: '#3674B5', fontWeight: '500' }}>All active and historical contracts</div>
               </div>
               <input
-                value={search} onChange={e => setSearch(e.target.value)}
+                value={search}
+                onChange={e => setSearch(e.target.value)}
                 placeholder="Search by ID, vendor, category…"
-                className="rounded-xl border border-[#a8cdd5] bg-[#EBF4F6] px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#088395]/40 w-full sm:w-64"
+                style={{ padding: '9px 14px', borderRadius: '10px', border: '1px solid rgba(8,131,149,0.25)', backgroundColor: '#EBF4F6', fontSize: isMobile ? '12px' : '13px', color: '#176B87', outline: 'none', width: isMobile ? '100%' : '240px', boxSizing: 'border-box' }}
               />
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ background: "#EBF4F6" }}>
-                    {["Asset ID","Category","Vendor","Type","Start Date","End Date","Cost (₹)","Status","Actions"].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider"
-                          style={{ color: "#176B87" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#EBF4F6]">
-                  {filtered.length === 0 ? (
-                    <tr><td colSpan={9} className="text-center py-10 text-gray-400 text-sm">No contracts found.</td></tr>
-                  ) : filtered.map((c, i) => {
-                    const st = getStatus(c.end);
-                    return (
-                      <tr key={c.id + i} className="card-hover group transition-colors hover:bg-[#EBF4F6]/50">
-                        <td className="px-4 py-3 font-bold text-[#088395]">{c.id}</td>
-                        <td className="px-4 py-3 text-gray-600">{c.category}</td>
-                        <td className="px-4 py-3 text-gray-700 font-medium">{c.vendor}</td>
-                        <td className="px-4 py-3 text-gray-500 text-xs">{c.type || "—"}</td>
-                        <td className="px-4 py-3 text-gray-500">{c.start}</td>
-                        <td className="px-4 py-3 text-gray-500">{c.end}</td>
-                        <td className="px-4 py-3 font-semibold text-gray-700">₹{Number(c.cost).toLocaleString("en-IN")}</td>
-                        <td className="px-4 py-3">
-                          <span className={`text-xs font-semibold px-3 py-1 rounded-full ${statusStyle[st]}`}>{st}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <button className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-white transition active:scale-95"
-                                    style={{ background: "#088395" }}>
-                              <Icons.Eye /> View
-                            </button>
-                            <button className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-white transition active:scale-95"
-                                    style={{ background: "#3674B5" }}>
-                              <Icons.Edit /> Edit
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <div className="px-6 py-3 border-t border-[#EBF4F6] text-xs text-gray-400 flex justify-between">
-              <span>Showing {filtered.length} of {contracts.length} contracts</span>
-              <span>Last updated: {new Date().toLocaleDateString("en-IN")}</span>
-            </div>
-          </section>
+          </div>
 
-          {/* ── Maintenance History ───────────────────────────────── */}
-          <section className="fade-in rounded-2xl border border-[#a8cdd5]/40 shadow-md overflow-hidden"
-                   style={{ background: "rgba(255,255,255,0.97)" }}>
-            <div className="flex items-center gap-3 px-6 py-4 border-b border-[#EBF4F6]">
-              <div className="rounded-lg p-2" style={{ background: "#D1F8EF", color: "#088395" }}><Icons.History /></div>
-              <h2 className="text-xl font-bold" style={{ color: "#176B87", fontFamily: "'DM Serif Display', Georgia, serif" }}>
-                Maintenance History
-              </h2>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ background: "#EBF4F6" }}>
-                    {["Asset ID","Service Date","Issue","Technician","Cost (₹)"].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider"
-                          style={{ color: "#176B87" }}>{h}</th>
-                    ))}
+          <table style={tableStyle}>
+            <thead style={{ backgroundColor: '#D1F8EF' }}>
+              <tr>
+                {["Asset ID","Category","Vendor","Type","Start Date","End Date","Cost (₹)","Status","Actions"].map(h => (
+                  <th key={h} style={thStyle}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={9} style={{ ...tdStyle, textAlign: 'center', padding: '3rem', color: '#9ca3af' }}>
+                    No contracts found.
+                  </td>
+                </tr>
+              ) : filtered.map((c, i) => {
+                const st = getStatus(c.end);
+                return (
+                  <tr
+                    key={c.id + i}
+                    style={{ cursor: 'pointer', transition: 'all 0.2s ease', backgroundColor: hoveredRow === i ? '#D1F8EF' : (i % 2 === 0 ? '#FFFFFF' : '#EBF4F6') }}
+                    onMouseEnter={() => setHoveredRow(i)}
+                    onMouseLeave={() => setHoveredRow(null)}
+                  >
+                    <td style={{ ...tdStyle, fontWeight: '700', color: '#088395' }}>{c.id}</td>
+                    <td style={tdStyle}>{c.category}</td>
+                    <td style={{ ...tdStyle, fontWeight: '600' }}>{c.vendor}</td>
+                    <td style={{ ...tdStyle, color: '#6b7280', fontSize: isMobile ? '11px' : '13px' }}>{c.type || "—"}</td>
+                    <td style={tdStyle}>{c.start}</td>
+                    <td style={tdStyle}>{c.end}</td>
+                    <td style={{ ...tdStyle, fontWeight: '700', color: '#088395', fontSize: isMobile ? '0.85rem' : '0.95rem' }}>
+                      ₹{Number(c.cost).toLocaleString("en-IN")}
+                    </td>
+                    <td style={tdStyle}>
+                      <span style={statusStyle(st)}>{st}</span>
+                    </td>
+                    <td style={tdStyle}>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button
+                          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 8px rgba(8,131,149,0.3)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)';   e.currentTarget.style.boxShadow = 'none'; }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', borderRadius: '8px', border: 'none', background: '#088395', color: 'white', fontSize: '11px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.15s' }}
+                        >
+                          <EyeIcon /> View
+                        </button>
+                        <button
+                          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 8px rgba(54,116,181,0.3)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)';   e.currentTarget.style.boxShadow = 'none'; }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', borderRadius: '8px', border: 'none', background: '#3674B5', color: 'white', fontSize: '11px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.15s' }}
+                        >
+                          <EditIcon /> Edit
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-[#EBF4F6]">
-                  {mockHistory.map((h, i) => (
-                    <tr key={i} className="transition-colors hover:bg-[#EBF4F6]/50">
-                      <td className="px-4 py-3 font-bold text-[#088395]">{h.assetId}</td>
-                      <td className="px-4 py-3 text-gray-500">{h.date}</td>
-                      <td className="px-4 py-3 text-gray-700">{h.issue}</td>
-                      <td className="px-4 py-3 font-medium text-gray-700">{h.tech}</td>
-                      <td className="px-4 py-3 font-semibold text-gray-700">₹{h.cost.toLocaleString("en-IN")}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+                );
+              })}
+            </tbody>
+          </table>
 
-          {/* ── Footer ────────────────────────────────────────────── */}
-          <footer className="text-center text-xs py-4" style={{ color: "#176B87", opacity: 0.6 }}>
-            AMC Tracking Dashboard · Institutional Asset Management System · {new Date().getFullYear()}
-          </footer>
-        </main>
+          <div style={{ padding: isMobile ? '0.75rem 0 0' : '0.75rem 0.25rem 0', display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#9ca3af', borderTop: '1px solid #D1F8EF', marginTop: '0.5rem' }}>
+            <span>Showing {filtered.length} of {contracts.length} contracts</span>
+            <span>Last updated: {new Date().toLocaleDateString("en-IN")}</span>
+          </div>
+        </div>
+
+        {/* ── Maintenance History ──────────────────────────────────────── */}
+        <div style={sectionCardStyle}>
+          <div style={sectionHeaderStyle}>
+            <div style={sectionTitleStyle}>Maintenance History</div>
+            <div style={{ fontSize: isMobile ? '0.8rem' : '0.9rem', color: '#3674B5', fontWeight: '500' }}>Past service records</div>
+          </div>
+          <table style={tableStyle}>
+            <thead style={{ backgroundColor: '#D1F8EF' }}>
+              <tr>
+                {["Asset ID","Service Date","Issue / Work Done","Technician","Cost (₹)"].map(h => (
+                  <th key={h} style={thStyle}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {mockHistory.map((h, i) => (
+                <tr
+                  key={i}
+                  style={{ cursor: 'pointer', transition: 'all 0.2s ease', backgroundColor: hoveredRow === `h${i}` ? '#D1F8EF' : (i % 2 === 0 ? '#FFFFFF' : '#EBF4F6') }}
+                  onMouseEnter={() => setHoveredRow(`h${i}`)}
+                  onMouseLeave={() => setHoveredRow(null)}
+                >
+                  <td style={{ ...tdStyle, fontWeight: '700', color: '#088395' }}>{h.assetId}</td>
+                  <td style={tdStyle}>{h.date}</td>
+                  <td style={{ ...tdStyle, whiteSpace: 'normal' }}>{h.issue}</td>
+                  <td style={{ ...tdStyle, fontWeight: '600' }}>{h.tech}</td>
+                  <td style={{ ...tdStyle, fontWeight: '700', color: '#088395', fontSize: isMobile ? '0.85rem' : '0.95rem' }}>
+                    ₹{h.cost.toLocaleString("en-IN")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
       </div>
     </>
   );
