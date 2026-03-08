@@ -733,7 +733,7 @@ export default function LabManagement() {
                           <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                         </svg>
                         <span style={styles.detailLabel}>Capacity:</span>
-                        <span style={styles.detailValue}>{lab.Total_Capacity}</span>
+                        <span style={styles.detailValue}>{lab.Total_Capacity}</span> 
                       </div>
                       <div style={styles.detailItem}>
                         <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{ marginRight: "6px", color: '#3674B5' }}>

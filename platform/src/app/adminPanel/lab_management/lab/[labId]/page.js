@@ -2134,13 +2134,13 @@ const LabInfo = () => {
             </div>
             <div style={styles.infoItem}>
               <span style={styles.infoLabel}>Lab Technician</span>
-              <span style={styles.infoValue}>{labData?.LabTechnician?.[0]?.Name}</span>
-              <span style={styles.infoValue}>{labData?.LabTechnician?.[0]?.Email}</span>
+              <span style={styles.infoValue}>{labData?.LabTechnician?.[0]?.UserDetails?.Name}</span>
+              <span style={styles.infoValue}>{labData?.LabTechnician?.[0]?.UserDetails?.Email}</span>
             </div>
             <div style={styles.infoItem}>
               <span style={styles.infoLabel}>Lab Incharge</span>
-              <span style={styles.infoValue}>{labData?.Lab_Incharge?.[0]?.Name}</span>
-              <span style={styles.infoValue}>{labData?.Lab_Incharge?.[0]?.Email}</span>
+              <span style={styles.infoValue}>{labData?.Lab_Incharge?.[0]?.UserDetails?.Name}</span>
+              <span style={styles.infoValue}>{labData?.Lab_Incharge?.[0]?.UserDetails?.Email}</span>
             </div>
             <div style={styles.infoItem}>
               <span style={styles.infoLabel}>Total Capacity</span>

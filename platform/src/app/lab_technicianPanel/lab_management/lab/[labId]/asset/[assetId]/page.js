@@ -1,10 +1,10 @@
 "use client"
 import React, { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Cpu } from 'lucide-react';
 import { useParams } from "next/navigation";
 
 function AssetsPage() {
-  const { id } = useParams();
+  const { assetId: id } = useParams();
   const [pcData, setPcData] = useState([]);
   const [assets, setAssets] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -24,10 +24,11 @@ function AssetsPage() {
   const [viewingIssue, setViewingIssue] = useState(null);
   const [currentIssueIndex, setCurrentIssueIndex] = useState(0);
   const [issueForm, setIssueForm] = useState({
-      resolveDescription: ''
-    });
+    resolveDescription: ''
+  });
   const assetTypes = ["Monitor", "Keyboard", "Mouse", "CPU", "UPS", "Other"];
 
+  const C = { primary: '#088395', dark: '#176B87', sky: '#86B6F6', ice: '#EBF4F6', mint: '#D1F8EF' };
 
   const fetchPC = async () => { 
     setLoading(true);
@@ -38,7 +39,6 @@ function AssetsPage() {
         setPcData(data.pc);
         setAssets(data.pc.Assets || []);
         console.log(data.pc.Assets);
-        
       } else {
         console.error("Failed to fetch PC:", data.error);
       }
@@ -144,7 +144,6 @@ function AssetsPage() {
       setEditingAsset(null);
       resetForm();
       await fetchPC();
-
     } catch (err) {
       console.error("Update Asset Error:", err);
       alert("Something went wrong while updating asset.");
@@ -174,7 +173,6 @@ function AssetsPage() {
 
       alert("Asset deleted successfully!");
       await fetchPC();
-
     } catch (err) {
       console.error("Delete Asset Error:", err);
       alert("Something went wrong while deleting asset.");
@@ -213,18 +211,15 @@ function AssetsPage() {
 
   function formatStatus(status) {
     if (!status) return "Pending";
-
     const map = {
       "pending": "Pending",
       "resolved by technician": "Resolved By Technician",
       "accepted": "Accepted"
     };
-
     return map[status] || status;
   }
 
-  const handleResolveIssue = async (issueId ,assetId) => {
-    
+  const handleResolveIssue = async (issueId, assetId) => {
     if (!assetId || !issueId || !issueForm.resolveDescription) {
       alert("Please fill all required fields");
       return;
@@ -252,7 +247,6 @@ function AssetsPage() {
       alert("Issue Resolved successfully!");
       setViewingIssue(null);
       await fetchPC();
-
     } catch (err) {
       console.error("Update Asset Error:", err);
       alert("Something went wrong while updating asset.");
@@ -287,339 +281,206 @@ function AssetsPage() {
       default: return { bg: '#e5e7eb', text: '#374151' };
     }
   };
-  
+
   const styles = {
-    loaderContainer: {
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: '100vh',
-      width: '100%',
-      backgroundColor: '#f9fafb',
-      flexDirection: 'column',
-      gap: '1rem',
-    },
-    loaderText: {
-      color: '#6b7280',
-      fontSize: '16px',
-      fontWeight: '500',
-    },
     container: {
       width: isMobile ? '100%' : 'calc(100% - 255px)',
       minHeight: '100vh',
-      backgroundColor: '#f9fafb',
+      backgroundColor: C.ice,
       padding: isMobile ? '1rem' : '2rem',
       boxSizing: 'border-box',
       marginLeft: isMobile ? '0' : '255px',
       overflowX: 'hidden',
     },
+    loaderContainer: {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '100vh',
+      flexDirection: 'column',
+      gap: '1rem',
+    },
     header: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '30px',
-      background: 'rgba(255, 255, 255, 0.95)',
-      backdropFilter: 'blur(20px)',
+      marginBottom: '1.5rem',
+      backgroundColor: 'white',
       borderRadius: '16px',
-      padding: isMobile ? '15px 20px' : '20px 25px',
-      boxShadow: '0 4px 20px rgba(0, 201, 123, 0.08)',
-      flexWrap: isMobile ? 'wrap' : 'nowrap',
-      gap: isMobile ? '1rem' : '0'
+      padding: isMobile ? '1.25rem' : '1.75rem 2rem',
+      boxShadow: '0 2px 8px rgba(8,131,149,0.08)',
+      borderBottom: `3px solid ${C.primary}`,
+      flexWrap: 'wrap',
+      gap: '1rem',
+    },
+    headerLeft: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '1rem',
+    },
+    headerIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: '12px',
+      backgroundColor: C.ice,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
     },
     headerTitle: {
-      fontSize: isMobile ? '20px' : '28px',
-      fontWeight: 700,
-      color: '#2d3748',
+      fontSize: isMobile ? '1.25rem' : '1.75rem',
+      fontWeight: '800',
+      color: C.dark,
       margin: 0,
-      width: isMobile ? '100%' : 'auto'
+      letterSpacing: '-0.5px',
+    },
+    headerSub: {
+      fontSize: '0.875rem',
+      color: C.primary,
+      fontWeight: '500',
+      margin: 0,
     },
     addButton: {
-      padding: isMobile ? '10px 20px' : '12px 24px',
-      background: 'linear-gradient(135deg, #00c97b 0%, #00b8d9 100%)',
+      padding: isMobile ? '10px 18px' : '12px 22px',
+      background: `linear-gradient(135deg, ${C.primary} 0%, #0a9fb5 100%)`,
       color: 'white',
       border: 'none',
       borderRadius: '12px',
-      fontWeight: 600,
+      fontWeight: 700,
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
       gap: '8px',
       fontSize: isMobile ? '13px' : '14px',
-      transition: 'all 0.3s ease'
-    },
-    infoBox: {
-      background: 'rgba(239, 246, 255, 0.95)',
-      backdropFilter: 'blur(20px)',
-      border: '2px solid #93c5fd',
-      borderRadius: '16px',
-      padding: isMobile ? '12px 16px' : '16px 20px',
-      marginBottom: '30px',
-      boxShadow: '0 4px 20px rgba(0, 184, 217, 0.08)'
-    },
-    infoText: {
-      color: '#1e3a8a',
-      fontSize: isMobile ? '13px' : '14px',
-      lineHeight: '1.6',
-      margin: 0
+      transition: 'all 0.3s ease',
+      boxShadow: '0 4px 12px rgba(8,131,149,0.3)',
+      letterSpacing: '0.3px',
     },
     filterSection: {
-      background: 'white',
+      backgroundColor: 'white',
       borderRadius: '12px',
-      padding: isMobile ? '1rem' : '1.5rem',
-      marginBottom: '2rem',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+      padding: isMobile ? '1rem' : '1.25rem 1.5rem',
+      marginBottom: '1.5rem',
+      boxShadow: '0 2px 8px rgba(8,131,149,0.06)',
     },
     filterLabel: {
-      fontSize: isMobile ? '13px' : '14px',
-      fontWeight: 600,
-      color: '#4a5568',
+      fontSize: '12px',
+      fontWeight: '700',
+      color: C.dark,
       marginBottom: '0.75rem',
-      display: 'block'
+      display: 'block',
+      textTransform: 'uppercase',
+      letterSpacing: '0.04em',
     },
     filterButtons: {
       display: 'flex',
-      gap: '0.75rem',
-      flexWrap: 'wrap'
+      gap: '0.5rem',
+      flexWrap: 'wrap',
     },
     filterButton: {
-      padding: isMobile ? '0.5rem 0.875rem' : '0.5rem 1rem',
-      background: '#f7fafc',
-      color: '#4a5568',
-      border: '2px solid',
-      borderColor: '#e2e8f0',
+      padding: '0.4rem 0.875rem',
+      backgroundColor: C.ice,
+      color: C.dark,
+      border: '2px solid transparent',
       borderRadius: '8px',
-      fontWeight: 500,
+      fontWeight: '600',
       cursor: 'pointer',
-      fontSize: isMobile ? '13px' : '14px',
+      fontSize: '13px',
       transition: 'all 0.2s ease',
-      textTransform: 'capitalize'
     },
     filterButtonActive: {
-      background: '#10b981',
+      backgroundColor: C.primary,
       color: 'white',
-      borderColor: '#10b981'
+      border: `2px solid ${C.primary}`,
+    },
+    infoBox: {
+      background: 'white',
+      border: `1px solid ${C.mint}`,
+      borderRadius: '10px',
+      padding: '12px 16px',
+      marginBottom: '1.5rem',
+      borderLeft: `4px solid ${C.primary}`,
+    },
+    infoText: {
+      color: C.dark,
+      fontSize: '13px',
+      lineHeight: '1.6',
+      margin: 0,
+      fontWeight: '500',
     },
     assetGrid: {
       display: 'grid',
       gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))',
-      gap: isMobile ? '1rem' : '1.5rem'
+      gap: '1rem',
     },
     assetCard: {
-      background: 'white',
-      borderRadius: '12px',
-      padding: isMobile ? '1.25rem' : '1.5rem',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+      backgroundColor: 'white',
+      borderRadius: '14px',
+      padding: '1.25rem',
+      boxShadow: '0 2px 8px rgba(8,131,149,0.07)',
+      borderLeft: `4px solid ${C.primary}`,
       transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-      position: 'relative'
+      position: 'relative',
     },
     assetName: {
-      fontSize: isMobile ? '16px' : '18px',
-      fontWeight: 600,
-      color: '#2d3748',
-      marginBottom: '1rem'
+      fontSize: '15px',
+      fontWeight: '700',
+      color: C.dark,
+      marginBottom: '1rem',
     },
     assetDetail: {
       display: 'flex',
-      alignItems: 'flex-start',
-      marginBottom: '0.75rem',
-      fontSize: isMobile ? '13px' : '14px'
+      alignItems: 'center',
+      marginBottom: '0.6rem',
+      fontSize: '13px',
     },
     detailLabel: {
-      fontWeight: 600,
-      color: '#4a5568',
-      minWidth: isMobile ? '100px' : '120px',
+      fontWeight: '600',
+      color: C.dark,
+      minWidth: '110px',
       display: 'flex',
       alignItems: 'center',
-      gap: '0.5rem'
+      gap: '5px',
+      fontSize: '12px',
     },
     detailValue: {
-      color: '#718096',
-      flex: 1
+      color: C.primary,
+      flex: 1,
+      fontWeight: '500',
     },
     statusBadge: {
       display: 'inline-block',
-      padding: '2px 8px',
-      borderRadius: '6px',
+      padding: '3px 10px',
+      borderRadius: '20px',
       fontSize: '12px',
-      fontWeight: 600
+      fontWeight: '600',
     },
     issueContainer: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      // gap: '0.5rem',
-      flex: 1
+      flex: 1,
     },
     issueBlock: {
       backgroundColor: '#fef3c7',
       border: '1px solid #fbbf24',
-      borderRadius: '6px',
-      padding: '2px 10px',
+      borderRadius: '20px',
+      padding: '2px 12px',
       cursor: 'pointer',
-      fontSize: '13px',
+      fontSize: '12px',
       color: '#92400e',
+      fontWeight: '600',
       transition: 'all 0.2s',
-      display: 'inline-block',
-      width: "auto"
     },
     noIssueText: {
-      color: '#718096',
-      fontWeight: 500,
-      flex: 1
-    },
-    issueModalOverlay: {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    },
-    issueModal: {
-      backgroundColor: 'white',
-      borderRadius: '12px',
-      padding: '24px',
-      maxWidth: '500px',
-      width: '90%',
-      maxHeight: '80vh',
-      overflow: 'auto',
-      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
-    },
-    issueModalHeader: {
-      fontSize: '20px',
-      fontWeight: 700,
-      color: '#1f2937',
-      marginBottom: '16px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between'
-    },
-    issueCloseBtn: {
-      background: 'none',
-      border: 'none',
-      fontSize: '24px',
-      cursor: 'pointer',
-      color: '#6b7280',
-      padding: '0',
-      width: '30px',
-      height: '30px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: '6px',
-      transition: 'all 0.2s'
-    },
-    issueDetailRow: {
-      marginBottom: '16px'
-    },
-    issueDetailLabel: {
-      fontSize: '12px',
-      fontWeight: 600,
-      color: '#6b7280',
-      textTransform: 'uppercase',
-      marginBottom: '6px',
-      letterSpacing: '0.5px'
-    },
-    issueDetailValue: {
-      fontSize: '15px',
-      color: '#1f2937',
-      lineHeight: '1.6'
-    },
-    issueStatusBadge: {
-      display: 'inline-block',
-      padding: '4px 12px',
-      borderRadius: '12px',
+      color: '#10b981',
+      fontWeight: '500',
       fontSize: '13px',
-      fontWeight: 600
-    },
-    formGroup: {
-      marginBottom: '16px'
-    },
-    label: {
-      display: 'block',
-      fontSize: '14px',
-      fontWeight: 600,
-      color: '#374151',
-      marginBottom: '6px'
-    },
-    textarea: {
-      width: '100%',
-      padding: '10px 12px',
-      border: '1px solid #d1d5db',
-      borderRadius: '8px',
-      fontSize: '14px',
-      minHeight: '120px',
-      resize: 'vertical',
-      fontFamily: 'inherit',
-      transition: 'all 0.2s',
-      outline: 'none',
-      boxSizing: 'border-box'
-    },
-    resolveButton: {
-      padding: isMobile ? '8px 12px' : '10px 14px',
-      background: 'linear-gradient(135deg, #00c97b 0%, #00b8d9 100%)',
-      color: 'white',
-      border: 'none',
-      borderRadius: '12px',
-      fontWeight: 600,
-      cursor: 'pointer',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: '8px',
-      fontSize: isMobile ? '13px' : '14px',
-      transition: 'all 0.3s ease'
-    },
-    resolvedIssue: {
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      height: '100%',
-      padding: '5px 0px',
-    },
-    resolvedText: {
-      color: '#6b7280',
-      fontSize: '14px',
-      marginTop: '10px'
-
-    },
-    navButtons: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      marginBottom: '12px'
-    },
-    navBtn: {
-      fontSize: '20px',
-      fontWeight: 'bold',
-      padding: '4px 10px',
-      borderRadius: '6px',
-      border: '1px solid #ddd',
-      cursor: 'pointer',
-      background: 'white'
-    },
-    qrCode: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '0.5rem',
-      padding: '0.5rem',
-      background: '#f7fafc',
-      borderRadius: '6px',
-      fontSize: '13px',
-      fontWeight: 600,
-      color: '#10b981'
-    },
-    qrCodeThumbnail: {
-      display: 'inline-block',
-      transition: 'transform 0.2s ease'
     },
     qrImage: {
-      width: '20px',
-      height: '20px',
+      width: '22px',
+      height: '22px',
       display: 'block',
     },
     actionButtons: {
@@ -627,25 +488,171 @@ function AssetsPage() {
       gap: '0.5rem',
       marginTop: '1rem',
       paddingTop: '1rem',
-      borderTop: '1px solid #e2e8f0'
+      borderTop: `1px solid ${C.mint}`,
     },
     iconButton: {
       padding: isMobile ? '0.625rem' : '0.5rem',
-      background: '#f7fafc',
+      background: C.ice,
       border: 'none',
-      borderRadius: '6px',
+      borderRadius: '8px',
       cursor: 'pointer',
       transition: 'background 0.2s ease',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      flex: 1
+      flex: 1,
     },
     editButton: {
-      color: '#10b981'
+      color: C.primary,
     },
     deleteButton: {
-      color: '#ef4444'
+      color: '#ef4444',
+    },
+    modalOverlay: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(23, 107, 135, 0.5)',
+      backdropFilter: 'blur(4px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      padding: '1rem',
+    },
+    issueModal: {
+      backgroundColor: 'white',
+      borderRadius: '16px',
+      padding: '1.5rem',
+      maxWidth: '480px',
+      width: '100%',
+      maxHeight: '80vh',
+      overflow: 'auto',
+      boxShadow: '0 20px 60px rgba(8,131,149,0.2)',
+      border: '1px solid rgba(8, 131, 149, 0.1)',
+    },
+    issueModalHeader: {
+      fontSize: '20px',
+      fontWeight: '800',
+      color: C.dark,
+      marginBottom: '1rem',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingBottom: '12px',
+      borderBottom: `2px solid ${C.mint}`,
+    },
+    closeBtn: {
+      background: C.ice,
+      border: 'none',
+      width: 32,
+      height: 32,
+      borderRadius: '8px',
+      cursor: 'pointer',
+      color: C.dark,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '18px',
+    },
+    issueDetailRow: {
+      marginBottom: '12px',
+    },
+    issueDetailLabel: {
+      fontSize: '11px',
+      fontWeight: '700',
+      color: C.dark,
+      textTransform: 'uppercase',
+      marginBottom: '4px',
+      letterSpacing: '0.05em',
+    },
+    issueDetailValue: {
+      fontSize: '14px',
+      color: '#374151',
+      lineHeight: '1.6',
+    },
+    issueStatusBadge: {
+      display: 'inline-block',
+      padding: '4px 12px',
+      borderRadius: '20px',
+      fontSize: '12px',
+      fontWeight: '600',
+    },
+    navButtons: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginBottom: '1rem',
+      gap: '0.5rem',
+    },
+    navBtn: {
+      fontSize: '14px',
+      fontWeight: '700',
+      padding: '6px 14px',
+      borderRadius: '8px',
+      border: `2px solid ${C.ice}`,
+      cursor: 'pointer',
+      background: C.ice,
+      color: C.dark,
+      transition: 'all 0.15s',
+    },
+    formGroup: {
+      marginBottom: '16px',
+    },
+    formLabel: {
+      display: 'block',
+      fontSize: '11px',
+      fontWeight: '700',
+      color: C.dark,
+      marginBottom: '6px',
+      textTransform: 'uppercase',
+      letterSpacing: '0.04em',
+    },
+    textarea: {
+      width: '100%',
+      padding: '10px 12px',
+      border: `2px solid ${C.ice}`,
+      borderRadius: '8px',
+      fontSize: '14px',
+      minHeight: '120px',
+      resize: 'vertical',
+      fontFamily: 'inherit',
+      transition: 'border-color 0.2s',
+      outline: 'none',
+      boxSizing: 'border-box',
+      color: C.dark,
+    },
+    resolveButton: {
+      background: `linear-gradient(135deg, ${C.primary} 0%, #0a9fb5 100%)`,
+      color: 'white',
+      border: 'none',
+      borderRadius: '10px',
+      padding: '12px 24px',
+      fontSize: '14px',
+      fontWeight: '700',
+      cursor: 'pointer',
+      width: '100%',
+      transition: 'all 0.2s',
+      boxShadow: '0 2px 8px rgba(8,131,149,0.25)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      marginTop: '12px',
+    },
+    resolvedIssue: {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '100%',
+      padding: '5px 0px',
+    },
+    resolvedText: {
+      color: C.primary,
+      fontSize: '14px',
+      marginTop: '10px',
+      fontWeight: '500',
     },
     modal: {
       position: 'fixed',
@@ -653,105 +660,112 @@ function AssetsPage() {
       left: 0,
       right: 0,
       bottom: 0,
-      background: 'rgba(0, 0, 0, 0.5)',
+      backgroundColor: 'rgba(23, 107, 135, 0.5)',
+      backdropFilter: 'blur(4px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 1000,
-      padding: isMobile ? '1rem' : '0'
+      padding: isMobile ? '1rem' : '0',
     },
     modalContent: {
       background: 'white',
-      borderRadius: '12px',
+      borderRadius: '20px',
       padding: isMobile ? '1.5rem' : '2rem',
       width: isMobile ? '100%' : '90%',
       maxWidth: '500px',
       maxHeight: '90vh',
-      overflowY: 'auto'
+      overflowY: 'auto',
+      boxShadow: '0 20px 60px rgba(8,131,149,0.25)',
+      border: '1px solid rgba(8, 131, 149, 0.1)',
     },
     modalHeader: {
-      fontSize: isMobile ? '20px' : '24px',
-      fontWeight: 600,
-      color: '#2d3748',
-      marginBottom: '1.5rem'
-    },
-    formGroup: {
-      marginBottom: '1.5rem'
+      fontSize: isMobile ? '20px' : '26px',
+      fontWeight: 800,
+      color: C.dark,
+      marginBottom: '1.5rem',
+      paddingBottom: '14px',
+      borderBottom: `2px solid ${C.mint}`,
+      letterSpacing: '-0.5px',
     },
     label: {
       display: 'block',
-      fontSize: isMobile ? '13px' : '14px',
-      fontWeight: 600,
-      color: '#2d3748',
-      marginBottom: '0.5rem'
+      fontSize: '11px',
+      fontWeight: '700',
+      color: C.dark,
+      marginBottom: '8px',
+      textTransform: 'uppercase',
+      letterSpacing: '0.04em',
     },
     input: {
       width: '100%',
-      padding: isMobile ? '0.625rem' : '0.75rem',
-      border: '2px solid #e2e8f0',
-      borderRadius: '8px',
+      padding: isMobile ? '0.625rem' : '14px',
+      border: `2px solid rgba(8, 131, 149, 0.2)`,
+      borderRadius: '10px',
       fontSize: '14px',
       transition: 'border-color 0.2s ease',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      color: C.dark,
+      fontWeight: '500',
     },
     select: {
       width: '100%',
-      padding: isMobile ? '0.625rem' : '0.75rem',
-      border: '2px solid #e2e8f0',
-      borderRadius: '8px',
+      padding: isMobile ? '0.625rem' : '14px',
+      border: `2px solid rgba(8, 131, 149, 0.2)`,
+      borderRadius: '10px',
       fontSize: '14px',
       transition: 'border-color 0.2s ease',
       boxSizing: 'border-box',
-      background: 'white'
-    },
-    textarea: {
-      width: '100%',
-      padding: isMobile ? '0.625rem' : '0.75rem',
-      border: '2px solid #e2e8f0',
-      borderRadius: '8px',
-      fontSize: '14px',
-      transition: 'border-color 0.2s ease',
-      boxSizing: 'border-box',
-      minHeight: '80px',
-      resize: 'vertical'
+      background: 'white',
+      color: C.dark,
+      fontWeight: '500',
+      cursor: 'pointer',
     },
     modalActions: {
       display: 'flex',
-      gap: '0.75rem',
-      marginTop: '2rem',
-      flexDirection: isMobile ? 'column' : 'row'
+      gap: '14px',
+      marginTop: '1.75rem',
+      paddingTop: '16px',
+      borderTop: `1px solid rgba(8, 131, 149, 0.1)`,
+      flexDirection: isMobile ? 'column' : 'row',
     },
     cancelButton: {
       flex: 1,
-      padding: '0.75rem',
+      padding: '14px',
       background: 'white',
-      color: '#718096',
-      border: '2px solid #e2e8f0',
-      borderRadius: '8px',
-      fontWeight: 600,
+      color: C.dark,
+      border: `2px solid rgba(8, 131, 149, 0.3)`,
+      borderRadius: '10px',
+      fontWeight: 700,
       cursor: 'pointer',
-      fontSize: '14px'
+      fontSize: '14px',
+      transition: 'all 0.3s ease',
+      letterSpacing: '0.3px',
     },
     saveButton: {
       flex: 1,
-      padding: '0.75rem',
-      background: saving ? '#9ca3af' : '#10b981',
+      padding: '14px',
+      background: saving ? '#9ca3af' : `linear-gradient(135deg, ${C.primary} 0%, #0a9fb5 100%)`,
       color: 'white',
       border: 'none',
-      borderRadius: '8px',
-      fontWeight: 600,
+      borderRadius: '10px',
+      fontWeight: 700,
       cursor: saving ? 'not-allowed' : 'pointer',
       fontSize: '14px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: '8px'
+      gap: '8px',
+      boxShadow: saving ? 'none' : '0 4px 6px rgba(8,131,149,0.3)',
+      transition: 'all 0.3s ease',
+      letterSpacing: '0.3px',
     },
     emptyState: {
       textAlign: 'center',
       padding: isMobile ? '2rem' : '3rem',
-      color: '#718096',
-      gridColumn: '1 / -1'
+      color: C.primary,
+      gridColumn: '1 / -1',
+      fontWeight: '600',
     },
     qrModal: {
       position: 'fixed',
@@ -759,57 +773,61 @@ function AssetsPage() {
       left: 0,
       right: 0,
       bottom: 0,
-      background: 'rgba(0, 0, 0, 0.7)',
+      background: 'rgba(23, 107, 135, 0.55)',
+      backdropFilter: 'blur(4px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 2000,
-      padding: isMobile ? '1rem' : '0'
+      padding: isMobile ? '1rem' : '0',
     },
     qrModalContent: {
       background: 'white',
-      borderRadius: '12px',
+      borderRadius: '16px',
       padding: isMobile ? '1.5rem' : '2rem',
-      maxWidth: '400px',
-      width: isMobile ? '100%' : '90%',
+      maxWidth: '380px',
+      width: '100%',
       textAlign: 'center',
-      position: 'relative'
+      position: 'relative',
+      boxShadow: '0 20px 60px rgba(8,131,149,0.2)',
+      border: '1px solid rgba(8, 131, 149, 0.1)',
     },
     qrModalHeader: {
-      fontSize: isMobile ? '18px' : '20px',
-      fontWeight: 600,
-      color: '#2d3748',
-      marginBottom: '1.5rem'
+      fontSize: '18px',
+      fontWeight: '700',
+      color: C.dark,
+      margin: 0,
     },
     qrModalImage: {
-      width: isMobile ? '200px' : '250px',
-      height: isMobile ? '200px' : '250px',
+      width: isMobile ? '180px' : '220px',
+      height: isMobile ? '180px' : '220px',
       margin: '0 auto 1.5rem',
       display: 'block',
-      border: '2px solid #e2e8f0',
-      borderRadius: '8px'
+      border: `2px solid ${C.mint}`,
+      borderRadius: '10px',
     },
     downloadButton: {
-      padding: '0.75rem 1.5rem',
-      background: '#10b981',
+      padding: '10px 24px',
+      background: C.primary,
       color: 'white',
       border: 'none',
-      borderRadius: '8px',
-      fontWeight: 600,
+      borderRadius: '10px',
+      fontWeight: '700',
       cursor: 'pointer',
       fontSize: '14px',
       display: 'flex',
       alignItems: 'center',
-      gap: '0.5rem',
+      gap: '8px',
       justifyContent: 'center',
       margin: '0 auto',
-      transition: 'background 0.2s ease'
+      transition: 'background 0.2s ease',
+      boxShadow: '0 2px 8px rgba(8,131,149,0.25)',
     },
     closeButton: {
       position: 'absolute',
       top: '1rem',
       right: '1rem',
-      background: '#f7fafc',
+      background: C.ice,
       border: 'none',
       borderRadius: '50%',
       width: '32px',
@@ -818,17 +836,17 @@ function AssetsPage() {
       alignItems: 'center',
       justifyContent: 'center',
       cursor: 'pointer',
-      color: '#718096',
-      transition: 'background 0.2s ease'
-    }
+      color: C.primary,
+      transition: 'background 0.2s ease',
+    },
   };
 
   if (loading) {
     return (
       <div style={styles.container}>
         <div style={styles.loaderContainer}>
-          <Loader2 size={48} className="animate-spin" color="#10b981" />
-          <p style={styles.loaderText}>Loading asset data...</p>
+          <Loader2 size={48} className="animate-spin" color={C.primary} />
+          <p style={{ color: C.dark, fontSize: '16px', fontWeight: '600' }}>Loading asset data...</p>
         </div>
       </div>
     );
@@ -836,13 +854,31 @@ function AssetsPage() {
 
   return (
     <div style={styles.container}>
+
       {/* Header */}
       <header style={styles.header}>
-        <h1 style={styles.headerTitle}>{pcData.PC_Name} {pcData.Lab?.Lab_ID}</h1>
-        <button 
-          style={styles.addButton} 
-          onClick={() => setShowAddModal(true)}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+        <div style={styles.headerLeft}>
+          <div style={styles.headerIcon}>
+            <Cpu size={24} color={C.primary} />
+          </div>
+          <div>
+            <h1 style={styles.headerTitle}>{pcData.PC_Name} · {pcData.Lab?.Lab_ID}</h1>
+            <p style={styles.headerSub}>Asset inventory</p>
+          </div>
+        </div>
+        <button
+          style={styles.addButton}
+          onClick={() => setShowAddModal(true)}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(8,131,149,0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(8,131,149,0.3)';
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/>
           </svg>
           Add New Asset
@@ -854,10 +890,7 @@ function AssetsPage() {
         <label style={styles.filterLabel}>Filter by Asset Type</label>
         <div style={styles.filterButtons}>
           <button
-            style={{
-              ...styles.filterButton,
-              ...(selectedType === "All" ? styles.filterButtonActive : {})
-            }}
+            style={{ ...styles.filterButton, ...(selectedType === "All" ? styles.filterButtonActive : {}) }}
             onClick={() => setSelectedType("All")}
           >
             All Types
@@ -865,10 +898,7 @@ function AssetsPage() {
           {assetTypes.map(type => (
             <button
               key={type}
-              style={{
-                ...styles.filterButton,
-                ...(selectedType === type ? styles.filterButtonActive : {})
-              }}
+              style={{ ...styles.filterButton, ...(selectedType === type ? styles.filterButtonActive : {}) }}
               onClick={() => setSelectedType(type)}
             >
               {type}
@@ -899,33 +929,33 @@ function AssetsPage() {
                 onMouseEnter={(e) => {
                   if (!isMobile) {
                     e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(8,131,149,0.15)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isMobile) {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(8,131,149,0.07)';
                   }
                 }}
               >
                 <div style={styles.assetName}>{asset.Asset_Name}</div>
-                
+
                 <div style={styles.assetDetail}>
                   <div style={styles.detailLabel}>
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{color: '#10b981'}}>
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" style={{ color: C.primary }}>
                       <path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"/>
                     </svg>
                     Asset Type
                   </div>
-                  <div style={{...styles.detailValue, textTransform: 'capitalize', fontWeight: 500}}>
+                  <div style={{ ...styles.detailValue, textTransform: 'capitalize', fontWeight: 500 }}>
                     {asset.Asset_Type === "cpu" || asset.Asset_Type === "ups" ? asset.Asset_Type.toUpperCase() : asset.Asset_Type}
                   </div>
                 </div>
 
                 <div style={styles.assetDetail}>
                   <div style={styles.detailLabel}>
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{color: '#10b981'}}>
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" style={{ color: C.primary }}>
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
                     </svg>
                     Brand Name
@@ -937,30 +967,26 @@ function AssetsPage() {
 
                 <div style={styles.assetDetail}>
                   <div style={styles.detailLabel}>
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{color: '#10b981'}}>
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" style={{ color: C.primary }}>
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
                     </svg>
                     Status
                   </div>
-                  <span style={{
-                    ...styles.statusBadge,
-                    backgroundColor: statusColors.bg,
-                    color: statusColors.text
-                  }}>
+                  <span style={{ ...styles.statusBadge, backgroundColor: statusColors.bg, color: statusColors.text }}>
                     {asset.Assest_Status === "Yes" ? "Yes" : asset.Assest_Status === "No" ? "No" : "Other"}
                   </span>
                 </div>
 
                 <div style={styles.assetDetail}>
                   <div style={styles.detailLabel}>
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{color: '#10b981'}}>
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" style={{ color: C.primary }}>
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
                     </svg>
                     Issues
                   </div>
                   <div style={styles.issueContainer}>
                     {asset.Issue_Reported.length > 0 ? (
-                      <div 
+                      <div
                         style={styles.issueBlock}
                         onClick={() => openIssueModal(asset)}
                         onMouseEnter={(e) => {
@@ -972,53 +998,51 @@ function AssetsPage() {
                           e.currentTarget.style.transform = 'translateY(0)';
                         }}
                       >
-
                         {asset.Issue_Reported.length} Issue{asset.Issue_Reported.length !== 1 ? 's' : ''}
                       </div>
                     ) : (
                       <div style={styles.noIssueText}>No Issues</div>
                     )}
-                    
                   </div>
                 </div>
 
                 <div style={styles.assetDetail}>
                   <div style={styles.detailLabel}>
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{color: '#10b981'}}>
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" style={{ color: C.primary }}>
                       <path fillRule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zM3 13a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zM13 3a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2v1h1V5h-1z" clipRule="evenodd"/>
                       <path d="M11 4a1 1 0 10-2 0v1a1 1 0 002 0V4zM10 7a1 1 0 011 1v1h2a1 1 0 110 2h-3a1 1 0 01-1-1V8a1 1 0 011-1zM16 9a1 1 0 100 2 1 1 0 000-2zM9 13a1 1 0 011-1h1a1 1 0 110 2v2a1 1 0 11-2 0v-3zM7 11a1 1 0 100-2H4a1 1 0 100 2h3zM17 13a1 1 0 01-1 1h-2a1 1 0 110-2h2a1 1 0 011 1zM16 17a1 1 0 100-2h-3a1 1 0 100 2h3z"/>
                     </svg>
                     QR Code
                   </div>
-                  <div 
-                    style={{...styles.qrCodeThumbnail, cursor: 'pointer'}}
+                  <div
+                    style={{ cursor: 'pointer' }}
                     onClick={() => setViewingQR(asset)}
                     title="Click to view QR code"
                   >
-                    <img 
-                      src={asset.QR_Code} 
-                      alt="QR Code"
-                      style={styles.qrImage}
-                    />
+                    <img src={asset.QR_Code} alt="QR Code" style={styles.qrImage} />
                   </div>
                 </div>
 
                 <div style={styles.actionButtons}>
                   <button
-                    style={{...styles.iconButton, ...styles.editButton}}
+                    style={{ ...styles.iconButton, ...styles.editButton }}
                     onClick={() => handleEditAsset(asset)}
                     title="Edit Asset"
+                    onMouseEnter={(e) => e.currentTarget.style.background = C.mint}
+                    onMouseLeave={(e) => e.currentTarget.style.background = C.ice}
                   >
-                    <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
                     </svg>
                   </button>
                   <button
-                    style={{...styles.iconButton, ...styles.deleteButton}}
+                    style={{ ...styles.iconButton, ...styles.deleteButton }}
                     onClick={() => handleDeleteAsset(asset.id || asset._id)}
                     title="Delete Asset"
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#fee2e2'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = C.ice}
                   >
-                    <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
                     </svg>
                   </button>
@@ -1035,119 +1059,85 @@ function AssetsPage() {
 
       {/* View Issue Modal */}
       {viewingIssue && (
-        <div style={styles.issueModalOverlay} onClick={() => setViewingIssue(null)}>
+        <div style={styles.modalOverlay} onClick={() => setViewingIssue(null)}>
           <div style={styles.issueModal} onClick={(e) => e.stopPropagation()}>
             <div style={styles.issueModalHeader}>
               <span>Issue Details</span>
-              <button 
-                style={styles.issueCloseBtn}
-                onClick={() => setViewingIssue(null)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f3f4f6';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                ×
-              </button>
+              <button style={styles.closeBtn} onClick={() => setViewingIssue(null)}>✕</button>
             </div>
 
-            {/* Multiple issues */}
             {viewingIssue.Issue_Reported.length > 1 && (
               <div style={styles.navButtons}>
-                <button 
-                  style={styles.navBtn}
-                  onClick={prevIssue}
-                  disabled={currentIssueIndex === 0}>
-                  ‹
-                </button>
-
-                <button 
-                  style={styles.navBtn}
-                  onClick={nextIssue}
-                  disabled={currentIssueIndex === viewingIssue.Issue_Reported.length - 1}>
-                  ›
-                </button>
+                <button style={styles.navBtn} onClick={prevIssue} disabled={currentIssueIndex === 0}>‹ Prev</button>
+                <span style={{ fontSize: '13px', color: C.dark, fontWeight: '600', alignSelf: 'center' }}>
+                  {currentIssueIndex + 1} / {viewingIssue.Issue_Reported.length}
+                </span>
+                <button style={styles.navBtn} onClick={nextIssue} disabled={currentIssueIndex === viewingIssue.Issue_Reported.length - 1}>Next ›</button>
               </div>
             )}
 
-            {/* Current Issue */}
             {(() => {
-              const issue = viewingIssue.Issue_Reported[currentIssueIndex];              
-              
+              const issue = viewingIssue.Issue_Reported[currentIssueIndex];
               return (
                 <>
-                  <div style={styles.issueDetailRow}>
-                    <div style={styles.issueDetailLabel}>Asset Name</div>
-                    <div style={styles.issueDetailValue}>{viewingIssue.Asset_Name}</div>
-                  </div>
-
-                  <div style={styles.issueDetailRow}>
-                    <div style={styles.issueDetailLabel}>Faculty Name</div>
-                    <div style={styles.issueDetailValue}>{issue?.FacultyDetails?.Name || "N/A"}</div>
-                  </div>
-
-                  <div style={styles.issueDetailRow}>
-                    <div style={styles.issueDetailLabel}>Issue Description</div>
-                    <div style={styles.issueDetailValue}>{issue?.IssueDescription}</div>
-                  </div>
-
-                  { issue?.Status === 'resolved by technician' ? (
-                    <div style={styles.issueDetailRow}>
-                      <div style={styles.issueDetailLabel}>Resolve Description</div>
-                      <div style={styles.issueDetailValue}>{issue?.ResolveDescription}</div>
+                  {[
+                    { label: 'Asset Name', value: viewingIssue.Asset_Name },
+                    { label: 'Faculty Name', value: issue?.FacultyDetails?.Name || "N/A" },
+                    { label: 'Issue Description', value: issue?.IssueDescription },
+                    ...(issue?.Status === 'resolved by technician' ? [{ label: 'Resolve Description', value: issue?.ResolveDescription }] : []),
+                  ].map((row, i) => (
+                    <div key={i} style={{ ...styles.issueDetailRow, backgroundColor: C.ice, borderRadius: '8px', padding: '10px 14px' }}>
+                      <div style={styles.issueDetailLabel}>{row.label}</div>
+                      <div style={styles.issueDetailValue}>{row.value}</div>
                     </div>
-                  ) : (
-                    <></>
-                  )}
+                  ))}
 
-                  <div style={styles.issueDetailRow}>
+                  <div style={{ marginTop: '10px', marginBottom: '12px' }}>
                     <div style={styles.issueDetailLabel}>Status</div>
-                    <span 
-                      style={{
-                        ...styles.issueStatusBadge,
-                        ...getIssueStatusColor(issue?.Status)
-                      }}>
+                    <span style={{ ...styles.issueStatusBadge, ...getIssueStatusColor(issue?.Status) }}>
                       {formatStatus(issue?.Status)}
                     </span>
                   </div>
 
-                  { issue?.Status === 'pending' ? (
+                  {issue?.Status === 'pending' ? (
                     <>
                       <div style={styles.formGroup}>
-                        <label style={styles.label}>Issue Resolve Description *</label>
-                        <textarea 
+                        <label style={styles.formLabel}>Issue Resolve Description *</label>
+                        <textarea
                           style={styles.textarea}
                           value={issueForm.resolveDescription}
-                          onChange={(e) => setIssueForm({...issueForm, resolveDescription: e.target.value})}
+                          onChange={(e) => setIssueForm({ ...issueForm, resolveDescription: e.target.value })}
                           placeholder="Describe how you resolved the issue..."
-                          onFocus={(e) => e.target.style.borderColor = '#10b981'}
-                          onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                          onFocus={(e) => e.target.style.borderColor = C.primary}
+                          onBlur={(e) => e.target.style.borderColor = C.ice}
                         />
                       </div>
-
-                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                        <button
-                          style={styles.resolveButton}
-                          onClick={ () => handleResolveIssue(issue._id, viewingIssue._id)}
-                          disabled={!issueForm.resolveDescription}
-                        >
-                          Issue Resolved
-                        </button>
-                      </div>
+                      <button
+                        style={{ ...styles.resolveButton, opacity: !issueForm.resolveDescription ? 0.6 : 1 }}
+                        onClick={() => handleResolveIssue(issue._id, viewingIssue._id)}
+                        disabled={!issueForm.resolveDescription}
+                        onMouseEnter={(e) => {
+                          if (issueForm.resolveDescription) {
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(8,131,149,0.35)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '0 2px 8px rgba(8,131,149,0.25)';
+                        }}
+                      >
+                        Issue Resolved
+                      </button>
                     </>
                   ) : (
                     <div style={styles.resolvedIssue}>
                       <p style={styles.resolvedText}>Not Yet Approved by the faculty!</p>
                     </div>
                   )}
-
-                  
                 </>
               );
             })()}
-            
           </div>
         </div>
       )}
@@ -1156,32 +1146,33 @@ function AssetsPage() {
       {viewingQR && (
         <div style={styles.qrModal} onClick={() => setViewingQR(null)}>
           <div style={styles.qrModalContent} onClick={(e) => e.stopPropagation()}>
-            <button 
+            <button
               style={styles.closeButton}
               onClick={() => setViewingQR(null)}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#e2e8f0'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#f7fafc'}
+              onMouseEnter={(e) => e.currentTarget.style.background = C.mint}
+              onMouseLeave={(e) => e.currentTarget.style.background = C.ice}
             >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
               </svg>
             </button>
-            
-            <h3 style={styles.qrModalHeader}>{viewingQR.Asset_Name}</h3>
-            
-            <img 
-              src={viewingQR.QR_Code}
-              alt="QR Code"
-              style={styles.qrModalImage}
-            />
-            
-            <button 
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '1.25rem' }}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" style={{ color: C.primary }}>
+                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zM3 13a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zM13 3a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2v1h1V5h-1z" clipRule="evenodd"/>
+              </svg>
+              <h3 style={styles.qrModalHeader}>{viewingQR.Asset_Name}</h3>
+            </div>
+
+            <img src={viewingQR.QR_Code} alt="QR Code" style={styles.qrModalImage} />
+
+            <button
               style={styles.downloadButton}
               onClick={() => handleDownloadQR(viewingQR.QR_Code, viewingQR.Asset_Name)}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
+              onMouseEnter={(e) => e.currentTarget.style.background = C.dark}
+              onMouseLeave={(e) => e.currentTarget.style.background = C.primary}
             >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd"/>
               </svg>
               Download QR Code
@@ -1201,15 +1192,17 @@ function AssetsPage() {
             <h2 style={styles.modalHeader}>
               {editingAsset ? "Edit Asset" : "Add New Asset"}
             </h2>
-            
+
             <div style={styles.formGroup}>
               <label style={styles.label}>Asset Name</label>
               <input
                 type="text"
                 style={styles.input}
                 value={newAsset.Asset_Name}
-                onChange={(e) => setNewAsset({...newAsset, Asset_Name: e.target.value})}
+                onChange={(e) => setNewAsset({ ...newAsset, Asset_Name: e.target.value })}
                 placeholder="Enter asset name"
+                onFocus={(e) => e.target.style.borderColor = C.primary}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
               />
             </div>
 
@@ -1218,7 +1211,9 @@ function AssetsPage() {
               <select
                 style={styles.select}
                 value={newAsset.Asset_Type}
-                onChange={(e) => setNewAsset({...newAsset, Asset_Type: e.target.value})}
+                onChange={(e) => setNewAsset({ ...newAsset, Asset_Type: e.target.value })}
+                onFocus={(e) => e.target.style.borderColor = C.primary}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
               >
                 {assetTypes.map(type => (
                   <option key={type} value={type}>{type}</option>
@@ -1232,8 +1227,10 @@ function AssetsPage() {
                 type="text"
                 style={styles.input}
                 value={newAsset.Brand}
-                onChange={(e) => setNewAsset({...newAsset, Brand: e.target.value})}
+                onChange={(e) => setNewAsset({ ...newAsset, Brand: e.target.value })}
                 placeholder="Enter brand name"
+                onFocus={(e) => e.target.style.borderColor = C.primary}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
               />
             </div>
 
@@ -1242,7 +1239,9 @@ function AssetsPage() {
               <select
                 style={styles.select}
                 value={newAsset.Assest_Status}
-                onChange={(e) => setNewAsset({...newAsset, Assest_Status: e.target.value})}
+                onChange={(e) => setNewAsset({ ...newAsset, Assest_Status: e.target.value })}
+                onFocus={(e) => e.target.style.borderColor = C.primary}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
               >
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
@@ -1256,8 +1255,10 @@ function AssetsPage() {
                 type="text"
                 style={styles.input}
                 value={newAsset.QR_Code}
-                onChange={(e) => setNewAsset({...newAsset, QR_Code: e.target.value})}
+                onChange={(e) => setNewAsset({ ...newAsset, QR_Code: e.target.value })}
                 placeholder="Enter QR code URL"
+                onFocus={(e) => e.target.style.borderColor = C.primary}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
               />
             </div>
 
@@ -1269,6 +1270,14 @@ function AssetsPage() {
                   setEditingAsset(null);
                   resetForm();
                 }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(8, 131, 149, 0.05)';
+                  e.target.style.borderColor = C.primary;
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'white';
+                  e.target.style.borderColor = 'rgba(8, 131, 149, 0.3)';
+                }}
               >
                 Cancel
               </button>
@@ -1276,6 +1285,18 @@ function AssetsPage() {
                 style={styles.saveButton}
                 onClick={editingAsset ? handleUpdateAsset : handleAddAsset}
                 disabled={saving}
+                onMouseEnter={(e) => {
+                  if (!saving) {
+                    e.target.style.transform = 'translateY(-1px)';
+                    e.target.style.boxShadow = '0 6px 10px rgba(8,131,149,0.4)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!saving) {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 6px rgba(8,131,149,0.3)';
+                  }
+                }}
               >
                 {saving ? (
                   <>
@@ -1290,6 +1311,7 @@ function AssetsPage() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

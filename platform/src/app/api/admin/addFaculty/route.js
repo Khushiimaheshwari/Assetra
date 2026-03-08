@@ -2,29 +2,39 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectDB } from "../../../../app/api/utils/db";
 import Faculty from "../../../../models/Faculty";
-import Programs from "../../../../models/Programs";
 import { User } from "../../../../models/User";
-import mongoose from "mongoose"; 
+import Lab from "../../../../models/Labs";
+import mongoose from "mongoose";
 
 export async function POST(req) {
   try {
     await connectDB();
 
     const body = await req.json();
-    const { name, email, password, department, designation, programSubjectPairs } = body;
+    console.log("BODY:", body);
 
-    console.log("ADD FACULTY BODY:", body);
+    const {
+      name,
+      email,
+      password,
+      department,
+      designation,
+      labAccess = [],
+      labIncharge = []
+    } = body;
 
     if (!name || !email || !password || !department || !designation) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "All required fields must be provided" },
+        { status: 400 }
+      );
     }
 
     const existingUser = await User.findOne({ Email: email });
-    const existingFaculty = await Faculty.findOne({ Email: email });
 
-    if (existingUser || existingFaculty) {
+    if (existingUser) {
       return NextResponse.json(
-        { error: "User with this email already exists" },
+        { error: "User already exists" },
         { status: 409 }
       );
     }
@@ -38,64 +48,40 @@ export async function POST(req) {
       Role: "faculty",
     });
 
-    const validPairs = (programSubjectPairs || [])
-      .filter(
-        (p) =>
-          p.programId &&
-          p.subjectId &&
-          mongoose.isValidObjectId(p.programId) &&
-          mongoose.isValidObjectId(p.subjectId)
-      )
-      .map((p) => ({
-        Program: new mongoose.Types.ObjectId(p.programId),
-        Subject: new mongoose.Types.ObjectId(p.subjectId),
-      }));
+    const validLabs = labAccess.filter((id) =>
+      mongoose.isValidObjectId(id)
+    );
 
-    const uniquePairs = Array.from(
-      new Map(validPairs.map((p) => [p.Program + "_" + p.Subject, p])).values()
+    const validInchargeLabs = labIncharge.filter((id) =>
+      mongoose.isValidObjectId(id)
     );
 
     const newFaculty = await Faculty.create({
-      Name: name,
-      Email: email,
-      Password: hashedPassword,
-      Role: "faculty",
+      UserDetails: newUser._id,
       Department: department,
       Designation: designation,
-      ProgramSubjectPairs: uniquePairs,
+      Labs: validLabs,
+      Incharge_Labs: validInchargeLabs,
     });
 
-    for (const pair of uniquePairs) {
-      await Programs.updateOne(
-        {
-          _id: pair.Program,
-          "Subject.Subject_ID": pair.Subject,
-        },
-        {
-          $set: { "Subject.$.Faculty_Assigned": newFaculty._id },
-        }
+    if (validInchargeLabs.length > 0) {
+      await Lab.updateMany(
+        { _id: { $in: validInchargeLabs } },
+        { $addToSet: { Lab_Incharge: newFaculty._id } }
       );
     }
 
     return NextResponse.json({
       message: "Faculty created successfully",
-      user: {
-        _id: newUser._id,
-        name: newUser.Name,
-        email: newUser.Email,
-        role: newUser.Role,
-      },
-      faculty: {
-        _id: newFaculty._id,
-        name: newFaculty.Name,
-        email: newFaculty.Email,
-        department: newFaculty.Department,
-        designation: newFaculty.Designation,
-        programSubjectPairs: newFaculty.ProgramSubjectPairs,
-      },
+      faculty: newFaculty,
     });
+
   } catch (error) {
-    console.error("Error creating Faculty:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Faculty creation error:", error);
+
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
   }
 }

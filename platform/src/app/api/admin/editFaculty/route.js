@@ -2,18 +2,26 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectDB } from "../../../../app/api/utils/db";
 import Faculty from "../../../../models/Faculty";
-import Programs from "../../../../models/Programs";
 import { User } from "../../../../models/User";
-import mongoose from "mongoose";;
+import Lab from "../../../../models/Labs";
+import mongoose from "mongoose";
 
 export async function POST(req) {
   try {
     await connectDB();
 
     const body = await req.json();
-    const { name, email, password, department, designation, programSubjectPairs } = body;
-
     console.log("EDIT FACULTY BODY:", body);
+
+    const {
+      name,
+      email,
+      password,
+      department,
+      designation,
+      labAccess = [],
+      labIncharge = []
+    } = body;
 
     if (!name || !email) {
       return NextResponse.json(
@@ -23,82 +31,74 @@ export async function POST(req) {
     }
 
     const user = await User.findOne({ Email: email });
-    const faculty = await Faculty.findOne({ Email: email });
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
 
-    if (!user || !faculty) {
+    const faculty = await Faculty.findOne({ UserDetails: user._id });
+    if (!faculty) {
       return NextResponse.json(
         { error: "Faculty not found" },
         { status: 404 }
       );
     }
 
-    let finalPassword = faculty.Password;
     if (password && password.trim() !== "") {
-      finalPassword = await bcrypt.hash(password, 10);
+      user.Password = await bcrypt.hash(password, 10);
     }
-
-    const validPairs = (programSubjectPairs || [])
-      .filter(
-        (p) =>
-          p.programId &&
-          p.subjectId &&
-          mongoose.isValidObjectId(p.programId) &&
-          mongoose.isValidObjectId(p.subjectId)
-      )
-      .map((p) => ({
-        Program: new mongoose.Types.ObjectId(p.programId),
-        Subject: new mongoose.Types.ObjectId(p.subjectId),
-      }));
-
-    const uniquePairs = Array.from(
-      new Map(validPairs.map((p) => [p.Program + "_" + p.Subject, p])).values()
-    );
-
-    faculty.Name = name;
-    faculty.Email = email;
-    faculty.Password = finalPassword;
-    faculty.Department = department;
-    faculty.Designation = designation;
-    faculty.ProgramSubjectPairs = uniquePairs;
-
-    await faculty.save();
 
     user.Name = name;
     user.Email = email;
-    user.Password = finalPassword;
     await user.save();
 
-    await Programs.updateMany(
-      { "Subject.Faculty_Assigned": faculty._id },
-      { $set: { "Subject.$[elem].Faculty_Assigned": null } },
-      { arrayFilters: [{ "elem.Faculty_Assigned": faculty._id }] }
+    const validLabs = labAccess.filter((id) =>
+      mongoose.isValidObjectId(id)
     );
 
-    for (const pair of uniquePairs) {
-      await Programs.updateOne(
-        {
-          _id: pair.Program,
-          "Subject.Subject_ID": pair.Subject,
-        },
-        {
-          $set: { "Subject.$.Faculty_Assigned": faculty._id },
-        }
+    const validInchargeLabs = labIncharge.filter((id) =>
+      mongoose.isValidObjectId(id)
+    );
+
+    await Lab.updateMany(
+      { Lab_Incharge: faculty._id },
+      { $pull: { Lab_Incharge: faculty._id } }
+    );
+
+    if (validInchargeLabs.length > 0) {
+      await Lab.updateMany(
+        { _id: { $in: validInchargeLabs } },
+        { $addToSet: { Lab_Incharge: faculty._id } }
       );
     }
 
+    faculty.Department = department;
+    faculty.Designation = designation;
+    faculty.Labs = validLabs;
+    faculty.Incharge_Labs = validInchargeLabs;
+
+    await faculty.save();
+
     return NextResponse.json({
       message: "Faculty updated successfully",
-      updatedFaculty: {
+      faculty: {
         _id: faculty._id,
-        name: faculty.Name,
-        email: faculty.Email,
+        name: user.Name,
+        email: user.Email,
         department: faculty.Department,
         designation: faculty.Designation,
-        programSubjectPairs: faculty.ProgramSubjectPairs,
+        labs: faculty.Labs,
+        inchargeLabs: faculty.Incharge_Labs,
       },
     });
+
   } catch (error) {
     console.error("Error updating faculty:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
   }
 }

@@ -10,4 +10,4 @@ const FacultySchema = new mongoose.Schema({
 
 const Faculty = mongoose.models.Faculty || mongoose.model("Faculty", FacultySchema);
 
-export default Faculty;
+export default Faculty; 
