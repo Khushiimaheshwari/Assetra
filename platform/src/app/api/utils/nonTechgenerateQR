@@ -1,0 +1,28 @@
+import QRCode from "qrcode";
+import NonTechAssets from "../../../models/NonTechAssets";
+import { Buffer } from "buffer";
+
+export async function generateQRCodeForNonTechAsset(assetId, baseUrl) {
+  const asset = await NonTechAssets.findById(assetId)
+    .populate("Lab_Name");
+
+  if (!asset) throw new Error("Asset not found");
+
+  const qrPayload = {
+    admin: `${baseUrl}/adminPanel/lab_management/nonTechLab/${asset.Lab_Name._id}`,
+    faculty: `${baseUrl}/facultyPanel/lab_management/nonTechLab/${asset.Lab_Name._id}`,
+    lab_technician: `${baseUrl}/lab_technicianPanel/lab_management/nonTechLab/${asset.Lab_Name._id}`
+  };
+
+  const encoded = Buffer.from(JSON.stringify(qrPayload)).toString("base64");
+
+  // QR code will open this universal redirect page
+  const qrValue = `${baseUrl}/qrRedirect?data=${encoded}`;
+
+  const qrImage = await QRCode.toDataURL(qrValue);
+
+  asset.QR_Code = qrImage;
+  await asset.save();
+
+  return qrImage;
+}

@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
+    "async_hooks": "^1.0.0",
     "autoprefixer": "^10.4.27",
     "bcryptjs": "^3.0.3",
+    "buffer": "^6.0.3",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.575.0",
     "mongoose": "^9.2.3",

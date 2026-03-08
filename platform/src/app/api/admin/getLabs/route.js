@@ -8,7 +8,7 @@ export async function GET() {
   try {
     await connectDB();
 
-    const labs = await Lab.find({}, "_id Lab_ID Lab_Name Block Lab_Room Total_Capacity Status LabTechnician")
+    const labs = await Lab.find({}, "_id Lab_ID Lab_Name Block Lab_Type Lab_Room Total_Capacity Status LabTechnician")
     .populate({
       path: "LabTechnician",
       populate: {
