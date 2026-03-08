@@ -38,7 +38,6 @@ export default function AdminNavbar({ onToggleSidebar }) {
             priority
             className={styles.logoImg}
           />
-          <span className={styles.logoText}>ASSETRA</span>
         </Link>
       </div>
 
