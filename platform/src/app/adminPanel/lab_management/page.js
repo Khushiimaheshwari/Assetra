@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import Lab from '@/models/Labs';
 
 export default function LabManagement() {
   const [labs, setLabs] = useState([]);
@@ -27,10 +26,6 @@ export default function LabManagement() {
     technician: '',
     incharge: '',
   });
-
-  const labIDs = Array.from({ length: 30 }, (_, i) => ({
-    ID: `Lab ${i + 1}`,
-  }));
 
   useEffect(() => {
     const handleResize = () => {
@@ -239,17 +234,30 @@ export default function LabManagement() {
   };
 
   const filteredLabs = labs.filter((lab) => {
-
+    const labId = (lab.Lab_ID || "").toLowerCase();
+    const labName = (lab.Lab_Name || "").toLowerCase();
+    const labRoom = (lab.Lab_Room || "").toLowerCase();
+    const technician = (lab.LabTechnician[0]?.UserDetails?.Name || "").toLowerCase();
+  
     const matchesSearch =
-      lab.Lab_ID.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lab.Lab_Name.toLowerCase().includes(searchTerm.toLowerCase());
+      labId.includes(searchTerm.toLowerCase()) ||
+      labName.includes(searchTerm.toLowerCase()) ||
+      labRoom.includes(searchTerm.toLowerCase()) ||
+      technician.includes(searchTerm.toLowerCase());
   
     const matchesFilter =
       labNameFilter === "" || lab.Lab_Name === labNameFilter;
   
     return matchesSearch && matchesFilter;
-  
   });
+
+  const labNameColors = {
+    "Computer Science Lab": { color: "#0369a1", background: "#e0f2fe", border: "#0369a1" },
+    "Chemistry Lab":        { color: "#7c3aed", background: "#ede9fe", border: "#7c3aed" },
+    "Mechanics Lab":        { color: "#b45309", background: "#fef3c7", border: "#b45309" },
+    "Physics Lab":          { color: "#065f46", background: "#d1fae5", border: "#065f46" },
+    "Robotics Lab":         { color: "#be185d", background: "#fce7f3", border: "#be185d" },
+  };
 
   const resetForm = () => {
     setNewLab({
@@ -704,35 +712,73 @@ export default function LabManagement() {
           </div>
         </div>
 
-        <div style={{display:"flex", gap:"12px", marginBottom:"20px", flexWrap:"wrap"}}>
+        <div style={{
+          display: "flex",
+          gap: "12px",
+          marginBottom: "20px",
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}>
           <input
             type="text"
-            placeholder="Search Lab..."
+            placeholder="Search ..."
             value={searchTerm}
-            onChange={(e)=>setSearchTerm(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
             style={{
-              padding:"12px",
-              border:"2px solid rgba(8,131,149,0.2)",
-              borderRadius:"10px",
-              minWidth:"220px"
+              padding: "12px 16px",
+              border: "2px solid rgba(8,131,149,0.25)",
+              borderRadius: "10px",
+              minWidth: "220px",
+              fontSize: "14px",
+              fontWeight: "500",
+              color: "#176B87",
+              background: "white",
+              outline: "none",
+              boxShadow: "0 2px 4px rgba(8,131,149,0.08)",
+              transition: "all 0.2s ease",
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = "#088395";
+              e.currentTarget.style.boxShadow = "0 0 0 3px rgba(8,131,149,0.12)";
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = "rgba(8,131,149,0.25)";
+              e.currentTarget.style.boxShadow = "0 2px 4px rgba(8,131,149,0.08)";
             }}
           />
 
           <select
             value={labNameFilter}
-            onChange={(e)=>setLabNameFilter(e.target.value)}
+            onChange={(e) => setLabNameFilter(e.target.value)}
             style={{
-              padding:"12px",
-              border:"2px solid rgba(8,131,149,0.2)",
-              borderRadius:"10px"
+              padding: "12px 16px",
+              border: "2px solid rgba(8,131,149,0.25)",
+              borderRadius: "10px",
+              fontSize: "14px",
+              fontWeight: "500",
+              color: "#176B87",
+              background: "white",
+              outline: "none",
+              cursor: "pointer",
+              boxShadow: "0 2px 4px rgba(8,131,149,0.08)",
+              transition: "all 0.2s ease",
+              minWidth: "180px",
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = "#088395";
+              e.currentTarget.style.boxShadow = "0 0 0 3px rgba(8,131,149,0.12)";
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = "rgba(8,131,149,0.25)";
+              e.currentTarget.style.boxShadow = "0 2px 4px rgba(8,131,149,0.08)";
             }}
           >
-          <option value="">All Labs</option>
-          <option value="Computer Science Lab">Computer Science Lab</option>
-          <option value="Chemistry Lab">Chemistry Lab</option>
-          <option value="Mechanics Lab">Mechanics Lab</option>
-          <option value="Physics Lab">Physics Lab</option>
-          <option value="Robotics Lab">Robotics Lab</option>
+            <option value="">All Labs</option>
+            <option value="Computer Science Lab">Computer Science Lab</option>
+            <option value="Chemistry Lab">Chemistry Lab</option>
+            <option value="Mechanics Lab">Mechanics Lab</option>
+            <option value="Physics Lab">Physics Lab</option>
+            <option value="Robotics Lab">Robotics Lab</option>
           </select>
         </div>
 
@@ -762,7 +808,17 @@ export default function LabManagement() {
                     </div>
                     <div style={styles.cardInfo}>
                       <div style={styles.cardIdRow}>
-                        <span style={styles.cardId}>#{lab.Lab_Name}</span>
+                      <span style={{
+                          ...styles.cardId,
+                          color: (labNameColors[lab.Lab_Name] || {}).color || "#3674B5",
+                          background: (labNameColors[lab.Lab_Name] || {}).background || "transparent",
+                          border: `1px solid ${(labNameColors[lab.Lab_Name] || {}).border || "#3674B5"}`,
+                          padding: "3px 10px",
+                          borderRadius: "6px",
+                          fontSize: "12px",
+                        }}>
+                          #{lab.Lab_Name}
+                        </span>
                         <span style={{...styles.statusBadge, ...(lab.Status === 'Active' ? styles.statusActive : styles.statusMaintenance)}}>
                           {lab.Status}
                         </span>
@@ -840,7 +896,15 @@ export default function LabManagement() {
                       </button>
                       <button 
                         style={{ ...styles.iconButton, ...styles.viewButton }} 
-                        onClick={() => { window.location.href = `/adminPanel/lab_management/lab/${lab._id}`; }}
+                        onClick={() => 
+                          { 
+                            if( lab.Lab_Type == "Technical_Lab"){
+                              window.location.href = `/adminPanel/lab_management/lab/${lab._id}`; 
+                            }else{
+                              window.location.href = `/adminPanel/lab_management/nonTechLab/${lab._id}`;
+                            }
+                          
+                          }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.borderColor = '#3674B5';
                           e.currentTarget.style.transform = 'scale(1.08)';
@@ -873,20 +937,15 @@ export default function LabManagement() {
               
               <div style={styles.formGroup}>
                 <label style={styles.label}>Lab ID</label>
-                <select
-                    style={styles.select}
-                    value={newLab.id}
-                    onChange={(e) => setNewLab({ ...newLab, id: e.target.value })}
-                    onFocus={(e) => e.currentTarget.style.borderColor = '#088395'}
-                    onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
-                  >
-                    <option value="">Select Lab</option>
-                    {labIDs.map((lab) => (
-                      <option key={lab.ID} value={lab.ID}>
-                        {lab.ID}
-                      </option>
-                    ))}
-                  </select>
+                <input 
+                  type="text" 
+                  style={styles.input} 
+                  value={newLab.id} 
+                  onChange={(e) => setNewLab({...newLab, id: e.target.value})} 
+                  placeholder="Enter Lab Id" 
+                  onFocus={(e) => e.currentTarget.style.borderColor = '#088395'}
+                  onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
+                />
               </div>
 
               <div style={styles.formGroup}>
@@ -913,8 +972,8 @@ export default function LabManagement() {
                   <option value="Computer Science Lab">Computer Science Lab</option>
                   <option value="Chemistry Lab">Chemistry Lab</option>
                   <option value="Mechanics Lab">Mechanics Lab</option>
-                  <option value="Physics Lab">Electronics Lab</option>
-                  <option value="Robotics Lab">Electronics Lab</option>
+                  <option value="Physics Lab">Physics Lab</option>
+                  <option value="Robotics Lab">Robotics Lab</option>
                 </select>
               </div>
 

@@ -14,7 +14,7 @@ export async function POST(req) {
     
     const { labId, labName, block, labType, labRoom, capacity, status, incharge, technician } = body;
 
-    if (!labId || !labName || !block || labType || !labRoom) {
+    if (!labId || !labName || !block || !labType || !labRoom) {
       return NextResponse.json({ error: "Lab ID, Name, Type, Block and LabRoom are required" }, { status: 400 });
     }
 
@@ -31,11 +31,16 @@ export async function POST(req) {
       ? [new mongoose.Types.ObjectId(incharge)]
       : [];
 
+    const labTypeMap = {
+      "Technical": "Technical_Lab",
+      "Non Technical": "Non_Technical_Lab",
+    };
+
     const newLab = await Lab.create({
       Lab_ID: labId,
       Lab_Name: labName,
       Block: block || "",
-      Lab_Type: labType,
+      Lab_Type: labTypeMap[labType],
       Lab_Room: labRoom || "",
       Total_Capacity: capacity || 0,
       Status: status?.toLowerCase() === "active" ? "active" : "inactive",

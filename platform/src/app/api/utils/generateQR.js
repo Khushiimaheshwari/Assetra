@@ -11,9 +11,9 @@ export async function generateQRCodeForAsset(assetId, baseUrl) {
   if (!asset.PC_Name._id) throw new Error("Asset PC reference missing");
 
   const qrPayload = {
-    admin: `${baseUrl}/adminPanel/asset_management/asset/${asset.PC_Name._id}`,
-    faculty: `${baseUrl}/facultyPanel/allAssets/asset/${asset.PC_Name._id}`,
-    lab_technician: `${baseUrl}/lab_technicianPanel/asset_management/asset/${asset.PC_Name._id}`
+    admin: `${baseUrl}/adminPanel/lab_management/lab/${asset.Lab_Name._id}/asset/${asset.PC_Name._id}`,
+    faculty: `${baseUrl}/facultyPanel/lab_management/lab/${asset.Lab_Name._id}/asset/${asset.PC_Name._id}`,
+    lab_technician: `${baseUrl}/lab_technicianPanel/lab_management/lab/${asset.Lab_Name._id}/asset/${asset.PC_Name._id}`
   };
 
   const encoded = Buffer.from(JSON.stringify(qrPayload)).toString("base64");

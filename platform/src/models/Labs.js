@@ -14,6 +14,7 @@ const LabSchema = new mongoose.Schema({
   Software_Specifications: { type: String, default: "" },
   Hardware_Specifications: { type: String, default: "" },
   PCs: [{ type: mongoose.Schema.Types.ObjectId, ref: "PCs" }],
+  NonTechAssets: [{ type: mongoose.Schema.Types.ObjectId, ref: "NonTechAssets" }],
   Remarks: { type: String, default: "" },
   Device: [{
     Device_Type: { type: String, enum:["projector", "screen board", "N/A"] , default: "" },

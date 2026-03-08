@@ -30,7 +30,8 @@ function AssetsPage() {
       useful_life: "",
       breakdown_frequency: 0,
       total_maintenance_cost: 0,
-      usage_frequency: ""
+      usage_frequency: "",
+      warranty: 0,
     }
   });
 
@@ -100,7 +101,8 @@ function AssetsPage() {
             useful_life: Number(newAsset.Financial_Details.useful_life),
             breakdown_frequency: Number(newAsset.Financial_Details.breakdown_frequency || 0),
             total_maintenance_cost: Number(newAsset.Financial_Details.total_maintenance_cost || 0),
-            usage_frequency: newAsset.Financial_Details.usage_frequency
+            usage_frequency: newAsset.Financial_Details.usage_frequency,
+            warranty: Number(newAsset.Financial_Details.warranty || 0)
           }
         }), 
       });
@@ -214,7 +216,8 @@ function AssetsPage() {
         useful_life: "",
         breakdown_frequency: "",
         total_maintenance_cost: "",
-        usage_frequency: ""
+        usage_frequency: "", 
+        warranty: ""
       }
     });
   };
@@ -885,19 +888,49 @@ function AssetsPage() {
                     />
                   </div>
                 ))}
-                <div style={{ gridColumn: '1 / -1' }}>
+                <div>
                   <label style={{ ...labelStyle, color: '#065f46' }}>Usage Frequency</label>
-                  <select style={{ ...selectStyle, backgroundColor: 'white' }}
+                  <select
+                    style={{ ...selectStyle, backgroundColor: 'white' }}
                     value={newAsset.Financial_Details.usage_frequency || ""}
-                    onChange={(e) => setNewAsset({ ...newAsset, Financial_Details: { ...newAsset.Financial_Details, usage_frequency: e.target.value } })}
-                    onFocus={(e) => e.target.style.borderColor = C.primary}
-                    onBlur={(e) => e.target.style.borderColor = C.ice}>
-
-                    <option value="">Select Usage</option>  
+                    onChange={(e) =>
+                      setNewAsset({
+                        ...newAsset,
+                        Financial_Details: {
+                          ...newAsset.Financial_Details,
+                          usage_frequency: e.target.value
+                        }
+                      })
+                    }
+                    onFocus={(e) => (e.target.style.borderColor = '#088395')}
+                    onBlur={(e) => (e.target.style.borderColor = '#EBF4F6')}
+                  >
+                    <option value="">Select Usage</option>
                     <option value="Low">Low</option>
                     <option value="Medium">Medium</option>
                     <option value="High">High</option>
                   </select>
+                </div>
+
+                <div>
+                  <label style={{ ...labelStyle, color: '#065f46' }}>Warranty (Years)</label>
+                  <input
+                    type="number"
+                    style={{ ...inputStyle, backgroundColor: 'white' }}
+                    value={newAsset.Financial_Details.warranty || ""}
+                    onChange={(e) =>
+                      setNewAsset({
+                        ...newAsset,
+                        Financial_Details: {
+                          ...newAsset.Financial_Details,
+                          warranty: e.target.value
+                        }
+                      })
+                    }
+                    placeholder="e.g., 5"
+                    onFocus={(e) => (e.target.style.borderColor = '#088395')}
+                    onBlur={(e) => (e.target.style.borderColor = '#EBF4F6')}
+                  />
                 </div>
               </div>
             </div>
