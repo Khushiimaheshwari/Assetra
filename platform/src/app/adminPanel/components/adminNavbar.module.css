@@ -1,9 +1,13 @@
-/* ── Navbar ── */
+/* ══════════════════════════════════════════
+   ADMIN NAVBAR
+══════════════════════════════════════════ */
+
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 40px;
+  padding: 0 40px;
+  height: 68px;                          /* fixed height — no logo stretching */
   background: white;
   border-bottom: 2px solid #EBF4F6;
   box-shadow: 0 2px 12px rgba(8, 131, 149, 0.08);
@@ -15,18 +19,39 @@
   font-family: 'Segoe UI', sans-serif;
 }
 
-/* ── Logo ── */
+/* ── Logo ─────────────────────────────── */
 .logo {
   display: flex;
   align-items: center;
   flex-shrink: 0;
 }
 
-.logo img {
-  height: auto;
+/* The <a> wrapping logo image + text */
+.logoLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
 }
 
-/* ── Right Actions ── */
+/* Constrain the logo image — this was the root cause */
+.logoImg {
+  width: 46px !important;
+  height: 46px !important;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+}
+
+.logoText {
+  font-size: 18px;
+  font-weight: 800;
+  color: #088395;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* ── Right Actions ────────────────────── */
 .desktopActions {
   display: flex;
   align-items: center;
@@ -34,7 +59,7 @@
   margin-left: auto;
 }
 
-/* ── Notification Button ── */
+/* ── Notification Button ──────────────── */
 .notificationBtn {
   width: 42px;
   height: 42px;
@@ -47,7 +72,7 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  position: relative;
+  flex-shrink: 0;
 }
 
 .notificationBtn:hover {
@@ -56,7 +81,7 @@
   transform: scale(1.05);
 }
 
-/* ── Profile ── */
+/* ── Profile ──────────────────────────── */
 .profileLink {
   display: flex;
   align-items: center;
@@ -64,12 +89,13 @@
 }
 
 .profileImg {
-  width: 40px;
-  height: 40px;
+  width: 40px !important;
+  height: 40px !important;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid #EBF4F6;
   transition: all 0.2s ease;
+  display: block;
 }
 
 .profileImg:hover {
@@ -77,7 +103,7 @@
   box-shadow: 0 0 0 3px rgba(8, 131, 149, 0.15);
 }
 
-/* ── Hamburger Button (mobile only) ── */
+/* ── Hamburger Button (mobile only) ────── */
 .hamburgerBtn {
   display: none;
   flex-direction: column;
@@ -90,6 +116,7 @@
   gap: 4px;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .hamburgerBtn:hover {
@@ -105,23 +132,36 @@
   display: block;
 }
 
-/* ==================== RESPONSIVE ==================== */
+/* ══════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════ */
 
 @media (max-width: 1024px) {
   .navbar {
-    padding: 14px 28px;
+    padding: 0 28px;
   }
 }
 
 @media (max-width: 768px) {
   .navbar {
-    padding: 12px 16px;
+    padding: 0 16px;
+    height: 60px;
+  }
+
+  .logoImg {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  .logoText {
+    font-size: 16px;
   }
 
   .logo {
     margin-right: auto;
   }
 
+  /* Show hamburger on mobile */
   .hamburgerBtn {
     display: flex;
     order: 3;
@@ -143,8 +183,8 @@
   }
 
   .profileImg {
-    width: 36px;
-    height: 36px;
+    width: 36px !important;
+    height: 36px !important;
   }
 
   .desktopActions {
@@ -154,12 +194,17 @@
 
 @media (max-width: 480px) {
   .navbar {
-    padding: 10px 12px;
+    padding: 0 12px;
+    height: 56px;
   }
 
-  .logo img {
-    width: 100px;
-    height: auto;
+  .logoImg {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .logoText {
+    font-size: 15px;
   }
 
   .notificationBtn {
@@ -173,8 +218,8 @@
   }
 
   .profileImg {
-    width: 34px;
-    height: 34px;
+    width: 34px !important;
+    height: 34px !important;
   }
 
   .desktopActions {
@@ -184,11 +229,17 @@
 
 @media (max-width: 360px) {
   .navbar {
-    padding: 10px 10px;
+    padding: 0 10px;
+    height: 52px;
   }
 
-  .logo img {
-    width: 90px;
+  .logoImg {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .logoText {
+    font-size: 14px;
   }
 
   .hamburgerBtn {
@@ -210,7 +261,7 @@
   }
 
   .profileImg {
-    width: 32px;
-    height: 32px;
+    width: 32px !important;
+    height: 32px !important;
   }
 }
