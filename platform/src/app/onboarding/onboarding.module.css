@@ -121,6 +121,13 @@
   color: #176B87;
   letter-spacing: 0.06em;
 }
+.formLogoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 1rem;
+}
 
 /* ══════════════ BACK BUTTON ══════════════ */
 .arrowContainer { display: flex; margin-bottom: 1rem; }
