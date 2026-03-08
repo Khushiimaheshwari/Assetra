@@ -15,7 +15,7 @@ export default function Navbar() {
       <div className={styles.logo}>
         <Link href="/">
           <Image
-            src="/logo2.jpeg"
+            src="/logo2.png"
             alt="Assetra Logo"
             width={120}
             height={40}
