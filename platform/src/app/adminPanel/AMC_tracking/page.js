@@ -1,496 +1,526 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import AdminSidebar from "@/app/adminPanel/components/Admin_Sidebar"; // ← ADDED
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const mockContracts = [
-  { id: "LAB16-PC3",  category: "Computer",     vendor: "Microtek",    type: "Comprehensive",     start: "2024-01-10", end: "2025-03-24", cost: 18000, contact: "9876543210" },
-  { id: "SCI12-PR1",  category: "Printer",      vendor: "HP Services", type: "Non-Comprehensive",  start: "2024-03-01", end: "2025-08-01", cost: 12000, contact: "9812345670" },
-  { id: "LAB08-SC2",  category: "Scanner",      vendor: "Canon Care",  type: "Comprehensive",     start: "2023-07-15", end: "2024-12-31", cost: 9500,  contact: "9900112233" },
-  { id: "ADMIN-AC5",  category: "AC Unit",      vendor: "BlueStar",    type: "Comprehensive",     start: "2024-02-01", end: "2025-04-10", cost: 22000, contact: "9988776655" },
-  { id: "LAB02-SV1",  category: "Server",       vendor: "Dell Tech",   type: "Comprehensive",     start: "2024-06-01", end: "2026-05-31", cost: 85000, contact: "9111223344" },
-  { id: "PHY05-OS1",  category: "Oscilloscope", vendor: "Tektronix",   type: "Non-Comprehensive",  start: "2023-11-01", end: "2025-03-30", cost: 31000, contact: "9222334455" },
-];
-
-const mockHistory = [
-  { assetId: "LAB16-PC3",  date: "2025-01-15", issue: "Fan replacement & cleaning",      tech: "Ravi Kumar",   cost: 1200 },
-  { assetId: "SCI12-PR1",  date: "2025-02-03", issue: "Cartridge jam + roller fix",       tech: "Anita Shah",   cost: 850  },
-  { assetId: "LAB08-SC2",  date: "2024-11-20", issue: "Sensor calibration",               tech: "Deepak Nair",  cost: 2000 },
-  { assetId: "ADMIN-AC5",  date: "2025-01-28", issue: "Gas refill & compressor check",    tech: "Suresh Patel", cost: 3500 },
-  { assetId: "PHY05-OS1",  date: "2025-02-22", issue: "Display flicker – board replaced", tech: "Meena Joshi",  cost: 7800 },
-];
+import { useState, useEffect, useMemo } from "react";
+import AdminSidebar from "@/app/adminPanel/components/Admin_Sidebar";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function daysLeft(end) { return Math.ceil((new Date(end) - new Date()) / 86400000); }
-function getStatus(end) {
+function daysLeft(end) {
+  if (!end) return null;
+  return Math.ceil((new Date(end) - new Date()) / 86400000);
+}
+function getWarrantyStatus(end) {
+  if (!end) return "No Warranty";
   const d = daysLeft(end);
   if (d < 0)   return "Expired";
-  if (d <= 30) return "Expiring Soon";
+  if (d <= 60) return "Expiring Soon";
   return "Active";
 }
+function fmtDate(d) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+function fmtINR(n) {
+  if (n == null || n === "") return "—";
+  return "₹" + Number(n).toLocaleString("en-IN");
+}
 
-// ─── Icons (inline SVG) ───────────────────────────────────────────────────────
-const BellIcon = ({ size = 20 }) => (
-  <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-  </svg>
-);
-const PlusIcon = ({ size = 18 }) => (
-  <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
-  </svg>
-);
-const EyeIcon = ({ size = 14 }) => (
-  <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-  </svg>
-);
-const EditIcon = ({ size = 14 }) => (
-  <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-  </svg>
-);
+// ─── Icons ────────────────────────────────────────────────────────────────────
+const Icon = {
+  Bell:     () => <svg width={16} height={16} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>,
+  Plus:     () => <svg width={16} height={16} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M12 4v16m8-8H4"/></svg>,
+  Close:    () => <svg width={18} height={18} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M18 6 6 18M6 6l12 12"/></svg>,
+  Shield:   () => <svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  Wrench:   () => <svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>,
+  Calendar: () => <svg width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>,
+  Spinner:  () => <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ animation: "spin 1s linear infinite" }}><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#ccc"/><path d="M21 12a9 9 0 00-9-9" stroke="#088395"/></svg>,
+  Asset:    () => <svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>,
+  Check:    () => <svg width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M20 6 9 17l-5-5"/></svg>,
+};
+
+// ─── Status badge configs ─────────────────────────────────────────────────────
+const WARRANTY_BADGE = {
+  "Active":        { bg: "#DCFCE7", text: "#166534", border: "#86EFAC", dot: "#22C55E" },
+  "Expiring Soon": { bg: "#FEF9C3", text: "#854D0E", border: "#FDE047", dot: "#EAB308" },
+  "Expired":       { bg: "#FEE2E2", text: "#991B1B", border: "#FCA5A5", dot: "#EF4444" },
+  "No Warranty":   { bg: "#F1F5F9", text: "#475569", border: "#CBD5E1", dot: "#94A3B8" },
+};
+const MAINT_BADGE = {
+  "Scheduled":   { bg: "#DBEAFE", text: "#1E40AF", border: "#93C5FD", dot: "#3B82F6" },
+  "In Progress": { bg: "#FEF9C3", text: "#854D0E", border: "#FDE047", dot: "#EAB308" },
+  "Completed":   { bg: "#DCFCE7", text: "#166534", border: "#86EFAC", dot: "#22C55E" },
+  "Cancelled":   { bg: "#FEE2E2", text: "#991B1B", border: "#FCA5A5", dot: "#EF4444" },
+};
+
+function StatusBadge({ label, map }) {
+  const c = map[label] || map["No Warranty"] || { bg:"#F1F5F9", text:"#475569", border:"#CBD5E1", dot:"#94A3B8" };
+  return (
+    <span style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"3px 10px", borderRadius:99, fontSize:11, fontWeight:700, background:c.bg, color:c.text, border:`1px solid ${c.border}` }}>
+      <span style={{ width:6, height:6, borderRadius:"50%", background:c.dot, display:"inline-block" }} />
+      {label}
+    </span>
+  );
+}
 
 // ─── InputField ───────────────────────────────────────────────────────────────
-function InputField({ label, name, type = "text", value, onChange, options, isMobile }) {
-  const inputStyle = {
-    width: '100%',
-    borderRadius: '10px',
-    border: '1px solid rgba(8, 131, 149, 0.25)',
-    backgroundColor: '#EBF4F6',
-    padding: '10px 14px',
-    fontSize: isMobile ? '13px' : '14px',
-    color: '#176B87',
-    outline: 'none',
-    transition: 'border-color 0.2s, box-shadow 0.2s',
-    boxSizing: 'border-box',
-  };
-  const labelStyle = {
-    fontSize: '11px',
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    color: '#176B87',
-    marginBottom: '6px',
-    display: 'block',
-  };
+function Field({ label, name, type="text", value, onChange, options, isMobile, required }) {
+  const base = { width:"100%", borderRadius:10, border:"1px solid rgba(8,131,149,0.25)", backgroundColor:"#EBF4F6", padding:"9px 13px", fontSize: isMobile?13:14, color:"#176B87", outline:"none", boxSizing:"border-box", fontFamily:"inherit" };
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <label style={labelStyle}>{label}</label>
+    <div style={{ display:"flex", flexDirection:"column" }}>
+      <label style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", color:"#176B87", marginBottom:5 }}>
+        {label}{required && <span style={{ color:"#EF4444" }}> *</span>}
+      </label>
       {options ? (
-        <select name={name} value={value} onChange={onChange} style={inputStyle}>
+        <select name={name} value={value} onChange={onChange} style={{ ...base, appearance:"none", backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat:"no-repeat", backgroundPosition:"right 10px center", paddingRight:30 }}>
           <option value="">Select…</option>
-          {options.map(o => <option key={o}>{o}</option>)}
+          {options.map(o => <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>)}
         </select>
       ) : (
-        <input type={type} name={name} value={value} onChange={onChange}
-               placeholder={`Enter ${label.toLowerCase()}`} style={inputStyle} />
+        <input type={type} name={name} value={value} onChange={onChange} placeholder={`Enter ${label.toLowerCase()}`} style={base} />
       )}
     </div>
   );
 }
 
+// ─── Skeleton row ─────────────────────────────────────────────────────────────
+function SkRow({ cols }) {
+  return (
+    <tr style={{ borderBottom:"1px solid #D1F8EF" }}>
+      {Array.from({length: cols}).map((_, i) => (
+        <td key={i} style={{ padding:"14px 20px" }}>
+          <div style={{ height:13, borderRadius:6, background:"linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%)", backgroundSize:"200% 100%", animation:"shimmer 1.4s infinite", width:["80%","60%","70%","55%","65%"][i%5] }} />
+        </td>
+      ))}
+    </tr>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AMCDashboard() {
-  const [contracts, setContracts] = useState(mockContracts);
-  const [formOpen,  setFormOpen]  = useState(false);
-  const [search,    setSearch]    = useState("");
-  const [isMobile,  setIsMobile]  = useState(false);
-  const [hoveredRow, setHoveredRow] = useState(null);
-  const [hoveredBtn, setHoveredBtn] = useState(null);
-  const [form, setForm] = useState({
-    id: "", category: "", vendor: "", type: "",
-    start: "", end: "", cost: "", contact: "",
+  // Data state
+  const [contracts,    setContracts]    = useState([]);
+  const [maintenance,  setMaintenance]  = useState([]);
+  const [loadingC,     setLoadingC]     = useState(true);
+  const [loadingM,     setLoadingM]     = useState(true);
+  const [errorC,       setErrorC]       = useState(null);
+  const [errorM,       setErrorM]       = useState(null);
+
+  // UI state
+  const [maintFormOpen, setMaintFormOpen] = useState(false);
+  const [search,        setSearch]        = useState("");
+  const [isMobile,      setIsMobile]      = useState(false);
+  const [hoveredRow,    setHoveredRow]    = useState(null);
+  const [saving,        setSaving]        = useState(false);
+  const [saveOk,        setSaveOk]        = useState(false);
+
+  // Add-maintenance form
+  const [mForm, setMForm] = useState({
+    assetObjectId: "", scheduledDate: "", technicianName: "",
+    workDone: "", cost: "", status: "Scheduled", notes: "",
   });
 
+  // Responsive
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024);
     check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
 
-  // ── Derived values ──
-  const total    = contracts.length;
-  const active   = contracts.filter(c => getStatus(c.end) === "Active").length;
-  const expiring = contracts.filter(c => getStatus(c.end) === "Expiring Soon").length;
-  const expired  = contracts.filter(c => getStatus(c.end) === "Expired").length;
+  // Fetch contracts (warranty data)
+  useEffect(() => {
+    async function load() {
+      try {
+        setLoadingC(true); setErrorC(null);
+        // ⚠️ adjust path to match your Next.js route location
+        const res = await fetch("/api/admin/amc/contracts");
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+        const data = await res.json();
+        setContracts(data.contracts || []);
+      } catch (e) {
+        setErrorC("Failed to load warranty contracts.");
+      } finally {
+        setLoadingC(false);
+      }
+    }
+    load();
+  }, []);
 
-  const filtered = contracts.filter(c =>
-    [c.id, c.vendor, c.category].some(v =>
-      v.toLowerCase().includes(search.toLowerCase())
-    )
+  // Fetch maintenance records
+  async function loadMaintenance() {
+    try {
+      setLoadingM(true); setErrorM(null);
+      // ⚠️ adjust path to match your Next.js route location
+      const res = await fetch("/api/admin/amc/maintenance");
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const data = await res.json();
+      setMaintenance(data.maintenance || []);
+    } catch (e) {
+      setErrorM("Failed to load maintenance records.");
+    } finally {
+      setLoadingM(false);
+    }
+  }
+  useEffect(() => { loadMaintenance(); }, []);
+
+  // Derived
+  const total    = contracts.length;
+  const active   = contracts.filter(c => getWarrantyStatus(c.warrantyEnd) === "Active").length;
+  const expiring = contracts.filter(c => getWarrantyStatus(c.warrantyEnd) === "Expiring Soon").length;
+  const expired  = contracts.filter(c => getWarrantyStatus(c.warrantyEnd) === "Expired").length;
+
+  const alertList = useMemo(() =>
+    contracts
+      .filter(c => { const d = daysLeft(c.warrantyEnd); return d !== null && d >= 0 && d <= 60; })
+      .map(c => ({ ...c, days: daysLeft(c.warrantyEnd) }))
+      .sort((a, b) => a.days - b.days),
+    [contracts]
   );
 
-  const alertList = contracts
-    .map(c => ({ ...c, days: daysLeft(c.end) }))
-    .filter(c => c.days >= 0 && c.days <= 30)
-    .sort((a, b) => a.days - b.days);
+  const filtered = useMemo(() =>
+    contracts.filter(c =>
+      [c.assetId, c.assetName, c.brand, c.lab, c.assetType].some(v =>
+        (v || "").toLowerCase().includes(search.toLowerCase())
+      )
+    ),
+    [contracts, search]
+  );
 
-  function handleChange(e) { setForm(p => ({ ...p, [e.target.name]: e.target.value })); }
-  function handleSubmit() {
-    if (!form.id || !form.vendor || !form.start || !form.end) return;
-    setContracts(p => [{ ...form, cost: Number(form.cost) }, ...p]);
-    setForm({ id: "", category: "", vendor: "", type: "", start: "", end: "", cost: "", contact: "" });
-    setFormOpen(false);
+  // Asset options for maintenance form
+  const assetOptions = useMemo(() =>
+    contracts.map(c => ({ value: c._id, label: `${c.assetId} — ${c.assetName}` })),
+    [contracts]
+  );
+
+  function handleMForm(e) {
+    setMForm(p => ({ ...p, [e.target.name]: e.target.value }));
   }
 
-  // ── Styles (matching existing Dashboard pattern exactly) ──
-  const containerStyle = {
-    width: isMobile ? '100%' : 'calc(100% - 255px)',
-    minHeight: '100vh',
-    backgroundColor: '#EBF4F6',
-    padding: isMobile ? '1rem' : '2rem',
-    marginLeft: isMobile ? '0' : '255px',
-    boxSizing: 'border-box',
-    transition: 'all 0.3s ease',
-    overflowX: 'hidden',
+  async function handleAddMaintenance() {
+    if (!mForm.assetObjectId || !mForm.scheduledDate) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/amc/maintenance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assetObjectId:  mForm.assetObjectId,
+          scheduledDate:  mForm.scheduledDate,
+          technicianName: mForm.technicianName,
+          workDone:       mForm.workDone,
+          cost:           mForm.cost,
+          status:         mForm.status,
+          notes:          mForm.notes,
+        }),
+      });
+      if (!res.ok) throw new Error("Save failed");
+      setSaveOk(true);
+      setMaintFormOpen(false);
+      setMForm({ assetObjectId:"", scheduledDate:"", technicianName:"", workDone:"", cost:"", status:"Scheduled", notes:"" });
+      await loadMaintenance();
+      setTimeout(() => setSaveOk(false), 3000);
+    } catch {
+      alert("Failed to save maintenance record. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // ── Styles ────────────────────────────────────────────────────────────────
+  const container = {
+    width: isMobile ? "100%" : "calc(100% - 255px)",
+    minHeight: "100vh",
+    backgroundColor: "#EBF4F6",
+    padding: isMobile ? "1rem" : "2rem",
+    marginLeft: isMobile ? "0" : "255px",
+    boxSizing: "border-box",
+    transition: "all 0.3s ease",
+    overflowX: "hidden",
   };
-
-  const headerStyle = {
-    marginBottom: '2rem',
-    paddingBottom: '1rem',
-    borderBottom: '3px solid #088395',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: '1rem',
+  const card = {
+    backgroundColor: "white",
+    borderRadius: 16,
+    padding: isMobile ? "1.25rem" : "1.5rem",
+    boxShadow: "0 4px 6px -1px rgba(8,131,149,0.1)",
+    border: "1px solid rgba(8,131,149,0.1)",
+    marginBottom: "1.5rem",
+    overflowX: "auto",
   };
-
-  const titleStyle = {
-    fontSize: isMobile ? '1.75rem' : '2.25rem',
-    fontWeight: '800',
-    color: '#176B87',
-    margin: 0,
-    letterSpacing: '-0.5px',
+  const th = {
+    padding: isMobile ? "10px 12px" : "12px 20px",
+    textAlign: "left",
+    fontWeight: 700,
+    color: "#176B87",
+    borderBottom: "2px solid #088395",
+    textTransform: "uppercase",
+    fontSize: 11,
+    letterSpacing: "0.5px",
+    backgroundColor: "#D1F8EF",
+    whiteSpace: "nowrap",
   };
+  const td = { padding: isMobile ? "10px 12px" : "12px 20px", color: "#334155", borderBottom: "1px solid #D1F8EF", fontSize: isMobile ? 12 : 14, whiteSpace: "nowrap" };
 
-  const summaryGridStyle = {
-    display: 'grid',
-    gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-    gap: '1.25rem',
-    marginBottom: '2rem',
-  };
-
-  const cardBase = {
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    padding: isMobile ? '1.25rem' : '1.5rem',
-    boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)',
-    border: '1px solid rgba(8, 131, 149, 0.1)',
-    transition: 'all 0.3s ease',
-    cursor: 'default',
-    position: 'relative',
-    overflow: 'hidden',
-  };
-
-  const sectionCardStyle = {
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    padding: isMobile ? '1.25rem' : '1.5rem',
-    boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)',
-    border: '1px solid rgba(8, 131, 149, 0.1)',
-    marginBottom: '1.5rem',
-    overflowX: 'auto',
-  };
-
-  const sectionTitleStyle = {
-    fontSize: isMobile ? '1.1rem' : '1.25rem',
-    fontWeight: '700',
-    color: '#176B87',
-    marginBottom: '0.35rem',
-  };
-
-  const sectionHeaderStyle = {
-    marginBottom: '1.25rem',
-    paddingBottom: '0.75rem',
-    borderBottom: '2px solid #D1F8EF',
-  };
-
-  const tableStyle = {
-    width: '100%',
-    borderCollapse: 'collapse',
-    fontSize: isMobile ? '0.8rem' : '0.9rem',
-  };
-
-  const thStyle = {
-    padding: isMobile ? '0.75rem' : '1rem 1.25rem',
-    textAlign: 'left',
-    fontWeight: '700',
-    color: '#176B87',
-    borderBottom: '2px solid #088395',
-    textTransform: 'uppercase',
-    fontSize: isMobile ? '0.7rem' : '0.8rem',
-    letterSpacing: '0.5px',
-    backgroundColor: '#D1F8EF',
-    whiteSpace: 'nowrap',
-  };
-
-  const tdStyle = {
-    padding: isMobile ? '0.75rem' : '1rem 1.25rem',
-    color: '#176B87',
-    borderBottom: '1px solid #D1F8EF',
-    fontWeight: '500',
-    whiteSpace: 'nowrap',
-  };
-
-  const iconSize = isMobile ? '40px' : '48px';
-
-  const summaryCards = [
-    { label: 'Total Assets Under AMC', value: total,    bg: '#D1F8EF',                    icon: '#088395',
-      svg: <svg width={isMobile?"20":"24"} height={isMobile?"20":"24"} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm0 2h10v10H5V5z" clipRule="evenodd"/></svg> },
-    { label: 'Active AMC Contracts',   value: active,   bg: 'rgba(134,182,246,0.2)',      icon: '#3674B5',
-      svg: <svg width={isMobile?"20":"24"} height={isMobile?"20":"24"} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"/></svg> },
-    { label: 'AMC Expiring Soon',      value: expiring, bg: 'rgba(251,191,36,0.15)',      icon: '#d97706',
-      svg: <svg width={isMobile?"20":"24"} height={isMobile?"20":"24"} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/></svg> },
-    { label: 'Expired AMC',            value: expired,  bg: 'rgba(239,68,68,0.12)',       icon: '#dc2626',
-      svg: <svg width={isMobile?"20":"24"} height={isMobile?"20":"24"} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/></svg> },
-  ];
-
-  const statusStyle = (st) => {
-    const base = { fontSize: '11px', fontWeight: '700', padding: '4px 10px', borderRadius: '99px', whiteSpace: 'nowrap' };
-    if (st === "Active")        return { ...base, background: '#d1fae5', color: '#065f46', border: '1px solid #a7f3d0' };
-    if (st === "Expiring Soon") return { ...base, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' };
-    return                             { ...base, background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca' };
-  };
-
-  // ── ADDED: fragment wrapper + <AdminSidebar /> ──
   return (
     <>
       <AdminSidebar />
 
-      <div style={containerStyle}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Outfit:wght@400;500;600;700&display=swap');
+        * { font-family: 'Outfit', sans-serif; box-sizing: border-box; }
+        @keyframes fadeUp  { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+        @keyframes spin    { to{transform:rotate(360deg)} }
+        .fade-in { animation: fadeUp .35s ease both; }
+        .row-hover:hover { background: linear-gradient(90deg,#EBF4F6,#f8fafc) !important; }
+        ::-webkit-scrollbar { width:5px; height:5px; }
+        ::-webkit-scrollbar-thumb { background:#a8cdd5; border-radius:99px; }
+      `}</style>
 
-        {/* ── Header ─────────────────────────────────────────────────── */}
-        <header style={headerStyle}>
-          <div>
-            <h1 style={titleStyle}>AMC Tracking Dashboard</h1>
-            <p style={{ margin: '4px 0 0', fontSize: isMobile ? '12px' : '13px', color: '#3674B5', fontWeight: '500' }}>
-              Institutional Asset Management System · {new Date().toLocaleDateString("en-IN", { dateStyle: "long" })}
-              {alertList.length > 0 && (
-                <span style={{ marginLeft: '12px', color: '#d97706', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                  <BellIcon size={14} /> {alertList.length} expiry alert{alertList.length > 1 ? "s" : ""}
-                </span>
-              )}
-            </p>
+      <div style={container}>
+
+        {/* ── Header ───────────────────────────────────────────────── */}
+        <div className="fade-in" style={{ marginBottom:"1.5rem", paddingBottom:"1rem", borderBottom:"3px solid #088395", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:"1rem" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ width:42, height:42, borderRadius:12, background:"linear-gradient(135deg,#088395,#176B87)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 4px 12px rgba(8,131,149,0.3)", color:"#fff" }}>
+              <Icon.Shield />
+            </div>
+            <div>
+              <h1 style={{ fontSize: isMobile?"1.6rem":"2.1rem", fontWeight:800, color:"#176B87", margin:0, fontFamily:"'Playfair Display',serif" }}>
+                AMC Dashboard
+              </h1>
+              <p style={{ margin:"2px 0 0", fontSize:13, color:"#3674B5", fontWeight:500 }}>
+                Warranty & Maintenance Tracking ·{" "}
+                {alertList.length > 0 && (
+                  <span style={{ color:"#d97706", fontWeight:700 }}>
+                    <Icon.Bell /> {alertList.length} expiry alert{alertList.length !== 1 ? "s" : ""}
+                  </span>
+                )}
+              </p>
+            </div>
           </div>
-          <button
-            onClick={() => setFormOpen(o => !o)}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(8,131,149,0.35)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)';   e.currentTarget.style.boxShadow = '0 4px 12px rgba(8,131,149,0.25)'; }}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: isMobile ? '9px 16px' : '10px 20px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg,#088395,#176B87)', color: 'white', fontSize: isMobile ? '13px' : '14px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(8,131,149,0.25)', transition: 'all 0.2s ease' }}
-          >
-            <PlusIcon size={isMobile ? 16 : 18} /> Add Contract
-          </button>
-        </header>
 
-        {/* ── Summary Cards ───────────────────────────────────────────── */}
-        <div style={summaryGridStyle}>
-          {summaryCards.map((c, i) => (
-            <div
-              key={i}
-              style={cardBase}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(8,131,149,0.2), 0 4px 6px -2px rgba(8,131,149,0.1)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)';   e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(8,131,149,0.1), 0 2px 4px -1px rgba(8,131,149,0.06)'; }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                <div style={{ fontSize: isMobile ? '0.75rem' : '0.85rem', fontWeight: '600', color: '#176B87', textTransform: 'uppercase', letterSpacing: '0.5px', maxWidth: '120px', lineHeight: '1.3' }}>{c.label}</div>
-                <div style={{ width: iconSize, height: iconSize, borderRadius: '12px', backgroundColor: c.bg, color: c.icon, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  {c.svg}
-                </div>
+          {/* Add Maintenance button */}
+          <button
+            onClick={() => setMaintFormOpen(o => !o)}
+            style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 20px", borderRadius:12, border:"none", background:"linear-gradient(135deg,#088395,#176B87)", color:"white", fontSize:14, fontWeight:700, cursor:"pointer", boxShadow:"0 4px 12px rgba(8,131,149,0.25)", transition:"all 0.2s" }}
+            onMouseEnter={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 8px 20px rgba(8,131,149,0.35)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform="translateY(0)";   e.currentTarget.style.boxShadow="0 4px 12px rgba(8,131,149,0.25)"; }}
+          >
+            <Icon.Wrench /> Schedule Maintenance
+          </button>
+        </div>
+
+        {/* ── Save success toast ────────────────────────────────────── */}
+        {saveOk && (
+          <div className="fade-in" style={{ display:"flex", alignItems:"center", gap:8, borderRadius:12, padding:"12px 18px", marginBottom:"1rem", background:"#DCFCE7", border:"1px solid #86EFAC", color:"#166534", fontSize:13, fontWeight:600 }}>
+            <Icon.Check /> Maintenance record saved successfully.
+          </div>
+        )}
+
+        {/* ── Summary Cards ─────────────────────────────────────────── */}
+        <div className="fade-in" style={{ display:"grid", gridTemplateColumns: isMobile?"repeat(2,1fr)":"repeat(4,1fr)", gap:"1.25rem", marginBottom:"1.5rem", animationDelay:".05s" }}>
+          {[
+            { label:"Assets with Warranty",     value: loadingC ? "…" : total,    bg:"#D1F8EF",                 icon:"#088395", Icon: Icon.Shield  },
+            { label:"Warranty Active",           value: loadingC ? "…" : active,   bg:"rgba(134,182,246,0.2)",   icon:"#3674B5", Icon: Icon.Check   },
+            { label:"Expiring within 60 days",   value: loadingC ? "…" : expiring, bg:"rgba(251,191,36,0.15)",   icon:"#d97706", Icon: Icon.Bell    },
+            { label:"Warranty Expired",          value: loadingC ? "…" : expired,  bg:"rgba(239,68,68,0.12)",    icon:"#dc2626", Icon: Icon.Asset   },
+          ].map((s, i) => (
+            <div key={i} style={{ backgroundColor:"white", borderRadius:16, padding: isMobile?"1rem":"1.25rem", boxShadow:"0 4px 6px -1px rgba(8,131,149,0.1)", border:"1px solid rgba(8,131,149,0.1)", position:"relative", overflow:"hidden", transition:"all 0.25s" }}
+              onMouseEnter={e => { e.currentTarget.style.transform="translateY(-4px)"; e.currentTarget.style.boxShadow="0 10px 20px rgba(8,131,149,0.18)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform="translateY(0)";   e.currentTarget.style.boxShadow="0 4px 6px -1px rgba(8,131,149,0.1)"; }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"0.75rem" }}>
+                <div style={{ fontSize: isMobile?11:12, fontWeight:600, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.4px", lineHeight:1.4, maxWidth:120 }}>{s.label}</div>
+                <div style={{ width:40, height:40, borderRadius:10, background:s.bg, color:s.icon, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}><s.Icon /></div>
               </div>
-              <div style={{ fontSize: isMobile ? '1.75rem' : '2.25rem', fontWeight: '800', color: '#088395', letterSpacing: '-1px' }}>{c.value}</div>
-              {/* decorative circle */}
-              <div style={{ position: 'absolute', bottom: '-16px', right: '-16px', width: '80px', height: '80px', borderRadius: '50%', backgroundColor: c.icon, opacity: 0.07 }} />
+              <div style={{ fontSize: isMobile?"1.75rem":"2.25rem", fontWeight:800, color:"#088395", fontFamily:"'Playfair Display',serif" }}>{s.value}</div>
+              <div style={{ position:"absolute", bottom:-16, right:-16, width:70, height:70, borderRadius:"50%", background:s.icon, opacity:0.07 }} />
             </div>
           ))}
         </div>
 
-        {/* ── Add Contract Form ────────────────────────────────────────── */}
-        {formOpen && (
-          <div style={{ ...sectionCardStyle, marginBottom: '1.5rem' }}>
-            <div style={sectionHeaderStyle}>
-              <div style={sectionTitleStyle}>New AMC Contract</div>
-              <div style={{ fontSize: isMobile ? '0.8rem' : '0.9rem', color: '#3674B5', fontWeight: '500' }}>Fill in the details below</div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(1,1fr)' : 'repeat(4,1fr)', gap: '1rem' }}>
-              <InputField label="Asset ID"       name="id"       value={form.id}       onChange={handleChange} isMobile={isMobile} />
-              <InputField label="Asset Category" name="category" value={form.category} onChange={handleChange} isMobile={isMobile}
-                          options={["Computer","Printer","Scanner","Server","AC Unit","Oscilloscope","Projector","UPS","Other"]} />
-              <InputField label="AMC Vendor"     name="vendor"   value={form.vendor}   onChange={handleChange} isMobile={isMobile} />
-              <InputField label="AMC Type"       name="type"     value={form.type}     onChange={handleChange} isMobile={isMobile}
-                          options={["Comprehensive","Non-Comprehensive"]} />
-              <InputField label="Start Date"     name="start"    value={form.start}    onChange={handleChange} isMobile={isMobile} type="date" />
-              <InputField label="End Date"       name="end"      value={form.end}      onChange={handleChange} isMobile={isMobile} type="date" />
-              <InputField label="Cost (₹)"       name="cost"     value={form.cost}     onChange={handleChange} isMobile={isMobile} type="number" />
-              <InputField label="Vendor Contact" name="contact"  value={form.contact}  onChange={handleChange} isMobile={isMobile} type="tel" />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '1.25rem' }}>
-              <button
-                onClick={() => setFormOpen(false)}
-                style={{ padding: '9px 20px', borderRadius: '10px', border: '1px solid rgba(8,131,149,0.3)', background: 'white', color: '#176B87', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                style={{ padding: '9px 24px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg,#088395,#176B87)', color: 'white', fontSize: '14px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(8,131,149,0.25)', transition: 'all 0.2s' }}
-              >
-                Add Contract
-              </button>
-            </div>
+        {/* ── Error banners ─────────────────────────────────────────── */}
+        {(errorC || errorM) && (
+          <div style={{ borderRadius:12, padding:"12px 18px", marginBottom:"1rem", background:"#FEF2F2", border:"1px solid #FCA5A5", color:"#991B1B", fontSize:13, fontWeight:600 }}>
+            {errorC || errorM}
+            <button onClick={() => window.location.reload()} style={{ marginLeft:16, background:"#991B1B", color:"#fff", border:"none", borderRadius:8, padding:"3px 12px", fontSize:12, cursor:"pointer", fontWeight:600 }}>Retry</button>
           </div>
         )}
 
-        {/* ── Expiry Alerts ────────────────────────────────────────────── */}
+        {/* ── Expiry Alerts ─────────────────────────────────────────── */}
         {alertList.length > 0 && (
-          <div style={{ backgroundColor: '#fffbeb', borderRadius: '16px', border: '1px solid #fde68a', marginBottom: '1.5rem', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(8,131,149,0.08)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: isMobile ? '12px 16px' : '14px 20px', borderBottom: '1px solid #fde68a', backgroundColor: '#fef9c3' }}>
-              <BellIcon size={16} />
-              <span style={{ fontSize: isMobile ? '14px' : '15px', fontWeight: '700', color: '#92400e' }}>AMC Expiry Alerts</span>
-              <span style={{ marginLeft: 'auto', background: '#fde68a', color: '#92400e', fontSize: '11px', fontWeight: '700', padding: '2px 10px', borderRadius: '99px' }}>
-                {alertList.length}
-              </span>
+          <div className="fade-in" style={{ backgroundColor:"#fffbeb", borderRadius:16, border:"1px solid #fde68a", marginBottom:"1.5rem", overflow:"hidden", boxShadow:"0 4px 6px rgba(8,131,149,0.06)", animationDelay:".1s" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10, padding: isMobile?"12px 16px":"14px 20px", borderBottom:"1px solid #fde68a", backgroundColor:"#fef9c3" }}>
+              <Icon.Bell />
+              <span style={{ fontSize:15, fontWeight:700, color:"#92400e" }}>Warranty Expiry Alerts</span>
+              <span style={{ marginLeft:"auto", background:"#fde68a", color:"#92400e", fontSize:11, fontWeight:700, padding:"2px 10px", borderRadius:99 }}>{alertList.length}</span>
             </div>
-            <div>
-              {alertList.map((a, i) => (
-                <div key={a.id} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', padding: isMobile ? '12px 16px' : '12px 20px', borderBottom: i < alertList.length - 1 ? '1px solid #fef3c7' : 'none', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                    <span style={{ color: '#d97706', fontSize: '16px' }}>⚠</span>
-                    <span style={{ fontWeight: '700', color: '#176B87', fontSize: isMobile ? '13px' : '14px' }}>{a.id}</span>
-                    <span style={{ color: '#d1d5db' }}>·</span>
-                    <span style={{ color: '#6b7280', fontSize: isMobile ? '12px' : '13px' }}>{a.vendor}</span>
-                    <span style={{ color: '#d1d5db' }}>·</span>
-                    <span style={{ color: '#9ca3af', fontSize: isMobile ? '11px' : '12px' }}>Expires {a.end}</span>
-                  </div>
-                  <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '99px', background: a.days <= 10 ? '#fee2e2' : '#fef3c7', color: a.days <= 10 ? '#991b1b' : '#92400e', whiteSpace: 'nowrap' }}>
-                    {a.days}d remaining
-                  </span>
+            {alertList.map((a, i) => (
+              <div key={a._id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding: isMobile?"12px 16px":"12px 20px", borderBottom: i < alertList.length-1 ? "1px solid #fef3c7" : "none", gap:8, flexWrap:"wrap" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+                  <span style={{ fontSize:16 }}>⚠</span>
+                  <span style={{ fontWeight:700, color:"#176B87", fontSize:14 }}>{a.assetId}</span>
+                  <span style={{ color:"#d1d5db" }}>·</span>
+                  <span style={{ color:"#6b7280", fontSize:13 }}>{a.assetName}</span>
+                  <span style={{ color:"#d1d5db" }}>·</span>
+                  <span style={{ color:"#9ca3af", fontSize:12 }}>Expires {fmtDate(a.warrantyEnd)}</span>
                 </div>
-              ))}
+                <span style={{ fontSize:11, fontWeight:700, padding:"4px 12px", borderRadius:99, background: a.days <= 14 ? "#fee2e2" : "#fef3c7", color: a.days <= 14 ? "#991b1b" : "#92400e", whiteSpace:"nowrap" }}>
+                  {a.days}d remaining
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Add Maintenance Form ──────────────────────────────────── */}
+        {maintFormOpen && (
+          <div className="fade-in" style={{ ...card, animationDelay:".05s" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"1rem", paddingBottom:"0.75rem", borderBottom:"2px solid #D1F8EF" }}>
+              <div>
+                <div style={{ fontSize: isMobile?15:17, fontWeight:700, color:"#176B87" }}>Schedule Maintenance</div>
+                <div style={{ fontSize:13, color:"#3674B5", marginTop:2 }}>Log a new service or upcoming maintenance</div>
+              </div>
+              <button onClick={() => setMaintFormOpen(false)} style={{ background:"none", border:"none", cursor:"pointer", color:"#94a3b8", padding:4, display:"flex" }}><Icon.Close /></button>
+            </div>
+
+            <div style={{ display:"grid", gridTemplateColumns: isMobile?"1fr":"repeat(3,1fr)", gap:"1rem" }}>
+              <Field label="Asset" name="assetObjectId" value={mForm.assetObjectId} onChange={handleMForm} options={assetOptions} isMobile={isMobile} required />
+              <Field label="Scheduled Date" name="scheduledDate" type="date" value={mForm.scheduledDate} onChange={handleMForm} isMobile={isMobile} required />
+              <Field label="Technician Name" name="technicianName" value={mForm.technicianName} onChange={handleMForm} isMobile={isMobile} />
+              <Field label="Work to be Done" name="workDone" value={mForm.workDone} onChange={handleMForm} isMobile={isMobile} />
+              <Field label="Estimated Cost (₹)" name="cost" type="number" value={mForm.cost} onChange={handleMForm} isMobile={isMobile} />
+              <Field label="Status" name="status" value={mForm.status} onChange={handleMForm} options={["Scheduled","In Progress","Completed","Cancelled"]} isMobile={isMobile} />
+            </div>
+            <div style={{ marginTop:"0.75rem" }}>
+              <Field label="Notes" name="notes" value={mForm.notes} onChange={handleMForm} isMobile={isMobile} />
+            </div>
+
+            <div style={{ display:"flex", justifyContent:"flex-end", gap:12, marginTop:"1.25rem" }}>
+              <button onClick={() => setMaintFormOpen(false)} style={{ padding:"9px 20px", borderRadius:10, border:"1px solid rgba(8,131,149,0.3)", background:"white", color:"#176B87", fontSize:14, fontWeight:600, cursor:"pointer" }}>Cancel</button>
+              <button
+                onClick={handleAddMaintenance}
+                disabled={saving || !mForm.assetObjectId || !mForm.scheduledDate}
+                style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 24px", borderRadius:10, border:"none", background: saving?"#a8cdd5":"linear-gradient(135deg,#088395,#176B87)", color:"white", fontSize:14, fontWeight:700, cursor: saving?"not-allowed":"pointer", boxShadow:"0 4px 12px rgba(8,131,149,0.25)", opacity: (!mForm.assetObjectId || !mForm.scheduledDate) ? 0.6 : 1 }}
+              >
+                {saving ? <><Icon.Spinner /> Saving…</> : <><Icon.Plus /> Save Record</>}
+              </button>
             </div>
           </div>
         )}
 
-        {/* ── Contracts Table ──────────────────────────────────────────── */}
-        <div style={sectionCardStyle}>
-          <div style={sectionHeaderStyle}>
-            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: '12px' }}>
-              <div>
-                <div style={sectionTitleStyle}>AMC Contracts</div>
-                <div style={{ fontSize: isMobile ? '0.8rem' : '0.9rem', color: '#3674B5', fontWeight: '500' }}>All active and historical contracts</div>
+        {/* ── Warranty / Contracts Table ────────────────────────────── */}
+        <div className="fade-in" style={{ ...card, animationDelay:".12s" }}>
+          <div style={{ display:"flex", alignItems: isMobile?"flex-start":"center", justifyContent:"space-between", marginBottom:"1rem", paddingBottom:"0.75rem", borderBottom:"2px solid #D1F8EF", flexDirection: isMobile?"column":"row", gap:12 }}>
+            <div>
+              <div style={{ fontSize: isMobile?15:17, fontWeight:700, color:"#176B87", display:"flex", alignItems:"center", gap:8 }}>
+                <Icon.Shield /> Warranty Contracts
+                <span style={{ borderRadius:99, padding:"2px 10px", fontSize:11, fontWeight:700, background:"#EBF4F6", color:"#088395" }}>{loadingC ? "…" : filtered.length}</span>
               </div>
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search by ID, vendor, category…"
-                style={{ padding: '9px 14px', borderRadius: '10px', border: '1px solid rgba(8,131,149,0.25)', backgroundColor: '#EBF4F6', fontSize: isMobile ? '12px' : '13px', color: '#176B87', outline: 'none', width: isMobile ? '100%' : '240px', boxSizing: 'border-box' }}
-              />
+              <div style={{ fontSize:13, color:"#3674B5", marginTop:2 }}>Derived from asset Financial Details</div>
             </div>
+            <input
+              value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search ID, name, brand, lab…"
+              style={{ padding:"9px 14px", borderRadius:10, border:"1px solid rgba(8,131,149,0.25)", backgroundColor:"#EBF4F6", fontSize:13, color:"#176B87", outline:"none", width: isMobile?"100%":240 }}
+            />
           </div>
 
-          <table style={tableStyle}>
-            <thead style={{ backgroundColor: '#D1F8EF' }}>
-              <tr>
-                {["Asset ID","Category","Vendor","Type","Start Date","End Date","Cost (₹)","Status","Actions"].map(h => (
-                  <th key={h} style={thStyle}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
+          <div style={{ overflowX:"auto" }}>
+            <table style={{ width:"100%", borderCollapse:"collapse" }}>
+              <thead>
                 <tr>
-                  <td colSpan={9} style={{ ...tdStyle, textAlign: 'center', padding: '3rem', color: '#9ca3af' }}>
-                    No contracts found.
-                  </td>
+                  {["Asset ID","Asset Name","Type","Brand","Lab","Purchase Year","Warranty (yrs)","Warranty End","Total Maint. Cost","Breakdown Freq.","Status"].map(h => (
+                    <th key={h} style={th}>{h}</th>
+                  ))}
                 </tr>
-              ) : filtered.map((c, i) => {
-                const st = getStatus(c.end);
-                return (
-                  <tr
-                    key={c.id + i}
-                    style={{ cursor: 'pointer', transition: 'all 0.2s ease', backgroundColor: hoveredRow === i ? '#D1F8EF' : (i % 2 === 0 ? '#FFFFFF' : '#EBF4F6') }}
-                    onMouseEnter={() => setHoveredRow(i)}
-                    onMouseLeave={() => setHoveredRow(null)}
-                  >
-                    <td style={{ ...tdStyle, fontWeight: '700', color: '#088395' }}>{c.id}</td>
-                    <td style={tdStyle}>{c.category}</td>
-                    <td style={{ ...tdStyle, fontWeight: '600' }}>{c.vendor}</td>
-                    <td style={{ ...tdStyle, color: '#6b7280', fontSize: isMobile ? '11px' : '13px' }}>{c.type || "—"}</td>
-                    <td style={tdStyle}>{c.start}</td>
-                    <td style={tdStyle}>{c.end}</td>
-                    <td style={{ ...tdStyle, fontWeight: '700', color: '#088395', fontSize: isMobile ? '0.85rem' : '0.95rem' }}>
-                      ₹{Number(c.cost).toLocaleString("en-IN")}
-                    </td>
-                    <td style={tdStyle}>
-                      <span style={statusStyle(st)}>{st}</span>
-                    </td>
-                    <td style={tdStyle}>
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button
-                          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 8px rgba(8,131,149,0.3)'; }}
-                          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)';   e.currentTarget.style.boxShadow = 'none'; }}
-                          style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', borderRadius: '8px', border: 'none', background: '#088395', color: 'white', fontSize: '11px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.15s' }}
-                        >
-                          <EyeIcon /> View
-                        </button>
-                        <button
-                          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 8px rgba(54,116,181,0.3)'; }}
-                          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)';   e.currentTarget.style.boxShadow = 'none'; }}
-                          style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', borderRadius: '8px', border: 'none', background: '#3674B5', color: 'white', fontSize: '11px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.15s' }}
-                        >
-                          <EditIcon /> Edit
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {loadingC
+                  ? Array.from({length:5}).map((_,i) => <SkRow key={i} cols={11} />)
+                  : filtered.length === 0
+                  ? (
+                    <tr><td colSpan={11} style={{ textAlign:"center", padding:"3rem", color:"#94a3b8", fontWeight:600 }}>No warranty records found</td></tr>
+                  )
+                  : filtered.map((c, i) => {
+                    const st = getWarrantyStatus(c.warrantyEnd);
+                    return (
+                      <tr key={c._id} className="row-hover" style={{ backgroundColor: i%2===0?"#fff":"#EBF4F6", cursor:"default", transition:"background 0.15s" }}>
+                        <td style={{ ...td, fontFamily:"monospace", fontWeight:700, color:"#088395" }}>{c.assetId}</td>
+                        <td style={{ ...td, fontWeight:600 }}>{c.assetName}</td>
+                        <td style={{ ...td, textTransform:"capitalize" }}>{c.assetType}</td>
+                        <td style={td}>{c.brand}</td>
+                        <td style={td}>{c.lab}</td>
+                        <td style={td}>{c.purchaseYear || "—"}</td>
+                        <td style={{ ...td, textAlign:"center" }}>{c.warrantyYears || "—"}</td>
+                        <td style={td}>{fmtDate(c.warrantyEnd)}</td>
+                        <td style={{ ...td, fontWeight:700, color:"#088395" }}>{fmtINR(c.totalMaintenanceCost)}</td>
+                        <td style={{ ...td, textAlign:"center" }}>{c.breakdownFrequency ?? "—"}</td>
+                        <td style={td}><StatusBadge label={st} map={WARRANTY_BADGE} /></td>
+                      </tr>
+                    );
+                  })
+                }
+              </tbody>
+            </table>
+          </div>
 
-          <div style={{ padding: isMobile ? '0.75rem 0 0' : '0.75rem 0.25rem 0', display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#9ca3af', borderTop: '1px solid #D1F8EF', marginTop: '0.5rem' }}>
-            <span>Showing {filtered.length} of {contracts.length} contracts</span>
+          <div style={{ display:"flex", justifyContent:"space-between", padding:"0.75rem 0 0", fontSize:12, color:"#9ca3af", borderTop:"1px solid #D1F8EF", marginTop:"0.5rem" }}>
+            <span>Showing {filtered.length} of {contracts.length}</span>
             <span>Last updated: {new Date().toLocaleDateString("en-IN")}</span>
           </div>
         </div>
 
-        {/* ── Maintenance History ──────────────────────────────────────── */}
-        <div style={sectionCardStyle}>
-          <div style={sectionHeaderStyle}>
-            <div style={sectionTitleStyle}>Maintenance History</div>
-            <div style={{ fontSize: isMobile ? '0.8rem' : '0.9rem', color: '#3674B5', fontWeight: '500' }}>Past service records</div>
+        {/* ── Maintenance History Table ─────────────────────────────── */}
+        <div className="fade-in" style={{ ...card, animationDelay:".18s" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"1rem", paddingBottom:"0.75rem", borderBottom:"2px solid #D1F8EF", flexWrap:"wrap", gap:12 }}>
+            <div>
+              <div style={{ fontSize: isMobile?15:17, fontWeight:700, color:"#176B87", display:"flex", alignItems:"center", gap:8 }}>
+                <Icon.Wrench /> Maintenance Schedule
+                <span style={{ borderRadius:99, padding:"2px 10px", fontSize:11, fontWeight:700, background:"#EBF4F6", color:"#088395" }}>{loadingM ? "…" : maintenance.length}</span>
+              </div>
+              <div style={{ fontSize:13, color:"#3674B5", marginTop:2 }}>All scheduled and completed service records</div>
+            </div>
           </div>
-          <table style={tableStyle}>
-            <thead style={{ backgroundColor: '#D1F8EF' }}>
-              <tr>
-                {["Asset ID","Service Date","Issue / Work Done","Technician","Cost (₹)"].map(h => (
-                  <th key={h} style={thStyle}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {mockHistory.map((h, i) => (
-                <tr
-                  key={i}
-                  style={{ cursor: 'pointer', transition: 'all 0.2s ease', backgroundColor: hoveredRow === `h${i}` ? '#D1F8EF' : (i % 2 === 0 ? '#FFFFFF' : '#EBF4F6') }}
-                  onMouseEnter={() => setHoveredRow(`h${i}`)}
-                  onMouseLeave={() => setHoveredRow(null)}
-                >
-                  <td style={{ ...tdStyle, fontWeight: '700', color: '#088395' }}>{h.assetId}</td>
-                  <td style={tdStyle}>{h.date}</td>
-                  <td style={{ ...tdStyle, whiteSpace: 'normal' }}>{h.issue}</td>
-                  <td style={{ ...tdStyle, fontWeight: '600' }}>{h.tech}</td>
-                  <td style={{ ...tdStyle, fontWeight: '700', color: '#088395', fontSize: isMobile ? '0.85rem' : '0.95rem' }}>
-                    ₹{h.cost.toLocaleString("en-IN")}
-                  </td>
+
+          <div style={{ overflowX:"auto" }}>
+            <table style={{ width:"100%", borderCollapse:"collapse" }}>
+              <thead>
+                <tr>
+                  {["Asset ID","Asset Name","Scheduled Date","Completed Date","Technician","Work Done","Cost (₹)","Status","Notes"].map(h => (
+                    <th key={h} style={th}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {loadingM
+                  ? Array.from({length:4}).map((_,i) => <SkRow key={i} cols={9} />)
+                  : maintenance.length === 0
+                  ? (
+                    <tr><td colSpan={9} style={{ textAlign:"center", padding:"3rem", color:"#94a3b8", fontWeight:600 }}>
+                      No maintenance records yet.{" "}
+                      <button onClick={() => setMaintFormOpen(true)} style={{ background:"none", border:"none", color:"#088395", fontWeight:700, cursor:"pointer", fontSize:"inherit", textDecoration:"underline" }}>Schedule one now →</button>
+                    </td></tr>
+                  )
+                  : maintenance.map((m, i) => (
+                    <tr key={m._id} className="row-hover" style={{ backgroundColor: i%2===0?"#fff":"#EBF4F6", transition:"background 0.15s" }}>
+                      <td style={{ ...td, fontFamily:"monospace", fontWeight:700, color:"#088395" }}>{m.assetId}</td>
+                      <td style={{ ...td, fontWeight:600 }}>{m.assetName}</td>
+                      <td style={td}>
+                        <span style={{ display:"inline-flex", alignItems:"center", gap:5 }}>
+                          <Icon.Calendar /> {fmtDate(m.scheduledDate)}
+                        </span>
+                      </td>
+                      <td style={{ ...td, color: m.completedDate ? "#166534" : "#9ca3af" }}>{m.completedDate ? fmtDate(m.completedDate) : "—"}</td>
+                      <td style={{ ...td, fontWeight:600 }}>{m.technicianName || "Unassigned"}</td>
+                      <td style={{ ...td, maxWidth:180, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{m.workDone || "—"}</td>
+                      <td style={{ ...td, fontWeight:700, color:"#088395" }}>{m.cost ? fmtINR(m.cost) : "—"}</td>
+                      <td style={td}><StatusBadge label={m.status} map={MAINT_BADGE} /></td>
+                      <td style={{ ...td, color:"#94a3b8", fontSize:12 }}>{m.notes || "—"}</td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
         </div>
 
       </div>

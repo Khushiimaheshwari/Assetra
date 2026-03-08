@@ -15,7 +15,8 @@ const AssetSchema = new mongoose.Schema({
     useful_life: { type: Number },
     breakdown_frequency: { type: Number, default: 0 },
     total_maintenance_cost: { type: Number, default: 0 },
-    usage_frequency: { type: String, enum: ["Low", "Medium", "High"] }
+    usage_frequency: { type: String, enum: ["Low", "Medium", "High"] },
+    warranty: { type: Number }
   },
   AI_Predictions: {
     failurePrediction: { type: Number },
