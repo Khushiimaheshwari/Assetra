@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import Lab from '@/models/Labs';
 
 export default function LabManagement() {
   const [labs, setLabs] = useState([]);
@@ -9,6 +10,8 @@ export default function LabManagement() {
   const [editingLab, setEditingLab] = useState(null);
   const [technicians, setTechnicians] = useState([]);
   const [labIncharge, setLabIncharge] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [labNameFilter, setLabNameFilter] = useState(""); 
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -17,6 +20,7 @@ export default function LabManagement() {
     id: '',
     name: '',
     block: '',
+    type: "",
     labRoom: '',
     capacity: '',
     status: 'Active',
@@ -116,6 +120,7 @@ export default function LabManagement() {
       labId: newLab.id,
       labName: newLab.name,
       block: newLab.block,
+      labType: newLab.type,
       labRoom: newLab.labRoom,
       capacity: newLab.capacity,
       status: newLab.status,
@@ -155,6 +160,7 @@ export default function LabManagement() {
       id: lab.Lab_ID || "",
       name: lab.Lab_Name || "",
       block: lab.Block || "",
+      labType: Lab.Lab_Type,
       labRoom: lab.Lab_Room || "",
       capacity: lab.Total_Capacity || "",
       status: lab.Status || "Active",
@@ -174,6 +180,7 @@ export default function LabManagement() {
       Lab_ID: newLab.id,
       Lab_Name: newLab.name,
       Block: newLab.block,
+      labType: newLab.type,
       Lab_Room: newLab.labRoom,
       Total_Capacity: newLab.capacity,
       Status: newLab.status,
@@ -230,6 +237,19 @@ export default function LabManagement() {
       alert("Something went wrong while deleting the lab.");
     }
   };
+
+  const filteredLabs = labs.filter((lab) => {
+
+    const matchesSearch =
+      lab.Lab_ID.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lab.Lab_Name.toLowerCase().includes(searchTerm.toLowerCase());
+  
+    const matchesFilter =
+      labNameFilter === "" || lab.Lab_Name === labNameFilter;
+  
+    return matchesSearch && matchesFilter;
+  
+  });
 
   const resetForm = () => {
     setNewLab({
@@ -684,9 +704,41 @@ export default function LabManagement() {
           </div>
         </div>
 
-        {labs.length > 0 ? (
+        <div style={{display:"flex", gap:"12px", marginBottom:"20px", flexWrap:"wrap"}}>
+          <input
+            type="text"
+            placeholder="Search Lab..."
+            value={searchTerm}
+            onChange={(e)=>setSearchTerm(e.target.value)}
+            style={{
+              padding:"12px",
+              border:"2px solid rgba(8,131,149,0.2)",
+              borderRadius:"10px",
+              minWidth:"220px"
+            }}
+          />
+
+          <select
+            value={labNameFilter}
+            onChange={(e)=>setLabNameFilter(e.target.value)}
+            style={{
+              padding:"12px",
+              border:"2px solid rgba(8,131,149,0.2)",
+              borderRadius:"10px"
+            }}
+          >
+          <option value="">All Labs</option>
+          <option value="Computer Science Lab">Computer Science Lab</option>
+          <option value="Chemistry Lab">Chemistry Lab</option>
+          <option value="Mechanics Lab">Mechanics Lab</option>
+          <option value="Physics Lab">Physics Lab</option>
+          <option value="Robotics Lab">Robotics Lab</option>
+          </select>
+        </div>
+
+        {filteredLabs.length > 0 ? (
           <div style={styles.cardContainer}>
-            {labs.map((lab) => (
+            {filteredLabs.map((lab) => (
               <div 
                 key={lab._id} 
                 style={styles.card}
@@ -842,7 +894,18 @@ export default function LabManagement() {
                 <select 
                   style={styles.select} 
                   value={newLab.name} 
-                  onChange={(e) => setNewLab({...newLab, name: e.target.value})}
+                  onChange={(e) => {
+                    const selectedName = e.target.value;
+                    let type = "Non Technical";
+                    if (selectedName === "Computer Science Lab") {
+                      type = "Technical";
+                    }
+                    setNewLab({
+                      ...newLab,
+                      name: selectedName,
+                      type: type
+                    });
+                  }}
                   onFocus={(e) => e.currentTarget.style.borderColor = '#088395'}
                   onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
                 >
@@ -850,8 +913,21 @@ export default function LabManagement() {
                   <option value="Computer Science Lab">Computer Science Lab</option>
                   <option value="Chemistry Lab">Chemistry Lab</option>
                   <option value="Mechanics Lab">Mechanics Lab</option>
-                  <option value="Electronics Lab">Electronics Lab</option>
-                  <option value="Other">Other</option>
+                  <option value="Physics Lab">Electronics Lab</option>
+                  <option value="Robotics Lab">Electronics Lab</option>
+                </select>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Lab Type</label>
+                <select
+                  style={styles.select}
+                  value={newLab.type}
+                  onChange={(e)=>setNewLab({...newLab,type:e.target.value})}
+                >
+                <option value="">Select Type</option>
+                <option value="Technical">Technical</option>
+                <option value="Non Technical">Non Technical</option>
                 </select>
               </div>
 

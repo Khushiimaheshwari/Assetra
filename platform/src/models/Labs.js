@@ -4,6 +4,7 @@ import { connectDB } from "../app/api/utils/db.js";
 const LabSchema = new mongoose.Schema({
   Lab_ID: { type: String, unique: true, required: true },
   Lab_Name: { type: String, required: true },
+  Lab_Type: { type: String, enum: ["Technical_Lab", "Non_Technical_Lab"], required: true },
   Block: { type: String, default: "" },
   Lab_Room: { type: String, default: "" },
   LabTechnician: [{ type: mongoose.Schema.Types.ObjectId, ref: "LabTechnician" }],
