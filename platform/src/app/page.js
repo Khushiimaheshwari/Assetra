@@ -534,7 +534,21 @@ export default function Page() {
           <div className="solutionsContainer">
             {[
               { num: "01", icon: <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>, title: "Asset Registration & Inventory", desc: "Centralized registration of all institutional assets with complete specifications, purchase data, cost center mapping, and location tracking.", features: ["Unique asset ID generation", "Barcode / QR integration", "Department-wise classification", "Vendor details management"] },
-              { num: "02", icon: <><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></>, title: "Asset Issuing & Return Management", desc: "Digital logs for asset issuance and return across departments and staff — complete accountability without paper registers.", features: ["Issue / return tracking", "Digital signatures", "Automated notifications", "Full usage history"] },
+             { num: "02",
+  icon: <>
+    <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+    <circle cx="8.5" cy="7" r="4"/>
+    <path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+  </>,
+  title: "Issues & Complaint Resolution",
+  desc: "Quickly report, track, and resolve asset-related issues or complaints with a centralized digital system — ensuring transparency and faster resolution.",
+  features: [
+    "Issue & complaint reporting",
+    "Ticket status tracking",
+    "Assigned resolution workflow",
+    "Resolution history & logs"
+  ]
+},
               { num: "03", icon: <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>, title: "Maintenance & AMC Management", desc: "Automated AMC and warranty alerts, preventive maintenance scheduling, service history, and complaint resolution workflows.", features: ["Automated AMC alerts", "Maintenance scheduling", "Service history tracking", "Complaint management"] },
               { num: "04", icon: <><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></>, title: "Depreciation & Asset Valuation", desc: "Automated depreciation calculations using multiple methods, real-time valuation history, and financial audit-ready reports.", features: ["SLM & WDV methods", "Automated calculations", "Valuation reports", "Full audit trail"] },
               { num: "05", icon: <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></>, title: "Reports & Compliance Management", desc: "One-click NAAC and NBA reports, custom report builder, department-wise analytics, and scheduled delivery to stakeholders.", features: ["NAAC / NBA ready", "Custom report builder", "Export PDF / Excel", "Scheduled reports"] },
