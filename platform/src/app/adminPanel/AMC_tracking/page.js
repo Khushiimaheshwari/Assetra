@@ -114,8 +114,13 @@ export default function AMCDashboard() {
 
   // Add-maintenance form
   const [mForm, setMForm] = useState({
-    assetObjectId: "", scheduledDate: "", technicianName: "",
-    workDone: "", cost: "", status: "Scheduled", notes: "",
+    assetObjectId: "",
+    scheduledDate: "",
+    serviceOfficerName: "",
+    workDone: "",
+    cost: "",
+    status: "Scheduled",
+    notes: "",
   });
 
   // Responsive
@@ -205,7 +210,7 @@ export default function AMCDashboard() {
         body: JSON.stringify({
           assetObjectId:  mForm.assetObjectId,
           scheduledDate:  mForm.scheduledDate,
-          technicianName: mForm.technicianName,
+          serviceOfficerName: mForm.serviceOfficerName,
           workDone:       mForm.workDone,
           cost:           mForm.cost,
           status:         mForm.status,
@@ -215,7 +220,7 @@ export default function AMCDashboard() {
       if (!res.ok) throw new Error("Save failed");
       setSaveOk(true);
       setMaintFormOpen(false);
-      setMForm({ assetObjectId:"", scheduledDate:"", technicianName:"", workDone:"", cost:"", status:"Scheduled", notes:"" });
+      setMForm({ assetObjectId:"", scheduledDate:"", serviceOfficerName:"", workDone:"", cost:"", status:"Scheduled", notes:"" });
       await loadMaintenance();
       setTimeout(() => setSaveOk(false), 3000);
     } catch {
@@ -225,7 +230,6 @@ export default function AMCDashboard() {
     }
   }
 
-  // ── Styles ────────────────────────────────────────────────────────────────
   const container = {
     width: isMobile ? "100%" : "calc(100% - 255px)",
     minHeight: "100vh",
@@ -385,7 +389,7 @@ export default function AMCDashboard() {
             <div style={{ display:"grid", gridTemplateColumns: isMobile?"1fr":"repeat(3,1fr)", gap:"1rem" }}>
               <Field label="Asset" name="assetObjectId" value={mForm.assetObjectId} onChange={handleMForm} options={assetOptions} isMobile={isMobile} required />
               <Field label="Scheduled Date" name="scheduledDate" type="date" value={mForm.scheduledDate} onChange={handleMForm} isMobile={isMobile} required />
-              <Field label="Technician Name" name="technicianName" value={mForm.technicianName} onChange={handleMForm} isMobile={isMobile} />
+              <Field label="Service Officer Name" name="serviceOfficerName" value={mForm.serviceOfficerName} onChange={handleMForm} isMobile={isMobile}/>
               <Field label="Work to be Done" name="workDone" value={mForm.workDone} onChange={handleMForm} isMobile={isMobile} />
               <Field label="Estimated Cost (₹)" name="cost" type="number" value={mForm.cost} onChange={handleMForm} isMobile={isMobile} />
               <Field label="Status" name="status" value={mForm.status} onChange={handleMForm} options={["Scheduled","In Progress","Completed","Cancelled"]} isMobile={isMobile} />
@@ -485,7 +489,7 @@ export default function AMCDashboard() {
             <table style={{ width:"100%", borderCollapse:"collapse" }}>
               <thead>
                 <tr>
-                  {["Asset ID","Asset Name","Scheduled Date","Completed Date","Technician","Work Done","Cost (₹)","Status","Notes"].map(h => (
+                  {["Asset ID","Asset Name","Scheduled Date","Completed Date","Service Officer","Work Done","Cost (₹)","Status","Notes"].map(h => (
                     <th key={h} style={th}>{h}</th>
                   ))}
                 </tr>
@@ -510,7 +514,7 @@ export default function AMCDashboard() {
                         </span>
                       </td>
                       <td style={{ ...td, color: m.completedDate ? "#166534" : "#9ca3af" }}>{m.completedDate ? fmtDate(m.completedDate) : "—"}</td>
-                      <td style={{ ...td, fontWeight:600 }}>{m.technicianName || "Unassigned"}</td>
+                      <td style={{ ...td, fontWeight:600 }}> {m.serviceOfficerName || "Unassigned"}</td>
                       <td style={{ ...td, maxWidth:180, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{m.workDone || "—"}</td>
                       <td style={{ ...td, fontWeight:700, color:"#088395" }}>{m.cost ? fmtINR(m.cost) : "—"}</td>
                       <td style={td}><StatusBadge label={m.status} map={MAINT_BADGE} /></td>

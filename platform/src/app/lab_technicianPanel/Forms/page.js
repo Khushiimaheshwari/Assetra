@@ -74,7 +74,7 @@ export default function HandoverFormPage() {
       handoverToName: 'Dr. Pankaj Agarwal ',
       handoverToDesignation: 'Professor & Dean',
       handoverDate: '2024-11-26',
-      purpose: 'Annual Lab Maintenance',
+      purpose: 'Placement Drive',
       status: 'Pending',
       equipment: [
         { serialNo: 'MP28Y01M', equipmentType: 'Monitor', brand: 'Lenovo', remarks: 'Working condition' },

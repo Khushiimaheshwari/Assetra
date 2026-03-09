@@ -7,9 +7,9 @@ const PAGE_SIZE = 8;
 
 // ─── Badge config ─────────────────────────────────────────────────────────────
 const BADGE = {
-  "Issue Reported": { bg: "#FEF9C3", text: "#854D0E", border: "#FDE047", dot: "#EAB308" },
-  "Issue Resolved": { bg: "#DBEAFE", text: "#1E40AF", border: "#93C5FD", dot: "#3B82F6" },
-  "Issue Approved": { bg: "#DCFCE7", text: "#166534", border: "#86EFAC", dot: "#22C55E" },
+  "Issue Reported": { text: "#854D0E", border: "#FDE047", dot: "#EAB308" },
+  "Issue Resolved": { text: "#1E40AF", border: "#93C5FD", dot: "#3B82F6" },
+  "Issue Approved": { text: "#166534", border: "#86EFAC", dot: "#22C55E" },
 };
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -404,9 +404,9 @@ export default function LogsPage() {
               <button key={a} onClick={() => { setAction(isActive ? "" : a); setPage(1); }}
                 style={{
                   borderRadius: "14px", padding: isMobile ? "12px" : "14px", textAlign: "left",
-                  border: `1px solid ${isActive ? c.border : "rgba(8,131,149,0.12)"}`,
-                  background: isActive ? c.bg : "#fff",
-                  boxShadow: isActive ? `0 0 0 2px ${c.border}` : "0 2px 4px rgba(8,131,149,0.06)",
+                  border: `0.5px solid ${isActive ? c.border : "rgba(8,131,149,0.12)"}`,
+                  background: "#fff",
+                  boxShadow: isActive ? `0 0 0 2px ${c.border}` : "0 1px 4px rgba(8,131,149,0.06)",
                   cursor: "pointer", transition: "all 0.2s ease",
                 }}>
                 <div style={{ width: "8px", height: "8px", borderRadius: "50%", marginBottom: "8px", background: c.dot }} />

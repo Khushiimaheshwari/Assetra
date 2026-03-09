@@ -4,7 +4,6 @@ import { connectDB } from "../../../utils/db";
 import AMCMaintenance from "../../../../../models/AMC_Maintenance";
 import Assets from "../../../../../models/Asset";
 
-// ── GET all maintenance records ───────────────────────────────────────────────
 export async function GET() {
   try {
     await connectDB();
@@ -63,17 +62,15 @@ export async function GET() {
   }
 }
 
-// ── POST — schedule a new maintenance record ──────────────────────────────────
 export async function POST(req) {
   try {
     await connectDB();
 
     const body = await req.json();
     const {
-      assetObjectId,   // MongoDB _id of the asset
+      assetObjectId,   
       scheduledDate,
-      technicianId,    // optional ObjectId of LabTechnician
-      technicianName,
+      serviceOfficerName,
       workDone,
       cost,
       status,
@@ -87,7 +84,6 @@ export async function POST(req) {
       );
     }
 
-    // Fetch asset to denormalise name/type
     const asset = await Assets.findById(assetObjectId)
       .populate("Lab_Name", "Lab_ID Lab_Name")
       .lean();
@@ -102,8 +98,7 @@ export async function POST(req) {
       Asset_Type: asset.Asset_Type,
       Lab_Name: asset.Lab_Name?._id || asset.Lab_Name,
       Scheduled_Date: new Date(scheduledDate),
-      Technician: technicianId || undefined,
-      Technician_Name: technicianName || "",
+      Service_Officer_Name: serviceOfficerName,
       Work_Done: workDone || "",
       Cost: cost ? Number(cost) : 0,
       Status: status || "Scheduled",
