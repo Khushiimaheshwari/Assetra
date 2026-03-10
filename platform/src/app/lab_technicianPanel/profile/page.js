@@ -5,7 +5,7 @@ import styles from "./profile.module.css";
 import { useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import AdminSidebar from "@/app/lab_technicianPanel/components/Lab_Technician_Sidebar.JS";
+import Sidebar from "../components/Lab_Technician_Sidebar";
 
 const Icons = {
   User:     () => <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
