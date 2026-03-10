@@ -19,6 +19,10 @@
   overflow-x: hidden;
   transition: all 0.3s ease;
 }
+.profileContainer {
+  overflow-x: hidden;
+  overflow-y: clip;   /* add this — clips without blocking scroll */
+}
 
 /* Subtle background decoration */
 .profileContainer::before {

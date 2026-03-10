@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
-import AdminSidebar from "@/app/adminPanel/components/Admin_Sidebar";
+import AdminSidebar from "@/app/facultyPanel/components/Faculty_Sidebar.js";
 
 const ACTIONS = ["Issue Reported", "Issue Resolved", "Issue Approved"];
 const PAGE_SIZE = 8;
@@ -76,15 +76,15 @@ function Drawer({ log, onClose, allLogs }) {
         }}
       />
 
-      {/* Modal */}
+      {/* Modal — FIX 1: pushed down to avoid navbar overlap */}
       <div
         style={{
           position: "fixed",
-          top: "50%", left: "50%",
+          top: "calc(50% + 30px)", left: "50%",
           transform: "translate(-50%,-50%)",
           zIndex: 50,
           width: "min(580px, 95vw)",
-          maxHeight: "88vh",
+          maxHeight: "calc(88vh - 60px)",
           display: "flex",
           flexDirection: "column",
           borderRadius: "24px",
@@ -190,7 +190,12 @@ function Drawer({ log, onClose, allLogs }) {
                 <Row icon={<Icon.Asset />} label="Asset Name"   value={log.assetName} />
                 <Row icon={<Icon.User />}  label="Performed By" value={`${log.user} · ${log.role}`} />
                 <Row icon={<Icon.Clock />} label="Timestamp"    value={log.timestamp} />
-                <Row icon={<Icon.Shield />} label="Action"><Badge action={log.action} /></Row>
+                {/* FIX 3: padding added to Action badge */}
+                <Row icon={<Icon.Shield />} label="Action">
+                  <div style={{ marginTop: "6px", paddingLeft: "2px" }}>
+                    <Badge action={log.action} />
+                  </div>
+                </Row>
               </div>
 
               <div style={{ borderRadius: "16px", padding: "16px", background: "#F8FAFC", border: "1px solid #e2e8f0" }}>
@@ -211,18 +216,7 @@ function Drawer({ log, onClose, allLogs }) {
                 </div>
               )}
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                <div style={{ borderRadius: "14px", padding: "14px", textAlign: "center", background: "#EBF4F6", border: "1px solid rgba(8,131,149,0.15)" }}>
-                  <p style={{ margin: 0, fontSize: "26px", fontWeight: "800", color: "#088395", fontFamily: "'Playfair Display', serif" }}>{timeline.length}</p>
-                  <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#64748b", fontWeight: "600" }}>Total Events</p>
-                </div>
-                <div style={{ borderRadius: "14px", padding: "14px", textAlign: "center", background: "#D1F8EF", border: "1px solid rgba(8,131,149,0.15)" }}>
-                  <p style={{ margin: 0, fontSize: "26px", fontWeight: "800", color: "#176B87", fontFamily: "'Playfair Display', serif" }}>
-                    {timeline.filter(l => l.action === "Issue Resolved").length}
-                  </p>
-                  <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#64748b", fontWeight: "600" }}>Resolved</p>
-                </div>
-              </div>
+              {/* FIX 2: Total Events / Resolved cards REMOVED */}
             </>
           ) : (
             <div>
