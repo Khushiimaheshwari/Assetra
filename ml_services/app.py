@@ -28,9 +28,12 @@ def preprocess_input(data):
 
     asset_age = current_year - purchase_year
     maintenance_ratio = total_maintenance_cost / purchase_cost
-    remaining_life = useful_life - asset_age
+    remaining_life = max(0, useful_life - asset_age)
     annual_depreciation = (purchase_cost - scrap_value) / useful_life
-    current_book_value = purchase_cost - (annual_depreciation * asset_age)
+    current_book_value = max(
+    scrap_value,
+    purchase_cost - (annual_depreciation * asset_age)
+)
 
     return {
         "asset_age": asset_age,

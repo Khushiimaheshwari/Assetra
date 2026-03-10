@@ -610,7 +610,7 @@ const LabInfoPage = () => {
     pcFilterButton: {
       padding: '8px 12px',
       borderRadius: '999px',
-      border: '1px solid #86B6F6',
+      border: '1px solid rgba(8,131,149,0.25)',      // ← fixed (was #86B6F6)
       background: '#EBF4F6',
       color: '#176B87',
       fontSize: '12px',
@@ -713,7 +713,7 @@ const LabInfoPage = () => {
     },
     pcRedirectButton: {
       color: '#3674B5',
-      background: 'rgba(134, 182, 246, 0.2)'
+      background: 'rgba(54,116,181,0.1)'                // ← fixed (was rgba(134,182,246,0.2))
     },
     pcEmptyState: {
       padding: '1.75rem',
@@ -779,7 +779,7 @@ const LabInfoPage = () => {
       width: '60px',
       height: '60px',
       borderRadius: '12px',
-      background: 'linear-gradient(135deg, #D1F8EF 0%, #B8F3E9 100%)',
+      background: 'linear-gradient(135deg, #D1F8EF 0%, #c8f5ec 100%)',  // ← fixed (was #B8F3E9)
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -821,16 +821,16 @@ const LabInfoPage = () => {
       border: '1px solid #088395'
     },
     statusPending: {
-      backgroundColor: '#FFE8CC',
-      color: '#E67E22',
-      border: '1px solid #E67E22'
+      backgroundColor: 'rgba(54,116,181,0.1)',          // ← fixed (was orange #FFE8CC)
+      color: '#3674B5',
+      border: '1px solid #3674B5'
     },
     programCount: {
       padding: '7px 14px',
       borderRadius: '8px',
       fontSize: '14px',
       fontWeight: '700',
-      backgroundColor: 'rgba(134, 182, 246, 0.2)',
+      backgroundColor: 'rgba(54,116,181,0.1)',
       color: '#3674B5',
       border: '1px solid #3674B5'
     },
@@ -945,7 +945,7 @@ const LabInfoPage = () => {
       borderRadius: '6px',
       fontSize: '13px',
       fontWeight: '700',
-      backgroundColor: 'rgba(134, 182, 246, 0.2)',
+      backgroundColor: 'rgba(54,116,181,0.1)',
       color: '#3674B5',
       border: '1px solid #3674B5'
     },
@@ -1233,7 +1233,6 @@ const LabInfoPage = () => {
             </div>
 
             <div style={styles.moreInfoContent}>
-              {/* Add Button for Specifications */}
               <div style={{display: 'flex', justifyContent: 'flex-end'}}>
                 <button 
                   style={styles.addButton}
@@ -1251,35 +1250,28 @@ const LabInfoPage = () => {
                 </button>
               </div>
 
-              {/* Hardware Specifications */}
               <div style={styles.infoSectionTitle}>
                 <span>Hardware Specifications</span>
               </div>
               {labData.Hardware_Specifications ? (
                 <div style={styles.specsBox}>
-                  <div style={styles.specsContent}>
-                    {labData.Hardware_Specifications}
-                  </div>
+                  <div style={styles.specsContent}>{labData.Hardware_Specifications}</div>
                 </div>
               ) : (
                 <div style={styles.emptyState}>No hardware specifications added yet</div>
               )}
 
-              {/* Software Specifications */}
               <div style={styles.infoSectionTitle}>
                 <span>Software Specifications</span>
               </div>
               {labData.Software_Specifications ? (
                 <div style={styles.specsBox}>
-                  <div style={styles.specsContent}>
-                    {labData.Software_Specifications}
-                  </div>
+                  <div style={styles.specsContent}>{labData.Software_Specifications}</div>
                 </div>
               ) : (
                 <div style={styles.emptyState}>No software specifications added yet</div>
               )}
 
-              {/* Screen Panel / Projector Details */}
               <div style={styles.infoSectionTitle}>
                 <span>Screen Board / Projector Details</span>
               </div>
@@ -1314,7 +1306,6 @@ const LabInfoPage = () => {
                 <div style={styles.emptyState}>No screen/projector details added yet</div>
               )} 
 
-              {/* Remarks */}
               <div style={styles.sectionTitle}>
                 <span>Remarks</span>
               </div>
@@ -1333,18 +1324,14 @@ const LabInfoPage = () => {
 
       {/* Add/Edit Information Modal */}
       {showAddModal && (
-        <div style={styles.modal} onClick={() => {
-          setShowAddModal(false);
-          setEditing(null);
-        }}>
+        <div style={styles.modal} onClick={() => { setShowAddModal(false); setEditing(null); }}>
           <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <h2 style={styles.modalHeader}>{editing ? 'Update Information' : 'Add Information'}</h2>
             
             <div style={styles.formGroup}>
               <label style={styles.label}>Hardware Specifications</label>
               <input 
-                type="text"
-                style={styles.input}
+                type="text" style={styles.input}
                 value={newInfo.hardwareSpecs}
                 onChange={(e) => setNewInfo({...newInfo, hardwareSpecs: e.target.value})}
                 placeholder="Enter Hardware Specifications"
@@ -1356,8 +1343,7 @@ const LabInfoPage = () => {
             <div style={styles.formGroup}>
               <label style={styles.label}>Software Specifications</label>
               <input 
-                type="text"
-                style={styles.input}
+                type="text" style={styles.input}
                 value={newInfo.softwareSpecs}
                 onChange={(e) => setNewInfo({...newInfo, softwareSpecs: e.target.value})}
                 placeholder="Enter Software Specifications"
@@ -1371,54 +1357,21 @@ const LabInfoPage = () => {
               <select
                 style={styles.input}
                 value={newInfo.device[0].Device_Type}
-                onChange={(e) =>
-                  setNewInfo({
-                    ...newInfo,
-                    device: [
-                      {
-                        ...((newInfo.device && newInfo.device[0]) || {
-                          Device_Type: "",
-                          Brand: "",
-                          Serial_No: "",
-                        }),
-                        Device_Type: e.target.value,
-                      },
-                    ],
-                  })
-                }
+                onChange={(e) => setNewInfo({ ...newInfo, device: [{ ...((newInfo.device && newInfo.device[0]) || { Device_Type: "", Brand: "", Serial_No: "" }), Device_Type: e.target.value }] })}
                 onFocus={(e) => e.target.style.borderColor = '#088395'}
                 onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
               >
                 <option value="">Select Device_Type</option>
-                {deviceType.map((d, index) => (
-                  <option key={index} value={d}>
-                    {d}
-                  </option>
-                ))}
+                {deviceType.map((d, index) => <option key={index} value={d}>{d}</option>)}
               </select>
             </div>
 
             <div style={styles.formGroup}>
               <label style={styles.label}>Brand</label>
               <input 
-                type="text"
-                style={styles.input}
+                type="text" style={styles.input}
                 value={newInfo.device[0].Brand}
-                onChange={(e) =>
-                  setNewInfo({
-                    ...newInfo,
-                    device: [
-                      {
-                        ...((newInfo.device && newInfo.device[0]) || {
-                          Device_Type: "",
-                          Brand: "",
-                          Serial_No: "",
-                        }),
-                        Brand: e.target.value,
-                      },
-                    ],
-                  })
-                }
+                onChange={(e) => setNewInfo({ ...newInfo, device: [{ ...((newInfo.device && newInfo.device[0]) || { Device_Type: "", Brand: "", Serial_No: "" }), Brand: e.target.value }] })}
                 placeholder="Enter Brand"
                 onFocus={(e) => e.target.style.borderColor = '#088395'}
                 onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
@@ -1428,24 +1381,9 @@ const LabInfoPage = () => {
             <div style={styles.formGroup}>
               <label style={styles.label}>S/N</label>
               <input 
-                type="text"
-                style={styles.input}
+                type="text" style={styles.input}
                 value={newInfo.device[0].Serial_No}
-                onChange={(e) =>
-                  setNewInfo({
-                    ...newInfo,
-                    device: [
-                      {
-                        ...((newInfo.device && newInfo.device[0]) || {
-                          Device_Type: "",
-                          Brand: "",
-                          Serial_No: "",
-                        }),
-                        Serial_No: e.target.value,
-                      },
-                    ],
-                  })
-                }
+                onChange={(e) => setNewInfo({ ...newInfo, device: [{ ...((newInfo.device && newInfo.device[0]) || { Device_Type: "", Brand: "", Serial_No: "" }), Serial_No: e.target.value }] })}
                 placeholder="Enter S/N"
                 onFocus={(e) => e.target.style.borderColor = '#088395'}
                 onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
@@ -1455,47 +1393,23 @@ const LabInfoPage = () => {
             <div style={styles.modalActions}>
               <button 
                 style={styles.cancelButton}
-                onClick={() => {
-                  setShowAddModal(false);
-                  setEditing(null);
-                  setNewInfo({
-                    hardwareSpecs: "",
-                    softwareSpecs: "",
-                    device: [{ Device_Type: "", Brand: "", Serial_No: "" }],
-                  });
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(8, 131, 149, 0.05)';
-                  e.target.style.borderColor = '#088395';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'white';
-                  e.target.style.borderColor = 'rgba(8, 131, 149, 0.3)';
-                }}
-              >
-                Cancel
-              </button>
+                onClick={() => { setShowAddModal(false); setEditing(null); setNewInfo({ hardwareSpecs: "", softwareSpecs: "", device: [{ Device_Type: "", Brand: "", Serial_No: "" }] }); }}
+                onMouseEnter={(e) => { e.target.style.background = 'rgba(8, 131, 149, 0.05)'; e.target.style.borderColor = '#088395'; }}
+                onMouseLeave={(e) => { e.target.style.background = 'white'; e.target.style.borderColor = 'rgba(8, 131, 149, 0.3)'; }}
+              >Cancel</button>
               <button 
                 style={styles.saveButton}
                 onClick={editing ? handleUpdateInfo : handleAddInfo}
-                onMouseEnter={(e) => {
-                  e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow = '0 6px 10px rgba(8, 131, 149, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 6px rgba(8, 131, 149, 0.3)';
-                }}
-              >
-                {editing ? 'Update Information' : 'Add Information'}
-              </button>
+                onMouseEnter={(e) => { e.target.style.transform = 'translateY(-1px)'; e.target.style.boxShadow = '0 6px 10px rgba(8, 131, 149, 0.4)'; }}
+                onMouseLeave={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 4px 6px rgba(8, 131, 149, 0.3)'; }}
+              >{editing ? 'Update Information' : 'Add Information'}</button>
             </div>
           </div>
         </div>
       )}
 
-       {/* PC Section */}
-       <div style={styles.pcSection}>
+      {/* PC Section */}
+      <div style={styles.pcSection}>
         <div style={styles.pcSectionHeader}>
           <div>
             <h2 style={styles.pcSectionTitle}>Lab PCs</h2>
@@ -1518,36 +1432,16 @@ const LabInfoPage = () => {
             />
           </div>
           <div style={styles.pcFilterButtons}>
-            <button
-              type="button"
-              style={{
-                ...styles.pcFilterButton,
-                ...(pcAssetFilter === 'all' ? styles.pcFilterButtonActive : {}),
-              }}
-              onClick={() => setPcAssetFilter('all')}
-            >
-              All PCs
-            </button>
-            <button
-              type="button"
-              style={{
-                ...styles.pcFilterButton,
-                ...(pcAssetFilter === 'withAssets' ? styles.pcFilterButtonActive : {}),
-              }}
-              onClick={() => setPcAssetFilter('withAssets')}
-            >
-              With Assets
-            </button>
-            <button
-              type="button"
-              style={{
-                ...styles.pcFilterButton,
-                ...(pcAssetFilter === 'withoutAssets' ? styles.pcFilterButtonActive : {}),
-              }}
-              onClick={() => setPcAssetFilter('withoutAssets')}
-            >
-              Without Assets
-            </button>
+            {['all', 'withAssets', 'withoutAssets'].map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                style={{ ...styles.pcFilterButton, ...(pcAssetFilter === filter ? styles.pcFilterButtonActive : {}) }}
+                onClick={() => setPcAssetFilter(filter)}
+              >
+                {filter === 'all' ? 'All PCs' : filter === 'withAssets' ? 'With Assets' : 'Without Assets'}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -1557,12 +1451,8 @@ const LabInfoPage = () => {
               <div
                 key={pc._id || pc.id}
                 style={styles.pcRow}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(8, 131, 149, 0.13)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(8, 131, 149, 0.08)';
-                }}
+                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(8, 131, 149, 0.13)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(8, 131, 149, 0.08)'; }}
               >
                 <div style={styles.pcIconBox}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#088395" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1593,17 +1483,9 @@ const LabInfoPage = () => {
                   <button
                     type="button"
                     style={{ ...styles.pcIconButton, ...styles.pcRedirectButton }}
-                    onClick={() => {
-                      window.location.href = `/lab_technicianPanel/lab_management/lab/${id}/asset/${pc._id}`;
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#3674B5';
-                      e.currentTarget.style.transform = 'scale(1.08)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'transparent';
-                      e.currentTarget.style.transform = 'scale(1)';
-                    }}
+                    onClick={() => { window.location.href = `/lab_technicianPanel/lab_management/lab/${id}/asset/${pc._id}`; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#3674B5'; e.currentTarget.style.transform = 'scale(1.08)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.transform = 'scale(1)'; }}
                     title="View PC details"
                   >
                     <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
@@ -1615,9 +1497,7 @@ const LabInfoPage = () => {
             ))}
           </div>
         ) : (
-          <div style={styles.pcEmptyState}>
-            No PCs found for this lab.
-          </div>
+          <div style={styles.pcEmptyState}>No PCs found for this lab.</div>
         )}
       </div>
     </div>
