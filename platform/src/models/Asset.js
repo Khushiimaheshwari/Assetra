@@ -42,7 +42,7 @@ const AssetSchema = new mongoose.Schema({
       To_Lab: { type: mongoose.Schema.Types.ObjectId, ref: "Lab" },
       From_PC: { type: mongoose.Schema.Types.ObjectId, ref: "PCs" },
       To_PC: { type: mongoose.Schema.Types.ObjectId, ref: "PCs" },
-      Moved_By: { type: mongoose.Schema.Types.ObjectId, ref: "LabTechnician" },
+      Moved_By: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       Reason: { type: String, default: "" },
       Date: { type: Date, default: Date.now }
     }

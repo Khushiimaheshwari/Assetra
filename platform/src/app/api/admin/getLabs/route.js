@@ -16,6 +16,7 @@ export async function GET() {
         model: "User",
       },
     })
+    .populate('PCs')
     .lean();
 
     return NextResponse.json({ labs });
