@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import Faculty from "../../../../models/Faculty";
-import Programs from "../../../../models/Programs";
 import Lab from "../../../../models/Labs";
 import PCs from "../../../../models/Lab_PCs";
 import { connectDB } from "../../utils/db";
