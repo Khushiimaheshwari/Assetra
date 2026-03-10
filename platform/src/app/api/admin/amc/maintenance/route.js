@@ -9,44 +9,48 @@ export async function GET() {
     await connectDB();
 
     const records = await AMCMaintenance.find()
-      .populate("Asset", "Asset_Name Asset_Type Brand Lab_Name PC_Name")
       .populate({
         path: "Asset",
+        select: "Asset_Name Asset_Type Brand Lab_Name PC_Name",
         populate: [
           { path: "Lab_Name", select: "Lab_ID Lab_Name" },
-          { path: "PC_Name",  select: "PC_Name" },
+          { path: "PC_Name", select: "PC_Name" },
         ],
       })
-      .populate("Technician", "Name")
       .sort({ Scheduled_Date: -1 })
       .lean();
 
     const maintenance = records.map((r) => {
       const asset = r.Asset || {};
+
       const labId =
         asset.Lab_Name?.Lab_ID ||
         asset.Lab_Name?._id?.toString()?.slice(-4) ||
         "???";
+
       const pcName = asset.PC_Name?.PC_Name || "";
+
       const assetId = pcName
         ? `${labId}-${pcName}`
         : `${labId}-${asset._id?.toString().slice(-4).toUpperCase() || "??"}`;
 
       return {
         _id: r._id,
+
         assetId,
         assetName: r.Asset_Name || asset.Asset_Name || "Unknown",
         assetType: r.Asset_Type || asset.Asset_Type || "—",
+
         scheduledDate: r.Scheduled_Date
           ? new Date(r.Scheduled_Date).toISOString().slice(0, 10)
           : null,
+
         completedDate: r.Completed_Date
           ? new Date(r.Completed_Date).toISOString().slice(0, 10)
           : null,
-        technicianName:
-          r.Technician_Name ||
-          r.Technician?.Name ||
-          "Unassigned",
+
+        serviceOfficerName: r.Service_Officer_Name || "Unassigned",
+
         workDone: r.Work_Done || "",
         cost: r.Cost ?? 0,
         status: r.Status,
@@ -56,9 +60,14 @@ export async function GET() {
     });
 
     return NextResponse.json({ maintenance }, { status: 200 });
+
   } catch (error) {
     console.error("Error fetching maintenance records:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
 

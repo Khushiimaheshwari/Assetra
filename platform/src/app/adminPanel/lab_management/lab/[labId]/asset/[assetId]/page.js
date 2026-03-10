@@ -329,25 +329,15 @@ function AssetsPage() {
     setMoveForm({ To_Lab: "", To_PC: "", Reason: "" });
     setLabPCs([]);
     try {
-      const res  = await fetch("/api/lab_technician/getLabs");
+      const res  = await fetch("/api/admin/getLabs");
       const data = await res.json();
-      if (res.ok) setLabs(data.labs || []);
+      console.log(data.labs);
+      
+      if (res.ok) {
+        setLabs(data.labs || []);
+        setLabPCs(data.labs[0]?.PCs || []);      }
     } catch (err) {
       console.error("Error fetching labs:", err);
-    }
-  };
-
-  const fetchPCsForLab = async (labId) => {
-    if (!labId) { setLabPCs([]); return; }
-    setLabPCsLoading(true);
-    try {
-      const res  = await fetch(`/api/lab_technician/getPcsByLab/${labId}`);
-      const data = await res.json();
-      if (res.ok) setLabPCs(data.pcs || []);
-    } catch (err) {
-      console.error("Error fetching PCs:", err);
-    } finally {
-      setLabPCsLoading(false);
     }
   };
 
@@ -355,7 +345,7 @@ function AssetsPage() {
     if (!moveForm.To_Lab) { alert("Please select a destination lab."); return; }
     setMoveSaving(true);
     try {
-      const res = await fetch("/api/lab_technician/moveAsset", {
+      const res = await fetch("/api/admin/moveAsset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

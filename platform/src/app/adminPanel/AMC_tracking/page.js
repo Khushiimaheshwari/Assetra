@@ -63,19 +63,29 @@ function StatusBadge({ label, map }) {
 
 // ─── InputField ───────────────────────────────────────────────────────────────
 function Field({ label, name, type="text", value, onChange, options, isMobile, required }) {
-  const base = { width:"100%", borderRadius:10, border:"1px solid rgba(8,131,149,0.25)", backgroundColor:"#EBF4F6", padding:"9px 13px", fontSize: isMobile?13:14, color:"#176B87", outline:"none", boxSizing:"border-box", fontFamily:"inherit" };
+  const base = { width:"100%", borderRadius:10, border:"2px solid #e2e8f0", backgroundColor:"white", padding:"9px 13px", fontSize: isMobile?13:14, color:"#176B87", outline:"none", boxSizing:"border-box", fontFamily:"inherit", transition:"border-color 0.2s" };
   return (
     <div style={{ display:"flex", flexDirection:"column" }}>
-      <label style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", color:"#176B87", marginBottom:5 }}>
+      <label style={{ fontSize:13, fontWeight:700, color:"#176B87", marginBottom:6, letterSpacing:"0.03em" }}>
         {label}{required && <span style={{ color:"#EF4444" }}> *</span>}
       </label>
       {options ? (
-        <select name={name} value={value} onChange={onChange} style={{ ...base, appearance:"none", backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat:"no-repeat", backgroundPosition:"right 10px center", paddingRight:30 }}>
+        <select
+          name={name} value={value} onChange={onChange}
+          style={{ ...base, appearance:"none", backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat:"no-repeat", backgroundPosition:"right 10px center", paddingRight:30 }}
+          onFocus={e => e.target.style.borderColor = "#088395"}
+          onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+        >
           <option value="">Select…</option>
           {options.map(o => <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>)}
         </select>
       ) : (
-        <input type={type} name={name} value={value} onChange={onChange} placeholder={`Enter ${label.toLowerCase()}`} style={base} />
+        <input
+          type={type} name={name} value={value} onChange={onChange}
+          placeholder={`Enter ${label.toLowerCase()}`} style={base}
+          onFocus={e => e.target.style.borderColor = "#088395"}
+          onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+        />
       )}
     </div>
   );
@@ -96,7 +106,6 @@ function SkRow({ cols }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function AMCDashboard() {
-  // Data state
   const [contracts,    setContracts]    = useState([]);
   const [maintenance,  setMaintenance]  = useState([]);
   const [loadingC,     setLoadingC]     = useState(true);
@@ -104,15 +113,13 @@ export default function AMCDashboard() {
   const [errorC,       setErrorC]       = useState(null);
   const [errorM,       setErrorM]       = useState(null);
 
-  // UI state
   const [maintFormOpen, setMaintFormOpen] = useState(false);
   const [search,        setSearch]        = useState("");
   const [isMobile,      setIsMobile]      = useState(false);
-  const [hoveredRow,    setHoveredRow]    = useState(null);
   const [saving,        setSaving]        = useState(false);
   const [saveOk,        setSaveOk]        = useState(false);
+  const [cardFilter,    setCardFilter]    = useState("Expiring Soon");
 
-  // Add-maintenance form
   const [mForm, setMForm] = useState({
     assetObjectId: "",
     scheduledDate: "",
@@ -123,7 +130,6 @@ export default function AMCDashboard() {
     notes: "",
   });
 
-  // Responsive
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024);
     check();
@@ -131,12 +137,10 @@ export default function AMCDashboard() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Fetch contracts (warranty data)
   useEffect(() => {
     async function load() {
       try {
         setLoadingC(true); setErrorC(null);
-        // ⚠️ adjust path to match your Next.js route location
         const res = await fetch("/api/admin/amc/contracts");
         if (!res.ok) throw new Error(`Server error ${res.status}`);
         const data = await res.json();
@@ -150,11 +154,9 @@ export default function AMCDashboard() {
     load();
   }, []);
 
-  // Fetch maintenance records
   async function loadMaintenance() {
     try {
       setLoadingM(true); setErrorM(null);
-      // ⚠️ adjust path to match your Next.js route location
       const res = await fetch("/api/admin/amc/maintenance");
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const data = await res.json();
@@ -167,7 +169,6 @@ export default function AMCDashboard() {
   }
   useEffect(() => { loadMaintenance(); }, []);
 
-  // Derived
   const total    = contracts.length;
   const active   = contracts.filter(c => getWarrantyStatus(c.warrantyEnd) === "Active").length;
   const expiring = contracts.filter(c => getWarrantyStatus(c.warrantyEnd) === "Expiring Soon").length;
@@ -181,16 +182,25 @@ export default function AMCDashboard() {
     [contracts]
   );
 
+  const CARD_STATUS_MAP = {
+    "all":           null,
+    "Active":        "Active",
+    "Expiring Soon": "Expiring Soon",
+    "Expired":       "Expired",
+  };
+
   const filtered = useMemo(() =>
-    contracts.filter(c =>
-      [c.assetId, c.assetName, c.brand, c.lab, c.assetType].some(v =>
+    contracts.filter(c => {
+      if (cardFilter && cardFilter !== "all") {
+        if (getWarrantyStatus(c.warrantyEnd) !== CARD_STATUS_MAP[cardFilter]) return false;
+      }
+      return [c.assetId, c.assetName, c.brand, c.lab, c.assetType].some(v =>
         (v || "").toLowerCase().includes(search.toLowerCase())
-      )
-    ),
-    [contracts, search]
+      );
+    }),
+    [contracts, search, cardFilter]
   );
 
-  // Asset options for maintenance form
   const assetOptions = useMemo(() =>
     contracts.map(c => ({ value: c._id, label: `${c.assetId} — ${c.assetName}` })),
     [contracts]
@@ -208,13 +218,13 @@ export default function AMCDashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          assetObjectId:  mForm.assetObjectId,
-          scheduledDate:  mForm.scheduledDate,
+          assetObjectId:      mForm.assetObjectId,
+          scheduledDate:      mForm.scheduledDate,
           serviceOfficerName: mForm.serviceOfficerName,
-          workDone:       mForm.workDone,
-          cost:           mForm.cost,
-          status:         mForm.status,
-          notes:          mForm.notes,
+          workDone:           mForm.workDone,
+          cost:               mForm.cost,
+          status:             mForm.status,
+          notes:              mForm.notes,
         }),
       });
       if (!res.ok) throw new Error("Save failed");
@@ -263,6 +273,13 @@ export default function AMCDashboard() {
   };
   const td = { padding: isMobile ? "10px 12px" : "12px 20px", color: "#334155", borderBottom: "1px solid #D1F8EF", fontSize: isMobile ? 12 : 14, whiteSpace: "nowrap" };
 
+  const summaryCards = [
+    { filterKey:"all",           label:"Assets with Warranty",   value: loadingC?"…":total,    bg:"#D1F8EF",               icon:"#088395", accent:"#088395", Icon:Icon.Shield },
+    { filterKey:"Active",        label:"Warranty Active",         value: loadingC?"…":active,   bg:"rgba(134,182,246,0.2)", icon:"#3674B5", accent:"#3674B5", Icon:Icon.Check  },
+    { filterKey:"Expiring Soon", label:"Expiring within 60 days", value: loadingC?"…":expiring, bg:"rgba(251,191,36,0.15)", icon:"#d97706", accent:"#d97706", Icon:Icon.Bell   },
+    { filterKey:"Expired",       label:"Warranty Expired",        value: loadingC?"…":expired,  bg:"rgba(239,68,68,0.12)",  icon:"#dc2626", accent:"#dc2626", Icon:Icon.Asset  },
+  ];
+
   return (
     <>
       <AdminSidebar />
@@ -271,17 +288,23 @@ export default function AMCDashboard() {
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Outfit:wght@400;500;600;700&display=swap');
         * { font-family: 'Outfit', sans-serif; box-sizing: border-box; }
         @keyframes fadeUp  { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+        @keyframes slideUp { from{opacity:0;transform:translateY(24px) scale(0.98)} to{opacity:1;transform:translateY(0) scale(1)} }
         @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
         @keyframes spin    { to{transform:rotate(360deg)} }
         .fade-in { animation: fadeUp .35s ease both; }
         .row-hover:hover { background: linear-gradient(90deg,#EBF4F6,#f8fafc) !important; }
         ::-webkit-scrollbar { width:5px; height:5px; }
         ::-webkit-scrollbar-thumb { background:#a8cdd5; border-radius:99px; }
+        .summary-card { transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
+        .summary-card:hover { transform: translateY(-4px) !important; box-shadow: 0 10px 20px rgba(8,131,149,0.18) !important; }
+        .modal-overlay { animation: fadeIn 0.2s ease both; }
+        .modal-content { animation: slideUp 0.25s ease both; }
       `}</style>
 
       <div style={container}>
 
-        {/* ── Header ───────────────────────────────────────────────── */}
+        {/* ── Header ── */}
         <div className="fade-in" style={{ marginBottom:"1.5rem", paddingBottom:"1rem", borderBottom:"3px solid #088395", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:"1rem" }}>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <div style={{ width:42, height:42, borderRadius:12, background:"linear-gradient(135deg,#088395,#176B87)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 4px 12px rgba(8,131,149,0.3)", color:"#fff" }}>
@@ -302,9 +325,8 @@ export default function AMCDashboard() {
             </div>
           </div>
 
-          {/* Add Maintenance button */}
           <button
-            onClick={() => setMaintFormOpen(o => !o)}
+            onClick={() => setMaintFormOpen(true)}
             style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 20px", borderRadius:12, border:"none", background:"linear-gradient(135deg,#088395,#176B87)", color:"white", fontSize:14, fontWeight:700, cursor:"pointer", boxShadow:"0 4px 12px rgba(8,131,149,0.25)", transition:"all 0.2s" }}
             onMouseEnter={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 8px 20px rgba(8,131,149,0.35)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform="translateY(0)";   e.currentTarget.style.boxShadow="0 4px 12px rgba(8,131,149,0.25)"; }}
@@ -313,35 +335,45 @@ export default function AMCDashboard() {
           </button>
         </div>
 
-        {/* ── Save success toast ────────────────────────────────────── */}
+        {/* ── Save success toast ── */}
         {saveOk && (
           <div className="fade-in" style={{ display:"flex", alignItems:"center", gap:8, borderRadius:12, padding:"12px 18px", marginBottom:"1rem", background:"#DCFCE7", border:"1px solid #86EFAC", color:"#166534", fontSize:13, fontWeight:600 }}>
             <Icon.Check /> Maintenance record saved successfully.
           </div>
         )}
 
-        {/* ── Summary Cards ─────────────────────────────────────────── */}
+        {/* ── Summary Cards ── */}
         <div className="fade-in" style={{ display:"grid", gridTemplateColumns: isMobile?"repeat(2,1fr)":"repeat(4,1fr)", gap:"1.25rem", marginBottom:"1.5rem", animationDelay:".05s" }}>
-          {[
-            { label:"Assets with Warranty",     value: loadingC ? "…" : total,    bg:"#D1F8EF",                 icon:"#088395", Icon: Icon.Shield  },
-            { label:"Warranty Active",           value: loadingC ? "…" : active,   bg:"rgba(134,182,246,0.2)",   icon:"#3674B5", Icon: Icon.Check   },
-            { label:"Expiring within 60 days",   value: loadingC ? "…" : expiring, bg:"rgba(251,191,36,0.15)",   icon:"#d97706", Icon: Icon.Bell    },
-            { label:"Warranty Expired",          value: loadingC ? "…" : expired,  bg:"rgba(239,68,68,0.12)",    icon:"#dc2626", Icon: Icon.Asset   },
-          ].map((s, i) => (
-            <div key={i} style={{ backgroundColor:"white", borderRadius:16, padding: isMobile?"1rem":"1.25rem", boxShadow:"0 4px 6px -1px rgba(8,131,149,0.1)", border:"1px solid rgba(8,131,149,0.1)", position:"relative", overflow:"hidden", transition:"all 0.25s" }}
-              onMouseEnter={e => { e.currentTarget.style.transform="translateY(-4px)"; e.currentTarget.style.boxShadow="0 10px 20px rgba(8,131,149,0.18)"; }}
-              onMouseLeave={e => { e.currentTarget.style.transform="translateY(0)";   e.currentTarget.style.boxShadow="0 4px 6px -1px rgba(8,131,149,0.1)"; }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"0.75rem" }}>
-                <div style={{ fontSize: isMobile?11:12, fontWeight:600, color:"#64748b", textTransform:"uppercase", letterSpacing:"0.4px", lineHeight:1.4, maxWidth:120 }}>{s.label}</div>
-                <div style={{ width:40, height:40, borderRadius:10, background:s.bg, color:s.icon, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}><s.Icon /></div>
+          {summaryCards.map((s) => {
+            const isActive = cardFilter === s.filterKey;
+            return (
+              <div
+                key={s.filterKey}
+                className="summary-card"
+                onClick={() => setCardFilter(isActive ? "all" : s.filterKey)}
+                style={{
+                  backgroundColor: "white", borderRadius: 16, padding: isMobile ? "1rem" : "1.25rem",
+                  border: isActive ? `2px solid ${s.accent}` : "1px solid rgba(8,131,149,0.1)",
+                  boxShadow: isActive ? `0 0 0 3px ${s.accent}22, 0 8px 16px rgba(8,131,149,0.14)` : "0 4px 6px -1px rgba(8,131,149,0.1)",
+                  position: "relative", overflow: "hidden", cursor: "pointer",
+                  transform: isActive ? "translateY(-4px)" : "translateY(0)", userSelect: "none",
+                }}
+              >
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"0.75rem" }}>
+                  <div style={{ fontSize: isMobile?11:12, fontWeight:600, color: isActive ? s.accent : "#64748b", textTransform:"uppercase", letterSpacing:"0.4px", lineHeight:1.4, maxWidth:120 }}>{s.label}</div>
+                  <div style={{ width:40, height:40, borderRadius:10, background:s.bg, color:s.icon, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, outline: isActive ? `2px solid ${s.accent}44` : "none", outlineOffset:2 }}><s.Icon /></div>
+                </div>
+                <div style={{ fontSize: isMobile?"1.75rem":"2.25rem", fontWeight:800, color: isActive ? s.accent : "#088395", fontFamily:"'Playfair Display',serif" }}>{s.value}</div>
+                {isActive && (
+                  <div style={{ position:"absolute", bottom:10, right:12, fontSize:9, fontWeight:800, textTransform:"uppercase", letterSpacing:"0.6px", padding:"2px 8px", borderRadius:99, background:s.accent, color:"#fff", opacity:0.9 }}>✓ Filtered</div>
+                )}
+                <div style={{ position:"absolute", bottom:-16, right:-16, width:70, height:70, borderRadius:"50%", background:s.icon, opacity: isActive ? 0.13 : 0.07 }} />
               </div>
-              <div style={{ fontSize: isMobile?"1.75rem":"2.25rem", fontWeight:800, color:"#088395", fontFamily:"'Playfair Display',serif" }}>{s.value}</div>
-              <div style={{ position:"absolute", bottom:-16, right:-16, width:70, height:70, borderRadius:"50%", background:s.icon, opacity:0.07 }} />
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* ── Error banners ─────────────────────────────────────────── */}
+        {/* ── Error banners ── */}
         {(errorC || errorM) && (
           <div style={{ borderRadius:12, padding:"12px 18px", marginBottom:"1rem", background:"#FEF2F2", border:"1px solid #FCA5A5", color:"#991B1B", fontSize:13, fontWeight:600 }}>
             {errorC || errorM}
@@ -349,7 +381,7 @@ export default function AMCDashboard() {
           </div>
         )}
 
-        {/* ── Expiry Alerts ─────────────────────────────────────────── */}
+        {/* ── Expiry Alerts ── */}
         {alertList.length > 0 && (
           <div className="fade-in" style={{ backgroundColor:"#fffbeb", borderRadius:16, border:"1px solid #fde68a", marginBottom:"1.5rem", overflow:"hidden", boxShadow:"0 4px 6px rgba(8,131,149,0.06)", animationDelay:".1s" }}>
             <div style={{ display:"flex", alignItems:"center", gap:10, padding: isMobile?"12px 16px":"14px 20px", borderBottom:"1px solid #fde68a", backgroundColor:"#fef9c3" }}>
@@ -375,43 +407,7 @@ export default function AMCDashboard() {
           </div>
         )}
 
-        {/* ── Add Maintenance Form ──────────────────────────────────── */}
-        {maintFormOpen && (
-          <div className="fade-in" style={{ ...card, animationDelay:".05s" }}>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"1rem", paddingBottom:"0.75rem", borderBottom:"2px solid #D1F8EF" }}>
-              <div>
-                <div style={{ fontSize: isMobile?15:17, fontWeight:700, color:"#176B87" }}>Schedule Maintenance</div>
-                <div style={{ fontSize:13, color:"#3674B5", marginTop:2 }}>Log a new service or upcoming maintenance</div>
-              </div>
-              <button onClick={() => setMaintFormOpen(false)} style={{ background:"none", border:"none", cursor:"pointer", color:"#94a3b8", padding:4, display:"flex" }}><Icon.Close /></button>
-            </div>
-
-            <div style={{ display:"grid", gridTemplateColumns: isMobile?"1fr":"repeat(3,1fr)", gap:"1rem" }}>
-              <Field label="Asset" name="assetObjectId" value={mForm.assetObjectId} onChange={handleMForm} options={assetOptions} isMobile={isMobile} required />
-              <Field label="Scheduled Date" name="scheduledDate" type="date" value={mForm.scheduledDate} onChange={handleMForm} isMobile={isMobile} required />
-              <Field label="Service Officer Name" name="serviceOfficerName" value={mForm.serviceOfficerName} onChange={handleMForm} isMobile={isMobile}/>
-              <Field label="Work to be Done" name="workDone" value={mForm.workDone} onChange={handleMForm} isMobile={isMobile} />
-              <Field label="Estimated Cost (₹)" name="cost" type="number" value={mForm.cost} onChange={handleMForm} isMobile={isMobile} />
-              <Field label="Status" name="status" value={mForm.status} onChange={handleMForm} options={["Scheduled","In Progress","Completed","Cancelled"]} isMobile={isMobile} />
-            </div>
-            <div style={{ marginTop:"0.75rem" }}>
-              <Field label="Notes" name="notes" value={mForm.notes} onChange={handleMForm} isMobile={isMobile} />
-            </div>
-
-            <div style={{ display:"flex", justifyContent:"flex-end", gap:12, marginTop:"1.25rem" }}>
-              <button onClick={() => setMaintFormOpen(false)} style={{ padding:"9px 20px", borderRadius:10, border:"1px solid rgba(8,131,149,0.3)", background:"white", color:"#176B87", fontSize:14, fontWeight:600, cursor:"pointer" }}>Cancel</button>
-              <button
-                onClick={handleAddMaintenance}
-                disabled={saving || !mForm.assetObjectId || !mForm.scheduledDate}
-                style={{ display:"flex", alignItems:"center", gap:8, padding:"9px 24px", borderRadius:10, border:"none", background: saving?"#a8cdd5":"linear-gradient(135deg,#088395,#176B87)", color:"white", fontSize:14, fontWeight:700, cursor: saving?"not-allowed":"pointer", boxShadow:"0 4px 12px rgba(8,131,149,0.25)", opacity: (!mForm.assetObjectId || !mForm.scheduledDate) ? 0.6 : 1 }}
-              >
-                {saving ? <><Icon.Spinner /> Saving…</> : <><Icon.Plus /> Save Record</>}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Warranty / Contracts Table ────────────────────────────── */}
+        {/* ── Warranty / Contracts Table ── */}
         <div className="fade-in" style={{ ...card, animationDelay:".12s" }}>
           <div style={{ display:"flex", alignItems: isMobile?"flex-start":"center", justifyContent:"space-between", marginBottom:"1rem", paddingBottom:"0.75rem", borderBottom:"2px solid #D1F8EF", flexDirection: isMobile?"column":"row", gap:12 }}>
             <div>
@@ -419,7 +415,15 @@ export default function AMCDashboard() {
                 <Icon.Shield /> Warranty Contracts
                 <span style={{ borderRadius:99, padding:"2px 10px", fontSize:11, fontWeight:700, background:"#EBF4F6", color:"#088395" }}>{loadingC ? "…" : filtered.length}</span>
               </div>
-              <div style={{ fontSize:13, color:"#3674B5", marginTop:2 }}>Derived from asset Financial Details</div>
+              <div style={{ fontSize:13, color:"#3674B5", marginTop:4, display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+                Derived from asset Financial Details
+                {cardFilter && cardFilter !== "all" && (
+                  <span style={{ display:"inline-flex", alignItems:"center", gap:5, fontSize:11, fontWeight:700, padding:"2px 9px", borderRadius:99, background:"#EBF4F6", color:"#088395", border:"1px solid #a8cdd5" }}>
+                    {cardFilter}
+                    <button onClick={() => setCardFilter("all")} style={{ background:"none", border:"none", cursor:"pointer", color:"#088395", fontSize:14, lineHeight:1, padding:0, display:"flex", alignItems:"center" }}>×</button>
+                  </span>
+                )}
+              </div>
             </div>
             <input
               value={search} onChange={e => setSearch(e.target.value)}
@@ -427,23 +431,16 @@ export default function AMCDashboard() {
               style={{ padding:"9px 14px", borderRadius:10, border:"1px solid rgba(8,131,149,0.25)", backgroundColor:"#EBF4F6", fontSize:13, color:"#176B87", outline:"none", width: isMobile?"100%":240 }}
             />
           </div>
-
           <div style={{ overflowX:"auto" }}>
             <table style={{ width:"100%", borderCollapse:"collapse" }}>
               <thead>
-                <tr>
-                  {["Asset ID","Asset Name","Type","Brand","Lab","Purchase Year","Warranty (yrs)","Warranty End","Total Maint. Cost","Breakdown Freq.","Status"].map(h => (
-                    <th key={h} style={th}>{h}</th>
-                  ))}
-                </tr>
+                <tr>{["Asset ID","Asset Name","Type","Brand","Lab","Purchase Year","Warranty (yrs)","Warranty End","Total Maint. Cost","Breakdown Freq.","Status"].map(h => <th key={h} style={th}>{h}</th>)}</tr>
               </thead>
               <tbody>
                 {loadingC
                   ? Array.from({length:5}).map((_,i) => <SkRow key={i} cols={11} />)
                   : filtered.length === 0
-                  ? (
-                    <tr><td colSpan={11} style={{ textAlign:"center", padding:"3rem", color:"#94a3b8", fontWeight:600 }}>No warranty records found</td></tr>
-                  )
+                  ? <tr><td colSpan={11} style={{ textAlign:"center", padding:"3rem", color:"#94a3b8", fontWeight:600 }}>No warranty records found</td></tr>
                   : filtered.map((c, i) => {
                     const st = getWarrantyStatus(c.warrantyEnd);
                     return (
@@ -466,14 +463,13 @@ export default function AMCDashboard() {
               </tbody>
             </table>
           </div>
-
           <div style={{ display:"flex", justifyContent:"space-between", padding:"0.75rem 0 0", fontSize:12, color:"#9ca3af", borderTop:"1px solid #D1F8EF", marginTop:"0.5rem" }}>
             <span>Showing {filtered.length} of {contracts.length}</span>
             <span>Last updated: {new Date().toLocaleDateString("en-IN")}</span>
           </div>
         </div>
 
-        {/* ── Maintenance History Table ─────────────────────────────── */}
+        {/* ── Maintenance History Table ── */}
         <div className="fade-in" style={{ ...card, animationDelay:".18s" }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"1rem", paddingBottom:"0.75rem", borderBottom:"2px solid #D1F8EF", flexWrap:"wrap", gap:12 }}>
             <div>
@@ -484,15 +480,10 @@ export default function AMCDashboard() {
               <div style={{ fontSize:13, color:"#3674B5", marginTop:2 }}>All scheduled and completed service records</div>
             </div>
           </div>
-
           <div style={{ overflowX:"auto" }}>
             <table style={{ width:"100%", borderCollapse:"collapse" }}>
               <thead>
-                <tr>
-                  {["Asset ID","Asset Name","Scheduled Date","Completed Date","Service Officer","Work Done","Cost (₹)","Status","Notes"].map(h => (
-                    <th key={h} style={th}>{h}</th>
-                  ))}
-                </tr>
+                <tr>{["Asset ID","Asset Name","Scheduled Date","Completed Date","Service Officer","Work Done","Cost (₹)","Status","Notes"].map(h => <th key={h} style={th}>{h}</th>)}</tr>
               </thead>
               <tbody>
                 {loadingM
@@ -508,13 +499,9 @@ export default function AMCDashboard() {
                     <tr key={m._id} className="row-hover" style={{ backgroundColor: i%2===0?"#fff":"#EBF4F6", transition:"background 0.15s" }}>
                       <td style={{ ...td, fontFamily:"monospace", fontWeight:700, color:"#088395" }}>{m.assetId}</td>
                       <td style={{ ...td, fontWeight:600 }}>{m.assetName}</td>
-                      <td style={td}>
-                        <span style={{ display:"inline-flex", alignItems:"center", gap:5 }}>
-                          <Icon.Calendar /> {fmtDate(m.scheduledDate)}
-                        </span>
-                      </td>
+                      <td style={td}><span style={{ display:"inline-flex", alignItems:"center", gap:5 }}><Icon.Calendar /> {fmtDate(m.scheduledDate)}</span></td>
                       <td style={{ ...td, color: m.completedDate ? "#166534" : "#9ca3af" }}>{m.completedDate ? fmtDate(m.completedDate) : "—"}</td>
-                      <td style={{ ...td, fontWeight:600 }}> {m.serviceOfficerName || "Unassigned"}</td>
+                      <td style={{ ...td, fontWeight:600 }}>{m.serviceOfficerName || "Unassigned"}</td>
                       <td style={{ ...td, maxWidth:180, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{m.workDone || "—"}</td>
                       <td style={{ ...td, fontWeight:700, color:"#088395" }}>{m.cost ? fmtINR(m.cost) : "—"}</td>
                       <td style={td}><StatusBadge label={m.status} map={MAINT_BADGE} /></td>
@@ -528,6 +515,85 @@ export default function AMCDashboard() {
         </div>
 
       </div>
+
+      {/* ── Schedule Maintenance Modal Popup ── */}
+      {maintFormOpen && (
+        <div
+          className="modal-overlay"
+          onClick={() => setMaintFormOpen(false)}
+          style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.45)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 1000, padding: "1rem",
+          }}
+        >
+          <div
+            className="modal-content"
+            onClick={e => e.stopPropagation()}
+            style={{
+              backgroundColor: "white", borderRadius: 16,
+              padding: isMobile ? "1.25rem" : "2rem",
+              width: "90%", maxWidth: 600,
+              maxHeight: "90vh", overflowY: "auto",
+              boxShadow: "0 20px 60px rgba(8,131,149,0.2)",
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", marginBottom:"1.5rem", paddingBottom:"1rem", borderBottom:"2px solid #EBF4F6" }}>
+              <div style={{ width:40, height:40, borderRadius:10, backgroundColor:"#EBF4F6", display:"flex", alignItems:"center", justifyContent:"center", color:"#088395", flexShrink:0 }}>
+                <Icon.Wrench />
+              </div>
+              <div>
+                <h2 style={{ fontSize:"1.25rem", fontWeight:800, color:"#176B87", margin:0 }}>Schedule Maintenance</h2>
+                <p style={{ margin:"2px 0 0", fontSize:13, color:"#3674B5", fontWeight:500 }}>Log a new service or upcoming maintenance</p>
+              </div>
+              <button
+                onClick={() => setMaintFormOpen(false)}
+                style={{ marginLeft:"auto", background:"none", border:"none", cursor:"pointer", color:"#94a3b8", padding:6, display:"flex", borderRadius:8, transition:"background 0.15s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#f1f5f9"}
+                onMouseLeave={e => e.currentTarget.style.background = "none"}
+              >
+                <Icon.Close />
+              </button>
+            </div>
+
+            {/* Form Fields */}
+            <div style={{ marginBottom:"1rem" }}>
+              <Field label="Asset" name="assetObjectId" value={mForm.assetObjectId} onChange={handleMForm} options={assetOptions} isMobile={isMobile} required />
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns: isMobile?"1fr":"repeat(2,1fr)", gap:"1rem" }}>
+              <Field label="Scheduled Date" name="scheduledDate" type="date" value={mForm.scheduledDate} onChange={handleMForm} isMobile={isMobile} required />
+              <Field label="Service Officer Name" name="serviceOfficerName" value={mForm.serviceOfficerName} onChange={handleMForm} isMobile={isMobile} />
+              <Field label="Work to be Done" name="workDone" value={mForm.workDone} onChange={handleMForm} isMobile={isMobile} />
+              <Field label="Estimated Cost (₹)" name="cost" type="number" value={mForm.cost} onChange={handleMForm} isMobile={isMobile} />
+              <Field label="Status" name="status" value={mForm.status} onChange={handleMForm} options={["Scheduled","In Progress","Completed","Cancelled"]} isMobile={isMobile} />
+            </div>
+            <div style={{ marginTop:"1rem" }}>
+              <Field label="Notes" name="notes" value={mForm.notes} onChange={handleMForm} isMobile={isMobile} />
+            </div>
+
+            {/* Modal Actions */}
+            <div style={{ display:"flex", gap:12, marginTop:"1.5rem" }}>
+              <button
+                onClick={() => setMaintFormOpen(false)}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = "#EBF4F6"}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = "white"}
+                style={{ flex:1, padding:"11px", backgroundColor:"white", color:"#6b7280", border:"2px solid #e2e8f0", borderRadius:10, fontWeight:600, cursor:"pointer", fontSize:14, transition:"background 0.15s" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddMaintenance}
+                disabled={saving || !mForm.assetObjectId || !mForm.scheduledDate}
+                style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:8, padding:"11px", borderRadius:10, border:"none", background: saving?"#a8cdd5":"linear-gradient(135deg,#088395,#176B87)", color:"white", fontSize:14, fontWeight:700, cursor: saving?"not-allowed":"pointer", boxShadow:"0 4px 12px rgba(8,131,149,0.25)", opacity: (!mForm.assetObjectId || !mForm.scheduledDate) ? 0.6 : 1, transition:"opacity 0.2s" }}
+              >
+                {saving ? <><Icon.Spinner /> Saving…</> : <><Icon.Plus /> Save Record</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

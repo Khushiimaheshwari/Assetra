@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "../../utils/db";
 import Assets from "../../../../models/Asset";
+import Lab from "../../../../models/Labs";
+import PCs from "../../../../models/Lab_PCs";
+import Faculty from "../../../../models/Faculty";
 
 export async function GET(req) {
   try {
