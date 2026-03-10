@@ -9,31 +9,41 @@ export async function POST(req) {
     await connectDB();
 
     const body = await req.json();
-    const { assetId, facultyId, description} = body;
+    const { asset_id, facultyId, description } = body;
 
-    if (!assetId || !facultyId || !description) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    if (!asset_id || !facultyId || !description) {
+      return NextResponse.json(
+        { error: "All fields are required" },
+        { status: 400 }
+      );
     }
 
     const user = await User.findById(facultyId);
     if (!user) {
-      return NextResponse.json({ error: `No user found.` }, { status: 409 });
+      return NextResponse.json(
+        { error: "No user found." },
+        { status: 404 }
+      );
     }
-    console.log(user);
 
-    const faculty = await Faculty.findOne({ Email: user.Email });
+    const faculty = await Faculty.findOne({ UserDetails: user._id });
     if (!faculty) {
-      return NextResponse.json({ error: `No faculty with this email found.` }, { status: 409 });
+      return NextResponse.json(
+        { error: "No faculty found for this user." },
+        { status: 404 }
+      );
     }
-    console.log(faculty);
 
-    const asset = await Assets.findById(assetId);
+    const asset = await Assets.findById(asset_id);
     if (!asset) {
-      return NextResponse.json({ error: `No asset found.` }, { status: 409 });
+      return NextResponse.json(
+        { error: "No asset found." },
+        { status: 404 }
+      );
     }
 
     const updatedAsset = await Assets.findByIdAndUpdate(
-      assetId,
+      asset_id,
       {
         $push: {
           Issue_Reported: {
@@ -43,18 +53,29 @@ export async function POST(req) {
           },
         },
       },
-      { new: true } 
-    ).populate("Issue_Reported.FacultyDetails", "facultyName");
+      { new: true }
+    )
+      .populate({
+        path: "Issue_Reported.FacultyDetails",
+        populate: {
+          path: "UserDetails",
+          select: "Name Email",
+        },
+      });
 
     return NextResponse.json(
       {
         message: "Issue added successfully",
         asset: updatedAsset,
       },
+      { status: 200 }
     );
 
   } catch (error) {
-    console.error("Error adding lab:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error("Error adding issue:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

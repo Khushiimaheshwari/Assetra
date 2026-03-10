@@ -34,6 +34,16 @@ function AssetsPage() {
       warranty: 0,
     }
   });
+  const [movingAsset, setMovingAsset]   = useState(null);  
+  const [labs, setLabs]                 = useState([]);
+  const [labPCs, setLabPCs]             = useState([]);
+  const [labPCsLoading, setLabPCsLoading] = useState(false);
+  const [moveSaving, setMoveSaving]     = useState(false);
+  const [moveForm, setMoveForm] = useState({
+    To_Lab: "",
+    To_PC:  "",
+    Reason: "",
+  });
 
   const assetTypes = ["Monitor", "Keyboard", "Mouse", "CPU", "UPS", "Other"];
 
@@ -313,6 +323,60 @@ function AssetsPage() {
       setAiLoading(false);
     }
   };
+
+  const openMoveModal = async (asset) => {
+    setMovingAsset(asset);
+    setMoveForm({ To_Lab: "", To_PC: "", Reason: "" });
+    setLabPCs([]);
+    try {
+      const res  = await fetch("/api/lab_technician/getLabs");
+      const data = await res.json();
+      if (res.ok) setLabs(data.labs || []);
+    } catch (err) {
+      console.error("Error fetching labs:", err);
+    }
+  };
+
+  const fetchPCsForLab = async (labId) => {
+    if (!labId) { setLabPCs([]); return; }
+    setLabPCsLoading(true);
+    try {
+      const res  = await fetch(`/api/lab_technician/getPcsByLab/${labId}`);
+      const data = await res.json();
+      if (res.ok) setLabPCs(data.pcs || []);
+    } catch (err) {
+      console.error("Error fetching PCs:", err);
+    } finally {
+      setLabPCsLoading(false);
+    }
+  };
+
+  const handleMoveAsset = async () => {
+    if (!moveForm.To_Lab) { alert("Please select a destination lab."); return; }
+    setMoveSaving(true);
+    try {
+      const res = await fetch("/api/lab_technician/moveAsset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assetId: movingAsset._id || movingAsset.id,
+          To_Lab:  moveForm.To_Lab,
+          To_PC:   moveForm.To_PC || null,
+          Reason:  moveForm.Reason,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || "Failed to move asset."); return; }
+      alert("Asset moved successfully!");
+      setMovingAsset(null);
+      await fetchPC();
+    } catch (err) {
+      console.error("Move Asset Error:", err);
+      alert("Something went wrong while moving the asset.");
+    } finally {
+      setMoveSaving(false);
+    }
+  };
   
   const C = { primary: '#088395', dark: '#176B87', sky: '#86B6F6', ice: '#EBF4F6', mint: '#D1F8EF' };
 
@@ -326,146 +390,69 @@ function AssetsPage() {
   const selectStyle = { ...inputStyle, cursor: 'pointer' };
 
   const styles = {
-    container: {
-      width: isMobile ? '100%' : 'calc(100% - 255px)',
-      minHeight: '100vh', backgroundColor: C.ice,
-      padding: isMobile ? '1rem' : '2rem',
-      boxSizing: 'border-box', marginLeft: isMobile ? '0' : '255px',
-      overflowX: 'hidden', fontFamily: "'Segoe UI', sans-serif",
-    },
-    loaderContainer: {
-      display: 'flex', justifyContent: 'center', alignItems: 'center',
-      minHeight: '100vh', flexDirection: 'column', gap: '1rem',
-    },
-    header: {
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      marginBottom: '1.5rem', backgroundColor: 'white',
-      borderRadius: '16px', padding: isMobile ? '1.25rem' : '1.75rem 2rem',
-      boxShadow: '0 2px 8px rgba(8,131,149,0.08)', borderBottom: `3px solid ${C.primary}`,
-      flexWrap: 'wrap', gap: '1rem',
-    },
+    container: { width: isMobile ? '100%' : 'calc(100% - 255px)', minHeight: '100vh', backgroundColor: C.ice, padding: isMobile ? '1rem' : '2rem', boxSizing: 'border-box', marginLeft: isMobile ? '0' : '255px', overflowX: 'hidden' },
+    loaderContainer: { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', flexDirection: 'column', gap: '1rem' },
+    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', backgroundColor: 'white', borderRadius: '16px', padding: isMobile ? '1.25rem' : '1.75rem 2rem', boxShadow: '0 2px 8px rgba(8,131,149,0.08)', borderBottom: `3px solid ${C.primary}`, flexWrap: 'wrap', gap: '1rem' },
     headerLeft: { display: 'flex', alignItems: 'center', gap: '1rem' },
-    headerIcon: {
-      width: 48, height: 48, borderRadius: '12px', backgroundColor: C.ice,
-      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-    },
+    headerIcon: { width: 48, height: 48, borderRadius: '12px', backgroundColor: C.ice, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     headerTitle: { fontSize: isMobile ? '1.25rem' : '1.75rem', fontWeight: '800', color: C.dark, margin: 0, letterSpacing: '-0.5px' },
     headerSub: { fontSize: '0.875rem', color: C.primary, fontWeight: '500', margin: 0 },
-    addButton: {
-      padding: isMobile ? '10px 18px' : '10px 22px', backgroundColor: C.primary, color: 'white',
-      border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer',
-      display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px',
-      transition: 'background 0.2s', boxShadow: '0 2px 8px rgba(8,131,149,0.25)',
-    },
-    filterSection: {
-      backgroundColor: 'white', borderRadius: '12px',
-      padding: isMobile ? '1rem' : '1.25rem 1.5rem', marginBottom: '1.5rem',
-      boxShadow: '0 2px 8px rgba(8,131,149,0.06)',
-    },
+    addButton: { padding: isMobile ? '10px 18px' : '12px 22px', background: `linear-gradient(135deg, ${C.primary} 0%, #0a9fb5 100%)`, color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: isMobile ? '13px' : '14px', transition: 'all 0.3s ease', boxShadow: '0 4px 12px rgba(8,131,149,0.3)', letterSpacing: '0.3px' },
+    filterSection: { backgroundColor: 'white', borderRadius: '12px', padding: isMobile ? '1rem' : '1.25rem 1.5rem', marginBottom: '1.5rem', boxShadow: '0 2px 8px rgba(8,131,149,0.06)' },
     filterLabel: { fontSize: '12px', fontWeight: '700', color: C.dark, marginBottom: '0.75rem', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' },
     filterButtons: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap' },
-    filterButton: {
-      padding: '0.4rem 0.875rem', backgroundColor: C.ice, color: C.dark,
-      border: '2px solid transparent', borderRadius: '8px', fontWeight: '600',
-      cursor: 'pointer', fontSize: '13px', transition: 'all 0.2s ease',
-    },
+    filterButton: { padding: '0.4rem 0.875rem', backgroundColor: C.ice, color: C.dark, border: '2px solid transparent', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px', transition: 'all 0.2s ease' },
     filterButtonActive: { backgroundColor: C.primary, color: 'white', border: `2px solid ${C.primary}` },
-    infoBox: {
-      background: 'white', border: `1px solid ${C.mint}`,
-      borderRadius: '10px', padding: '12px 16px', marginBottom: '1.5rem',
-      borderLeft: `4px solid ${C.primary}`,
-    },
+    infoBox: { background: 'white', border: `1px solid ${C.mint}`, borderRadius: '10px', padding: '12px 16px', marginBottom: '1.5rem', borderLeft: `4px solid ${C.primary}` },
     infoText: { color: C.dark, fontSize: '13px', lineHeight: '1.6', margin: 0, fontWeight: '500' },
-    assetGrid: {
-      display: 'grid',
-      gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))',
-      gap: '1rem',
-    },
-    assetCard: {
-      backgroundColor: 'white', borderRadius: '14px', padding: '1.25rem',
-      boxShadow: '0 2px 8px rgba(8,131,149,0.07)', borderLeft: `4px solid ${C.primary}`,
-      transition: 'transform 0.2s ease, box-shadow 0.2s ease', position: 'relative',
-    },
+    assetGrid: { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' },
+    assetCard: { backgroundColor: 'white', borderRadius: '14px', padding: '1.25rem', boxShadow: '0 2px 8px rgba(8,131,149,0.07)', borderLeft: `4px solid ${C.primary}`, transition: 'transform 0.2s ease, box-shadow 0.2s ease', position: 'relative' },
     assetName: { fontSize: '15px', fontWeight: '700', color: C.dark, marginBottom: '1rem' },
     assetDetail: { display: 'flex', alignItems: 'center', marginBottom: '0.6rem', fontSize: '13px' },
     detailLabel: { fontWeight: '600', color: C.dark, minWidth: '110px', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px' },
     detailValue: { color: C.primary, flex: 1, fontWeight: '500' },
-    issueBlock: {
-      backgroundColor: '#fef3c7', border: '1px solid #fbbf24', borderRadius: '20px',
-      padding: '2px 12px', cursor: 'pointer', fontSize: '12px', color: '#92400e',
-      fontWeight: '600', transition: 'all 0.2s',
-    },
-    noIssueText: { color: '#10b981', fontWeight: '500', fontSize: '13px' },
     statusBadge: { display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' },
-    actionButtons: {
-      display: 'flex', gap: '0.5rem', marginTop: '1rem',
-      paddingTop: '1rem', borderTop: `1px solid ${C.ice}`,
-    },
-    iconButton: {
-      padding: '0.5rem', backgroundColor: C.ice, border: 'none', borderRadius: '8px',
-      cursor: 'pointer', transition: 'background 0.2s ease',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1,
-    },
-    // ── Issue Modal ──
-    modalOverlay: {
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.45)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem',
-    },
-    issueModal: {
-      backgroundColor: 'white', borderRadius: '16px', padding: '1.5rem',
-      maxWidth: '480px', width: '100%', maxHeight: '80vh', overflow: 'auto',
-      boxShadow: '0 20px 60px rgba(8,131,149,0.2)',
-    },
-    issueModalHeader: {
-      fontSize: '18px', fontWeight: '800', color: C.dark,
-      marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    },
-    closeBtn: {
-      background: C.ice, border: 'none', width: 32, height: 32, borderRadius: '8px',
-      cursor: 'pointer', color: C.dark, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    },
-    issueDetailRow: { marginBottom: '14px' },
+    issueContainer: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1 },
+    issueBlock: { backgroundColor: '#fef3c7', border: '1px solid #fbbf24', borderRadius: '20px', padding: '2px 12px', cursor: 'pointer', fontSize: '12px', color: '#92400e', fontWeight: '600', transition: 'all 0.2s' },
+    noIssueText: { color: '#10b981', fontWeight: '500', fontSize: '13px' },
+    qrImage: { width: '22px', height: '22px', display: 'block' },
+    actionButtons: { display: 'flex', gap: '0.5rem', marginTop: '1rem', paddingTop: '1rem', borderTop: `1px solid ${C.mint}` },
+    iconButton: { padding: isMobile ? '0.625rem' : '0.5rem', background: C.ice, border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 },
+    editButton: { color: C.primary },
+    deleteButton: { color: '#ef4444' },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(23, 107, 135, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' },
+    issueModal: { backgroundColor: 'white', borderRadius: '16px', padding: '1.5rem', maxWidth: '480px', width: '100%', maxHeight: '80vh', overflow: 'auto', boxShadow: '0 20px 60px rgba(8,131,149,0.2)', border: '1px solid rgba(8, 131, 149, 0.1)' },
+    issueModalHeader: { fontSize: '20px', fontWeight: '800', color: C.dark, marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: `2px solid ${C.mint}` },
+    closeBtn: { background: C.ice, border: 'none', width: 32, height: 32, borderRadius: '8px', cursor: 'pointer', color: C.dark, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' },
+    issueDetailRow: { marginBottom: '12px' },
     issueDetailLabel: { fontSize: '11px', fontWeight: '700', color: C.dark, textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.05em' },
     issueDetailValue: { fontSize: '14px', color: '#374151', lineHeight: '1.6' },
     issueStatusBadge: { display: 'inline-block', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' },
     navButtons: { display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', gap: '0.5rem' },
-    navBtn: {
-      fontSize: '18px', fontWeight: 'bold', padding: '4px 14px', borderRadius: '8px',
-      border: `2px solid ${C.ice}`, cursor: 'pointer', background: C.ice, color: C.dark, transition: 'all 0.15s',
-    },
-    // ── QR Modal ──
-    qrModal: {
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.55)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem',
-    },
-    qrModalContent: {
-      background: 'white', borderRadius: '16px', padding: isMobile ? '1.5rem' : '2rem',
-      maxWidth: '380px', width: '100%', textAlign: 'center', position: 'relative',
-      boxShadow: '0 20px 60px rgba(8,131,149,0.2)',
-    },
-    qrModalHeader: { fontSize: '18px', fontWeight: '700', color: C.dark, marginBottom: '1.5rem' },
-    qrModalImage: {
-      width: isMobile ? '180px' : '220px', height: isMobile ? '180px' : '220px',
-      margin: '0 auto 1.5rem', display: 'block',
-      border: `2px solid ${C.mint}`, borderRadius: '10px',
-    },
-    qrImage: { width: '22px', height: '22px', display: 'block' },
-    downloadButton: {
-      padding: '10px 24px', background: C.primary, color: 'white', border: 'none',
-      borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '14px',
-      display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center',
-      margin: '0 auto', transition: 'background 0.2s ease',
-      boxShadow: '0 2px 8px rgba(8,131,149,0.25)',
-    },
-    closeButton: {
-      position: 'absolute', top: '1rem', right: '1rem', background: C.ice,
-      border: 'none', borderRadius: '50%', width: '32px', height: '32px',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      cursor: 'pointer', color: C.primary, transition: 'background 0.2s ease',
-    },
-    emptyState: { textAlign: 'center', padding: '3rem', color: C.primary, gridColumn: '1 / -1' },
+    navBtn: { fontSize: '14px', fontWeight: '700', padding: '6px 14px', borderRadius: '8px', border: `2px solid ${C.ice}`, cursor: 'pointer', background: C.ice, color: C.dark, transition: 'all 0.15s' },
+    formGroup: { marginBottom: '16px' },
+    formLabel: { display: 'block', fontSize: '11px', fontWeight: '700', color: C.dark, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' },
+    textarea: { width: '100%', padding: '10px 12px', border: `2px solid ${C.ice}`, borderRadius: '8px', fontSize: '14px', minHeight: '100px', resize: 'vertical', fontFamily: 'inherit', transition: 'border-color 0.2s', outline: 'none', boxSizing: 'border-box', color: C.dark },
+    resolveButton: { background: `linear-gradient(135deg, ${C.primary} 0%, #0a9fb5 100%)`, color: 'white', border: 'none', borderRadius: '10px', padding: '12px 24px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', width: '100%', transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(8,131,149,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '12px' },
+    resolvedIssue: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', padding: '5px 0px' },
+    resolvedText: { color: C.primary, fontSize: '14px', marginTop: '10px', fontWeight: '500' },
+    modal: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(23, 107, 135, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: isMobile ? '1rem' : '0' },
+    modalContent: { background: 'white', borderRadius: '20px', padding: isMobile ? '1.5rem' : '2rem', width: isMobile ? '100%' : '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(8,131,149,0.25)', border: '1px solid rgba(8, 131, 149, 0.1)' },
+    modalHeader: { fontSize: isMobile ? '20px' : '26px', fontWeight: 800, color: C.dark, marginBottom: '1.5rem', paddingBottom: '14px', borderBottom: `2px solid ${C.mint}`, letterSpacing: '-0.5px' },
+    label: { display: 'block', fontSize: '11px', fontWeight: '700', color: C.dark, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.04em' },
+    input: { width: '100%', padding: isMobile ? '0.625rem' : '14px', border: `2px solid rgba(8, 131, 149, 0.2)`, borderRadius: '10px', fontSize: '14px', transition: 'border-color 0.2s ease', boxSizing: 'border-box', color: C.dark, fontWeight: '500' },
+    readonlyInput: { width: '100%', padding: isMobile ? '0.625rem' : '14px', border: `2px solid rgba(8, 131, 149, 0.1)`, borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', color: '#64748b', fontWeight: '500', backgroundColor: '#f8fafc', cursor: 'not-allowed' },
+    select: { width: '100%', padding: isMobile ? '0.625rem' : '14px', border: `2px solid rgba(8, 131, 149, 0.2)`, borderRadius: '10px', fontSize: '14px', transition: 'border-color 0.2s ease', boxSizing: 'border-box', background: 'white', color: C.dark, fontWeight: '500', cursor: 'pointer' },
+    modalActions: { display: 'flex', gap: '14px', marginTop: '1.75rem', paddingTop: '16px', borderTop: `1px solid rgba(8, 131, 149, 0.1)`, flexDirection: isMobile ? 'column' : 'row' },
+    cancelButton: { flex: 1, padding: '14px', background: 'white', color: C.dark, border: `2px solid rgba(8, 131, 149, 0.3)`, borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '14px', transition: 'all 0.3s ease', letterSpacing: '0.3px' },
+    saveButton: { flex: 1, padding: '14px', background: saving ? '#9ca3af' : `linear-gradient(135deg, ${C.primary} 0%, #0a9fb5 100%)`, color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: saving ? 'none' : '0 4px 6px rgba(8,131,149,0.3)', transition: 'all 0.3s ease', letterSpacing: '0.3px' },
+    emptyState: { textAlign: 'center', padding: isMobile ? '2rem' : '3rem', color: C.primary, gridColumn: '1 / -1', fontWeight: '600' },
+    qrModal: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(23, 107, 135, 0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: isMobile ? '1rem' : '0' },
+    qrModalContent: { background: 'white', borderRadius: '16px', padding: isMobile ? '1.5rem' : '2rem', maxWidth: '380px', width: '100%', textAlign: 'center', position: 'relative', boxShadow: '0 20px 60px rgba(8,131,149,0.2)', border: '1px solid rgba(8, 131, 149, 0.1)' },
+    qrModalHeader: { fontSize: '18px', fontWeight: '700', color: C.dark, margin: 0 },
+    qrModalImage: { width: isMobile ? '180px' : '220px', height: isMobile ? '180px' : '220px', margin: '0 auto 1.5rem', display: 'block', border: `2px solid ${C.mint}`, borderRadius: '10px' },
+    downloadButton: { padding: '10px 24px', background: C.primary, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', margin: '0 auto', transition: 'background 0.2s ease', boxShadow: '0 2px 8px rgba(8,131,149,0.25)' },
+    closeButton: { position: 'absolute', top: '1rem', right: '1rem', background: C.ice, border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: C.primary, transition: 'background 0.2s ease' },
   };
 
   if (loading) {
@@ -559,7 +546,7 @@ function AssetsPage() {
                     <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
                     Issues
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flex: "1 1 0%"}}>
                     {asset.Issue_Reported.length > 0 ? (
                       <div style={styles.issueBlock}
                         onClick={() => openIssueModal(asset)}
@@ -605,6 +592,16 @@ function AssetsPage() {
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.ice}>
                     <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
                   </button>
+                  <button
+                    style={{ ...styles.iconButton, color: '#3674B5' }}
+                    onClick={() => openMoveModal(asset)}
+                    title="Move Asset to another Lab/PC"
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#dbeafe'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = C.ice}>
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+                    </svg>
+                  </button>
                   <button style={{ ...styles.iconButton, color: '#ef4444' }} onClick={() => handleDeleteAsset(asset.id || asset._id)}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.ice}>
@@ -621,6 +618,146 @@ function AssetsPage() {
           </div>
         )}
       </div>
+
+      {movingAsset && (
+        <div style={styles.modal} onClick={() => setMovingAsset(null)}>
+          <div style={{ ...styles.modalContent, maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
+
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', paddingBottom: '14px', borderBottom: `2px solid ${C.mint}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '8px', backgroundColor: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="#3674B5">
+                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+                  </svg>
+                </div>
+                <h2 style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: 800, color: C.dark, margin: 0 }}>Move Asset</h2>
+              </div>
+              <button style={styles.closeBtn} onClick={() => setMovingAsset(null)}>✕</button>
+            </div>
+
+            {/* Asset name chip */}
+            <div style={{ backgroundColor: C.ice, borderRadius: '8px', padding: '10px 14px', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg width="14" height="14" viewBox="0 0 20 20" fill={C.primary}><path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"/></svg>
+              <span style={{ fontSize: '13px', fontWeight: '700', color: C.dark }}>{movingAsset.Asset_Name}</span>
+              <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '4px', textTransform: 'capitalize' }}>({movingAsset.Asset_Type})</span>
+            </div>
+
+            {/* Pre-filled read-only fields */}
+            <div style={{ backgroundColor: '#f8fafc', border: `1px solid rgba(8,131,149,0.1)`, borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem' }}>
+              <p style={{ fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px', marginTop: 0 }}>Current Location — Read-only</p>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                <div>
+                  <label style={{ ...styles.label, color: '#94a3b8' }}>From Lab</label>
+                  <div style={styles.readonlyInput}>{pcData.Lab?.Lab_ID || '—'}</div>
+                </div>
+                <div>
+                  <label style={{ ...styles.label, color: '#94a3b8' }}>From PC</label>
+                  <div style={styles.readonlyInput}>{pcData.PC_Name || '—'}</div>
+                </div>
+              </div>
+              <div>
+                <label style={{ ...styles.label, color: '#94a3b8' }}>Moved By</label>
+                <div style={styles.readonlyInput}>You (logged-in technician)</div>
+              </div>
+            </div>
+
+            {/* To Lab dropdown */}
+            <div style={styles.formGroup}>
+              <label style={styles.label}>To Lab *</label>
+              <select
+                style={styles.select}
+                value={moveForm.To_Lab}
+                onChange={(e) => {
+                  const labId = e.target.value;
+                  setMoveForm({ ...moveForm, To_Lab: labId, To_PC: "" });
+                  fetchPCsForLab(labId);
+                }}
+                onFocus={(e) => e.target.style.borderColor = C.primary}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
+              >
+                <option value="">Select destination lab…</option>
+                {labs
+                  .filter(lab => lab._id !== (pcData.Lab?._id || pcData.Lab))
+                  .map(lab => (
+                    <option key={lab._id} value={lab._id}>
+                      {lab.Lab_ID}{lab.Lab_Name ? ` — ${lab.Lab_Name}` : ""}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            {/* To PC dropdown — only shown when a lab is selected */}
+            {moveForm.To_Lab && (
+              <div style={styles.formGroup}>
+                <label style={styles.label}>To PC <span style={{ fontWeight: '400', textTransform: 'none', color: '#94a3b8', fontSize: '10px' }}>(Optional — leave blank for lab-level)</span></label>
+                {labPCsLoading ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '14px', border: `2px solid rgba(8,131,149,0.2)`, borderRadius: '10px', fontSize: '14px', color: C.dark }}>
+                    <Loader2 size={14} className="animate-spin" color={C.primary} /> Loading PCs…
+                  </div>
+                ) : (
+                  <select
+                    style={styles.select}
+                    value={moveForm.To_PC}
+                    onChange={(e) => setMoveForm({ ...moveForm, To_PC: e.target.value })}
+                    onFocus={(e) => e.target.style.borderColor = C.primary}
+                    onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
+                  >
+                    <option value="">No specific PC</option>
+                    {labPCs.map(pc => (
+                      <option key={pc._id} value={pc._id}>{pc.PC_Name}</option>
+                    ))}
+                    {labPCs.length === 0 && <option disabled>No PCs found in this lab</option>}
+                  </select>
+                )}
+              </div>
+            )}
+
+            {/* Reason */}
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Reason for Move</label>
+              <textarea
+                style={styles.textarea}
+                value={moveForm.Reason}
+                onChange={(e) => setMoveForm({ ...moveForm, Reason: e.target.value })}
+                placeholder="Describe the reason for moving this asset…"
+                onFocus={(e) => e.target.style.borderColor = C.primary}
+                onBlur={(e) => e.target.style.borderColor = C.ice}
+              />
+            </div>
+
+            {/* Actions */}
+            <div style={styles.modalActions}>
+              <button style={styles.cancelButton} onClick={() => setMovingAsset(null)}
+                onMouseEnter={(e) => { e.target.style.background = 'rgba(8, 131, 149, 0.05)'; e.target.style.borderColor = C.primary; }}
+                onMouseLeave={(e) => { e.target.style.background = 'white'; e.target.style.borderColor = 'rgba(8, 131, 149, 0.3)'; }}>
+                Cancel
+              </button>
+              <button
+                style={{
+                  ...styles.saveButton,
+                  background: (moveSaving || !moveForm.To_Lab) ? '#9ca3af' : 'linear-gradient(135deg, #3674B5 0%, #088395 100%)',
+                  cursor: (moveSaving || !moveForm.To_Lab) ? 'not-allowed' : 'pointer',
+                  boxShadow: (moveSaving || !moveForm.To_Lab) ? 'none' : '0 4px 6px rgba(54,116,181,0.3)',
+                }}
+                onClick={handleMoveAsset}
+                disabled={moveSaving || !moveForm.To_Lab}
+              >
+                {moveSaving ? (
+                  <><Loader2 size={16} className="animate-spin" /> Moving…</>
+                ) : (
+                  <>
+                    <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+                    </svg>
+                    Confirm Move
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Issue Modal ── */}
       {viewingIssue && (

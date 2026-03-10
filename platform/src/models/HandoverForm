@@ -1,0 +1,37 @@
+import mongoose from "mongoose";
+
+const EquipmentItemSchema = new mongoose.Schema(
+  {
+    serialNo:      { type: String, default: "" },
+    equipmentType: { type: String, default: "" },
+    brand:         { type: String, default: "" },
+    remarks:       { type: String, default: "" },
+  },
+  { _id: false }
+);
+
+const HandoverFormSchema = new mongoose.Schema(
+  {
+    formName:               { type: String, required: true, trim: true },
+    labName:                { type: String, default: "" },
+    handoverDate:           { type: String, default: "" }, // kept as string to match UI date input
+    handoverByName:         { type: String, required: true, trim: true },
+    handoverByDesignation:  { type: String, default: "" },
+    handoverToName:         { type: String, required: true, trim: true },
+    handoverToDesignation:  { type: String, default: "" },
+    purpose:                { type: String, default: "" },
+    equipment:              { type: [EquipmentItemSchema], default: [] },
+    status: {
+      type: String,
+      enum: ["Pending", "In Progress", "Completed"],
+      default: "Pending",
+    },
+  },
+  { timestamps: true }
+);
+
+const HandoverForm =
+  mongoose.models.HandoverForm ||
+  mongoose.model("HandoverForm", HandoverFormSchema);
+
+export default HandoverForm;

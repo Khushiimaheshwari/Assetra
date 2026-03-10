@@ -5,11 +5,12 @@ import { ChevronDown, Loader2, FileText, Info, Monitor } from 'lucide-react';
 
 export default function HandoverFormPage() {
   const [handoverForms, setHandoverForms] = useState([]);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
-  const [expandedForm, setExpandedForm] = useState(null);
+  const [showAddModal, setShowAddModal]   = useState(false);
+  const [loading, setLoading]             = useState(true);
+  const [fetchError, setFetchError]       = useState(null);   // ← ADDED
+  const [isMobile, setIsMobile]           = useState(false);
+  const [isTablet, setIsTablet]           = useState(false);
+  const [expandedForm, setExpandedForm]   = useState(null);
   const [newHandoverForm, setNewHandoverForm] = useState({
     formName: '',
     labName: '',
@@ -36,15 +37,18 @@ export default function HandoverFormPage() {
 
   const fetchHandoverForms = async () => {
     try {
+      setFetchError(null);                                     // ← ADDED
       const res = await fetch("/api/admin/getHandoverForms");
       const data = await res.json();
       if (res.ok) {
         setHandoverForms(data.handoverForms);
       } else {
         console.error("Failed to fetch handover forms:", data.error);
+        setFetchError(data.error || "Failed to fetch handover forms."); // ← ADDED
       }
     } catch (err) {
       console.error("Error fetching handover forms:", err);
+      setFetchError("Network error. Please check your connection.");    // ← ADDED
     }
   };
 
@@ -62,25 +66,9 @@ export default function HandoverFormPage() {
     fetchAllData();
   }, []);
 
-  const dummyHandoverForms = [
-    {
-      _id: '1',
-      formName: 'Lab Equipment Handover - Lab 1',
-      labName: 'Lab 1',
-      handoverByName: 'Sneh',
-      handoverByDesignation: 'Lab Technician',
-      handoverToName: 'Dr. Pankaj Agarwal',
-      handoverToDesignation: 'Professor & Dean',
-      handoverDate: '2024-11-26',
-      purpose: 'Annual Lab Maintenance',
-      status: 'Pending',
-      equipment: [
-        { serialNo: 'MP28Y01M', equipmentType: 'Monitor', brand: 'Lenovo', remarks: 'Working condition' },
-      ]
-    },
-  ];
-
-  const displayForms = handoverForms.length > 0 ? handoverForms : dummyHandoverForms;
+  // ── REMOVED: dummyHandoverForms array entirely ─────────────────────────────
+  // ── CHANGED: use handoverForms directly (no fallback to dummy) ─────────────
+  const displayForms = handoverForms;
 
   const handleAddEquipment = () => {
     setNewHandoverForm({
@@ -107,16 +95,16 @@ export default function HandoverFormPage() {
     }
 
     const payload = {
-      formName: newHandoverForm.formName,
-      labName: newHandoverForm.labName,
-      handoverDate: newHandoverForm.handoverDate,
-      handoverByName: newHandoverForm.handoverByName,
-      handoverByDesignation: newHandoverForm.handoverByDesignation,
-      handoverToName: newHandoverForm.handoverToName,
-      handoverToDesignation: newHandoverForm.handoverToDesignation,
-      purpose: newHandoverForm.purpose,
-      equipment: newHandoverForm.equipment,
-      status: newHandoverForm.status
+      formName:               newHandoverForm.formName,
+      labName:                newHandoverForm.labName,
+      handoverDate:           newHandoverForm.handoverDate,
+      handoverByName:         newHandoverForm.handoverByName,
+      handoverByDesignation:  newHandoverForm.handoverByDesignation,
+      handoverToName:         newHandoverForm.handoverToName,
+      handoverToDesignation:  newHandoverForm.handoverToDesignation,
+      purpose:                newHandoverForm.purpose,
+      equipment:              newHandoverForm.equipment,
+      status:                 newHandoverForm.status
     };
 
     try {
@@ -191,9 +179,9 @@ export default function HandoverFormPage() {
 
   const getStatusStyle = (status) => {
     const s = status?.toLowerCase();
-    if (s === 'completed') return { backgroundColor: C.mint, color: '#065f46' };
+    if (s === 'completed')   return { backgroundColor: C.mint,    color: '#065f46' };
     if (s === 'in progress') return { backgroundColor: '#dbeafe', color: '#1e40af' };
-    return { backgroundColor: '#fef3c7', color: '#92400e' };
+    return                          { backgroundColor: '#fef3c7', color: '#92400e' };
   };
 
   if (loading) {
@@ -254,6 +242,24 @@ export default function HandoverFormPage() {
           Add New
         </button>
       </div>
+
+      {/* ── ADDED: Fetch error banner ── */}
+      {fetchError && (
+        <div style={{
+          backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: '12px',
+          padding: '12px 18px', marginBottom: '1.25rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+          fontSize: '13px', fontWeight: '600', color: '#991B1B',
+        }}>
+          <span>⚠ {fetchError}</span>
+          <button
+            onClick={() => { setFetchError(null); fetchHandoverForms(); }}
+            style={{ background: '#991B1B', color: '#fff', border: 'none', borderRadius: '8px', padding: '4px 14px', fontSize: '12px', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' }}
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* ── Table column header (desktop only) ── */}
       {!isMobile && !isTablet && (
@@ -393,9 +399,9 @@ export default function HandoverFormPage() {
                       <span style={{ fontSize: '11px', fontWeight: '700', color: '#065f46', textTransform: 'uppercase', letterSpacing: '0.05em' }}>General Information</span>
                     </div>
                     {[
-                      { label: 'Lab Name/Number', value: form.labName || 'N/A' },
-                      { label: 'Purpose of Handover', value: form.purpose || 'N/A' },
-                      { label: 'Date of Handover', value: form.handoverDate },
+                      { label: 'Lab Name/Number',      value: form.labName    || 'N/A' },
+                      { label: 'Purpose of Handover',  value: form.purpose    || 'N/A' },
+                      { label: 'Date of Handover',     value: form.handoverDate },
                     ].map((row, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: i < 2 ? `1px solid rgba(6,95,70,0.1)` : 'none' }}>
                         <span style={{ fontSize: '13px', color: '#065f46', fontWeight: '600' }}>{row.label}</span>
@@ -449,9 +455,13 @@ export default function HandoverFormPage() {
             </div>
           ))
         ) : (
+          // ── CHANGED: empty state shown only when DB truly has no records ──
           <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: 'white', borderRadius: '14px', boxShadow: '0 2px 8px rgba(8,131,149,0.07)' }}>
             <FileText size={40} color={C.sky} style={{ margin: '0 auto 1rem' }} />
-            <p style={{ fontWeight: '600', color: C.dark }}>No handover forms found.</p>
+            <p style={{ fontWeight: '600', color: C.dark, marginBottom: '0.5rem' }}>No handover forms found.</p>
+            <p style={{ fontSize: '13px', color: '#6b7280' }}>
+              Click <strong>Add New</strong> to create your first handover form.
+            </p>
           </div>
         )}
       </div>

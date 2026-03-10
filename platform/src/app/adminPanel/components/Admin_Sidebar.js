@@ -27,6 +27,21 @@ const navItems = [
     ),
   },
   {
+    name: "AMC Maintenance",
+    href: "/adminPanel/AMC_tracking",
+    icon: (
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.7 6.3a4 4 0 01-5.4 5.4l-5.3 5.3a1 1 0 01-1.4-1.4l5.3-5.3a4 4 0 015.4-5.4z"
+    />
+    ),
+  },
+  {
+    name: "Complaint Logs",
+    href: "/adminPanel/logs_page",
+    icon: (
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6M7 8h10M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" />
+    ),
+  },
+  {
     name: "Lab Technician",
     href: "/adminPanel/lab_technician",
     icon: (
