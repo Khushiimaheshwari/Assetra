@@ -628,7 +628,7 @@ const LabInfoPage = () => {
       width: '60px',
       height: '60px',
       borderRadius: '12px',
-      background: 'linear-gradient(135deg, #D1F8EF 0%, #B8F3E9 100%)',
+      background: 'linear-gradient(135deg, #D1F8EF 0%, #c8f5ec 100%)', // ← #B8F3E9 → #c8f5ec
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -670,9 +670,9 @@ const LabInfoPage = () => {
       border: '1px solid #088395'
     },
     statusPending: {
-      backgroundColor: '#FFE8CC',
-      color: '#E67E22',
-      border: '1px solid #E67E22'
+      backgroundColor: 'rgba(54, 116, 181, 0.1)', // ← #FFE8CC → Assetra blue tint
+      color: '#3674B5',                             // ← #E67E22 → #3674B5
+      border: '1px solid #3674B5'                  // ← #E67E22 → #3674B5
     },
     programCount: {
       padding: '7px 14px',

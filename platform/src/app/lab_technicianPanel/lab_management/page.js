@@ -93,11 +93,10 @@ export default function LabManagement() {
       gap: isMobile ? '1rem' : '0',
       marginBottom: isMobile ? '1.5rem' : '2rem',
       background: 'white',
-      backdropFilter: 'blur(20px)',
       borderRadius: isMobile ? '12px' : '16px',
       padding: isMobile ? '1.25rem' : isTablet ? '1.5rem' : '1.75rem',
-      boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)',
-      border: '1px solid rgba(8, 131, 149, 0.1)',
+      boxShadow: '0 4px 6px -1px rgba(8,131,149,0.1), 0 2px 4px -1px rgba(8,131,149,0.06)',
+      border: '1px solid rgba(8,131,149,0.1)',
       borderBottom: '3px solid #088395',
     },
     headerTitle: {
@@ -115,11 +114,10 @@ export default function LabManagement() {
     },
     statCard: {
       background: 'white',
-      backdropFilter: 'blur(20px)',
       borderRadius: isMobile ? '12px' : '16px',
       padding: isMobile ? '1.5rem' : '1.75rem',
-      boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)',
-      border: '1px solid rgba(8, 131, 149, 0.1)',
+      boxShadow: '0 4px 6px -1px rgba(8,131,149,0.1), 0 2px 4px -1px rgba(8,131,149,0.06)',
+      border: '1px solid rgba(8,131,149,0.1)',
       transition: 'all 0.3s ease',
       cursor: 'pointer',
     },
@@ -146,9 +144,9 @@ export default function LabManagement() {
       background: 'white',
       borderRadius: isMobile ? '12px' : '16px',
       padding: isMobile ? '1.25rem' : isTablet ? '1.5rem' : '1.75rem',
-      boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)',
+      boxShadow: '0 4px 6px -1px rgba(8,131,149,0.1), 0 2px 4px -1px rgba(8,131,149,0.06)',
       transition: 'all 0.3s ease',
-      border: '1px solid rgba(8, 131, 149, 0.1)',
+      border: '1px solid rgba(8,131,149,0.1)',
       cursor: 'pointer',
     },
     cardHeader: {
@@ -169,13 +167,13 @@ export default function LabManagement() {
       width: isMobile ? '48px' : '56px',
       height: isMobile ? '48px' : '56px',
       borderRadius: isMobile ? '10px' : '12px',
-      background: 'linear-gradient(135deg, #D1F8EF 0%, #B8F3E9 100%)',
+      background: 'linear-gradient(135deg, #D1F8EF 0%, #c8f5ec 100%)', // ← fixed
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       color: '#088395',
       flexShrink: 0,
-      boxShadow: '0 2px 4px rgba(8, 131, 149, 0.15)',
+      boxShadow: '0 2px 4px rgba(8,131,149,0.15)',
     },
     cardInfo: {
       flex: '1',
@@ -219,9 +217,9 @@ export default function LabManagement() {
       border: '1px solid #088395',
     },
     statusMaintenance: {
-      background: '#FFE8CC',
-      color: '#E67E22',
-      border: '1px solid #E67E22',
+      background: 'rgba(54,116,181,0.1)', // ← fixed (was orange)
+      color: '#3674B5',
+      border: '1px solid #3674B5',
     },
     cardRight: {
       display: 'flex',
@@ -272,7 +270,7 @@ export default function LabManagement() {
     },
     viewButton: {
       color: '#3674B5',
-      background: 'rgba(134, 182, 246, 0.2)',
+      background: 'rgba(54,116,181,0.1)', // ← fixed (was rgba(134,182,246,0.2))
       border: '2px solid transparent',
     },
   };
@@ -300,11 +298,11 @@ export default function LabManagement() {
             style={styles.statCard}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(8, 131, 149, 0.2), 0 4px 6px -2px rgba(8, 131, 149, 0.1)';
+              e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(8,131,149,0.2), 0 4px 6px -2px rgba(8,131,149,0.1)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)';
+              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(8,131,149,0.1), 0 2px 4px -1px rgba(8,131,149,0.06)';
             }}
           >
             <div style={styles.statLabel}>Total Labs</div>
@@ -314,11 +312,11 @@ export default function LabManagement() {
             style={styles.statCard}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(8, 131, 149, 0.2), 0 4px 6px -2px rgba(8, 131, 149, 0.1)';
+              e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(8,131,149,0.2), 0 4px 6px -2px rgba(8,131,149,0.1)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)';
+              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(8,131,149,0.1), 0 2px 4px -1px rgba(8,131,149,0.06)';
             }}
           >
             <div style={styles.statLabel}>Active Labs</div>
@@ -328,11 +326,11 @@ export default function LabManagement() {
             style={styles.statCard}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(8, 131, 149, 0.2), 0 4px 6px -2px rgba(8, 131, 149, 0.1)';
+              e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(8,131,149,0.2), 0 4px 6px -2px rgba(8,131,149,0.1)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)';
+              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(8,131,149,0.1), 0 2px 4px -1px rgba(8,131,149,0.06)';
             }}
           >
             <div style={styles.statLabel}>Under Maintenance</div>
@@ -348,13 +346,13 @@ export default function LabManagement() {
                 style={styles.card}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(8, 131, 149, 0.15), 0 4px 6px -2px rgba(8, 131, 149, 0.08)';
-                  e.currentTarget.style.borderColor = 'rgba(8, 131, 149, 0.3)';
+                  e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(8,131,149,0.15), 0 4px 6px -2px rgba(8,131,149,0.08)';
+                  e.currentTarget.style.borderColor = 'rgba(8,131,149,0.3)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(8, 131, 149, 0.1), 0 2px 4px -1px rgba(8, 131, 149, 0.06)';
-                  e.currentTarget.style.borderColor = 'rgba(8, 131, 149, 0.1)';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(8,131,149,0.1), 0 2px 4px -1px rgba(8,131,149,0.06)';
+                  e.currentTarget.style.borderColor = 'rgba(8,131,149,0.1)';
                 }}
               >
                 <div style={styles.cardHeader}>
@@ -397,12 +395,12 @@ export default function LabManagement() {
                         </svg>
                         <span style={styles.detailLabel}>Technician:</span>
                         {lab?.LabTechnician?.length === 0 ? (
-                          <span style={{ ...styles.detailValue, fontStyle: 'italic', color: '#86B6F6' }}>Not Assigned</span>
+                          <span style={{ ...styles.detailValue, fontStyle: 'italic', color: '#a8cdd5' }}>Not Assigned</span>
                         ) : (
                           lab.LabTechnician ? (
                             <span style={styles.detailValue}>{lab?.LabTechnician[0]?.Name}</span>
                           ) : (
-                            <span style={{ ...styles.detailValue, fontStyle: 'italic', color: '#86B6F6' }}>Not Assigned</span>
+                            <span style={{ ...styles.detailValue, fontStyle: 'italic', color: '#a8cdd5' }}>Not Assigned</span>
                           )
                         )}
                       </div>
@@ -432,7 +430,7 @@ export default function LabManagement() {
             ))}
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: isMobile ? '2.5rem 1.25rem' : '3.5rem 2rem', background: 'white', borderRadius: '16px', color: '#176B87', border: '1px solid rgba(8, 131, 149, 0.1)', boxShadow: '0 4px 6px -1px rgba(8, 131, 149, 0.1)' }}>
+          <div style={{ textAlign: 'center', padding: isMobile ? '2.5rem 1.25rem' : '3.5rem 2rem', background: '#EBF4F6', borderRadius: '16px', color: '#176B87', border: '1px solid rgba(8,131,149,0.1)' }}>
             <p style={{ fontSize: isMobile ? '15px' : '16px', fontWeight: '600', margin: 0 }}>No labs available.</p>
           </div>
         )}
