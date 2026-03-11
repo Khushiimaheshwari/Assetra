@@ -5,14 +5,16 @@ import { useRouter } from "next/navigation";
 import styles from "./login.module.css";
 import { signIn } from "next-auth/react";
 
-export default function LoginPage() {
+export default function LoginPage({ searchParams }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ── Backend logic unchanged ──
+  const callbackUrl = searchParams?.callbackUrl;
+
+  // ── Backend logic (with QR callback support) ──
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -47,6 +49,12 @@ export default function LoginPage() {
 
     if (needsOnboarding) {
       window.location.href = "/onboarding";
+      return;
+    }
+
+    // If we came here from a QR scan, go back to that URL
+    if (callbackUrl) {
+      window.location.href = callbackUrl;
       return;
     }
 

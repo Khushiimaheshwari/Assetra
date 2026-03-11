@@ -56,7 +56,6 @@ function AssetsPage() {
       const data = await res.json();
       if (res.ok) {
         console.log(data);
-        
         setPcData(data.pc);
         setAssets(data.pc.Assets || []);
       } else {
@@ -253,13 +252,11 @@ function AssetsPage() {
 
   function formatStatus(status) {
     if (!status) return "Pending";
-
     const map = {
       "pending": "Pending",
       "resolved by technician": "Resolved By Technician",
       "approved": "Approved"
     };
-
     return map[status] || status;
   }
 
@@ -293,29 +290,17 @@ function AssetsPage() {
   const handleGenerateAI = async () => {
     try {
       setAiLoading(true);
-  
       const response = await fetch("/api/ai/predict", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          assetId: viewingAI._id
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetId: viewingAI._id })
       });
-  
       const data = await response.json();
-  
       if (!response.ok) {
         alert(data.error || "AI generation failed");
         return;
       }
-  
-      setViewingAI(prev => ({
-        ...prev,
-        AI_Predictions: data.AI_Predictions
-      }));
-  
+      setViewingAI(prev => ({ ...prev, AI_Predictions: data.AI_Predictions }));
     } catch (error) {
       console.error("AI generation error:", error);
       alert("Something went wrong while generating AI report.");
@@ -324,6 +309,7 @@ function AssetsPage() {
     }
   };
 
+  // ── FIXED: openMoveModal — fetch all labs and store their PCs in a map ──────
   const openMoveModal = async (asset) => {
     setMovingAsset(asset);
     setMoveForm({ To_Lab: "", To_PC: "", Reason: "" });
@@ -331,13 +317,30 @@ function AssetsPage() {
     try {
       const res  = await fetch("/api/admin/getLabs");
       const data = await res.json();
-      console.log(data.labs);
-      
       if (res.ok) {
         setLabs(data.labs || []);
-        setLabPCs(data.labs[0]?.PCs || []);      }
+        // labPCs will be populated when a lab is selected via fetchPCsForLab
+      }
     } catch (err) {
       console.error("Error fetching labs:", err);
+    }
+  };
+
+  // ── FIXED: fetchPCsForLab — find the selected lab from the already-fetched
+  //    labs array and extract its PCs (the API already populates PCs via
+  //    .populate('PCs'), so no extra network call is needed) ─────────────────
+  const fetchPCsForLab = (labId) => {
+    if (!labId) {
+      setLabPCs([]);
+      return;
+    }
+    setLabPCsLoading(true);
+    try {
+      const selectedLab = labs.find(lab => lab._id === labId);
+      // PCs is already populated — it's an array of PC objects
+      setLabPCs(selectedLab?.PCs || []);
+    } finally {
+      setLabPCsLoading(false);
     }
   };
 
@@ -402,14 +405,11 @@ function AssetsPage() {
     detailLabel: { fontWeight: '600', color: C.dark, minWidth: '110px', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px' },
     detailValue: { color: C.primary, flex: 1, fontWeight: '500' },
     statusBadge: { display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' },
-    issueContainer: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', flex: 1 },
     issueBlock: { backgroundColor: '#fef3c7', border: '1px solid #fbbf24', borderRadius: '20px', padding: '2px 12px', cursor: 'pointer', fontSize: '12px', color: '#92400e', fontWeight: '600', transition: 'all 0.2s' },
     noIssueText: { color: '#10b981', fontWeight: '500', fontSize: '13px' },
     qrImage: { width: '22px', height: '22px', display: 'block' },
     actionButtons: { display: 'flex', gap: '0.5rem', marginTop: '1rem', paddingTop: '1rem', borderTop: `1px solid ${C.mint}` },
     iconButton: { padding: isMobile ? '0.625rem' : '0.5rem', background: C.ice, border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 },
-    editButton: { color: C.primary },
-    deleteButton: { color: '#ef4444' },
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(23, 107, 135, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' },
     issueModal: { backgroundColor: 'white', borderRadius: '16px', padding: '1.5rem', maxWidth: '480px', width: '100%', maxHeight: '80vh', overflow: 'auto', boxShadow: '0 20px 60px rgba(8,131,149,0.2)', border: '1px solid rgba(8, 131, 149, 0.1)' },
     issueModalHeader: { fontSize: '20px', fontWeight: '800', color: C.dark, marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: `2px solid ${C.mint}` },
@@ -423,9 +423,6 @@ function AssetsPage() {
     formGroup: { marginBottom: '16px' },
     formLabel: { display: 'block', fontSize: '11px', fontWeight: '700', color: C.dark, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' },
     textarea: { width: '100%', padding: '10px 12px', border: `2px solid ${C.ice}`, borderRadius: '8px', fontSize: '14px', minHeight: '100px', resize: 'vertical', fontFamily: 'inherit', transition: 'border-color 0.2s', outline: 'none', boxSizing: 'border-box', color: C.dark },
-    resolveButton: { background: `linear-gradient(135deg, ${C.primary} 0%, #0a9fb5 100%)`, color: 'white', border: 'none', borderRadius: '10px', padding: '12px 24px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', width: '100%', transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(8,131,149,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '12px' },
-    resolvedIssue: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', padding: '5px 0px' },
-    resolvedText: { color: C.primary, fontSize: '14px', marginTop: '10px', fontWeight: '500' },
     modal: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(23, 107, 135, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: isMobile ? '1rem' : '0' },
     modalContent: { background: 'white', borderRadius: '20px', padding: isMobile ? '1.5rem' : '2rem', width: isMobile ? '100%' : '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(8,131,149,0.25)', border: '1px solid rgba(8, 131, 149, 0.1)' },
     modalHeader: { fontSize: isMobile ? '20px' : '26px', fontWeight: 800, color: C.dark, marginBottom: '1.5rem', paddingBottom: '14px', borderBottom: `2px solid ${C.mint}`, letterSpacing: '-0.5px' },
@@ -609,6 +606,7 @@ function AssetsPage() {
         )}
       </div>
 
+      {/* ── Move Asset Modal ── */}
       {movingAsset && (
         <div style={styles.modal} onClick={() => setMovingAsset(null)}>
           <div style={{ ...styles.modalContent, maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
@@ -633,7 +631,7 @@ function AssetsPage() {
               <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '4px', textTransform: 'capitalize' }}>({movingAsset.Asset_Type})</span>
             </div>
 
-            {/* Pre-filled read-only fields */}
+            {/* Current location — read-only */}
             <div style={{ backgroundColor: '#f8fafc', border: `1px solid rgba(8,131,149,0.1)`, borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem' }}>
               <p style={{ fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px', marginTop: 0 }}>Current Location — Read-only</p>
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
@@ -660,7 +658,9 @@ function AssetsPage() {
                 value={moveForm.To_Lab}
                 onChange={(e) => {
                   const labId = e.target.value;
-                  setMoveForm({ ...moveForm, To_Lab: labId, To_PC: "" });
+                  // Reset PC selection when lab changes
+                  setMoveForm(prev => ({ ...prev, To_Lab: labId, To_PC: "" }));
+                  // Load PCs for the newly selected lab from the already-fetched labs data
                   fetchPCsForLab(labId);
                 }}
                 onFocus={(e) => e.target.style.borderColor = C.primary}
@@ -668,6 +668,7 @@ function AssetsPage() {
               >
                 <option value="">Select destination lab…</option>
                 {labs
+                  // Exclude the current lab so the user can't move to the same lab
                   .filter(lab => lab._id !== (pcData.Lab?._id || pcData.Lab))
                   .map(lab => (
                     <option key={lab._id} value={lab._id}>
@@ -677,11 +678,18 @@ function AssetsPage() {
               </select>
             </div>
 
-            {/* To PC dropdown — only shown when a lab is selected */}
+            {/* To PC dropdown — shown only after a lab is selected */}
             {moveForm.To_Lab && (
               <div style={styles.formGroup}>
-                <label style={styles.label}>To PC <span style={{ fontWeight: '400', textTransform: 'none', color: '#94a3b8', fontSize: '10px' }}>(Optional — leave blank for lab-level)</span></label>
+                <label style={styles.label}>
+                  To PC{" "}
+                  <span style={{ fontWeight: '400', textTransform: 'none', color: '#94a3b8', fontSize: '10px' }}>
+                    (Optional — leave blank for lab-level)
+                  </span>
+                </label>
+
                 {labPCsLoading ? (
+                  /* Loading spinner while PCs are being resolved */
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '14px', border: `2px solid rgba(8,131,149,0.2)`, borderRadius: '10px', fontSize: '14px', color: C.dark }}>
                     <Loader2 size={14} className="animate-spin" color={C.primary} /> Loading PCs…
                   </div>
@@ -689,16 +697,27 @@ function AssetsPage() {
                   <select
                     style={styles.select}
                     value={moveForm.To_PC}
-                    onChange={(e) => setMoveForm({ ...moveForm, To_PC: e.target.value })}
+                    onChange={(e) => setMoveForm(prev => ({ ...prev, To_PC: e.target.value }))}
                     onFocus={(e) => e.target.style.borderColor = C.primary}
                     onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
                   >
-                    <option value="">No specific PC</option>
+                    <option value="">No specific PC (lab-level)</option>
                     {labPCs.map(pc => (
-                      <option key={pc._id} value={pc._id}>{pc.PC_Name}</option>
+                      <option key={pc._id} value={pc._id}>
+                        {pc.PC_Name}
+                      </option>
                     ))}
-                    {labPCs.length === 0 && <option disabled>No PCs found in this lab</option>}
+                    {labPCs.length === 0 && (
+                      <option disabled>No PCs found in this lab</option>
+                    )}
                   </select>
+                )}
+
+                {/* Helpful count badge */}
+                {!labPCsLoading && labPCs.length > 0 && (
+                  <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#6b7280', fontWeight: '500' }}>
+                    {labPCs.length} PC{labPCs.length !== 1 ? 's' : ''} available in this lab
+                  </p>
                 )}
               </div>
             )}
@@ -709,7 +728,7 @@ function AssetsPage() {
               <textarea
                 style={styles.textarea}
                 value={moveForm.Reason}
-                onChange={(e) => setMoveForm({ ...moveForm, Reason: e.target.value })}
+                onChange={(e) => setMoveForm(prev => ({ ...prev, Reason: e.target.value }))}
                 placeholder="Describe the reason for moving this asset…"
                 onFocus={(e) => e.target.style.borderColor = C.primary}
                 onBlur={(e) => e.target.style.borderColor = C.ice}
@@ -718,9 +737,12 @@ function AssetsPage() {
 
             {/* Actions */}
             <div style={styles.modalActions}>
-              <button style={styles.cancelButton} onClick={() => setMovingAsset(null)}
-                onMouseEnter={(e) => { e.target.style.background = 'rgba(8, 131, 149, 0.05)'; e.target.style.borderColor = C.primary; }}
-                onMouseLeave={(e) => { e.target.style.background = 'white'; e.target.style.borderColor = 'rgba(8, 131, 149, 0.3)'; }}>
+              <button
+                style={styles.cancelButton}
+                onClick={() => setMovingAsset(null)}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(8, 131, 149, 0.05)'; e.currentTarget.style.borderColor = C.primary; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = 'rgba(8, 131, 149, 0.3)'; }}
+              >
                 Cancel
               </button>
               <button
@@ -827,7 +849,7 @@ function AssetsPage() {
         </div>
       )}
 
-      {/* AI Asset Intelligence Report Modal */}
+      {/* ── AI Asset Intelligence Modal ── */}
       {viewingAI && (
         <div style={styles.qrModal} onClick={() => setViewingAI(null)}>
           <div style={{
@@ -860,46 +882,19 @@ function AssetsPage() {
             {viewingAI.AI_Predictions ? (
               <div>
                 {[
-                  {
-                    label: 'Failure Probability',
-                    value: `${(viewingAI.AI_Predictions.failureProbability * 100).toFixed(2)}%`,
-                    accent: viewingAI.AI_Predictions.failureProbability > 0.6 ? '#fee2e2' : C.mint,
-                    textColor: viewingAI.AI_Predictions.failureProbability > 0.6 ? '#991b1b' : '#065f46',
-                  },
-                  {
-                    label: 'Failure Prediction',
-                    value: viewingAI.AI_Predictions.failurePrediction === 1 ? 'High Risk' : 'Low Risk',
-                    accent: viewingAI.AI_Predictions.failurePrediction === 1 ? '#fee2e2' : C.mint,
-                    textColor: viewingAI.AI_Predictions.failurePrediction === 1 ? '#991b1b' : '#065f46',
-                  },
+                  { label: 'Failure Probability', value: `${(viewingAI.AI_Predictions.failureProbability * 100).toFixed(2)}%`, accent: viewingAI.AI_Predictions.failureProbability > 0.6 ? '#fee2e2' : C.mint, textColor: viewingAI.AI_Predictions.failureProbability > 0.6 ? '#991b1b' : '#065f46' },
                   { label: 'Remaining Life', value: `${viewingAI.AI_Predictions.remainingLifePrediction?.toFixed(1)} Years`, accent: C.ice, textColor: C.dark },
                   { label: 'Predicted Book Value', value: `₹${viewingAI.AI_Predictions.depreciationPrediction?.toFixed(0)}`, accent: C.ice, textColor: C.dark },
                   { label: 'Next Year Maintenance', value: `₹${viewingAI.AI_Predictions.maintenanceCostPrediction?.toFixed(0)}`, accent: C.ice, textColor: C.dark },
                 ].map((row, i) => (
-                  <div key={i} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '10px 14px', borderRadius: '10px', marginBottom: '8px',
-                    backgroundColor: row.accent,
-                  }}>
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '10px', marginBottom: '8px', backgroundColor: row.accent }}>
                     <span style={{ fontSize: '13px', color: C.dark, fontWeight: '600' }}>{row.label}</span>
                     <span style={{ fontSize: '15px', fontWeight: '800', color: row.textColor }}>{row.value}</span>
                   </div>
                 ))}
-
-                {/* Recommendation */}
-                <div style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '12px 14px', borderRadius: '10px', marginBottom: '1.25rem',
-                  backgroundColor: viewingAI.AI_Predictions.recommendation === 'Replace' ? '#fee2e2' : C.mint,
-                  border: `2px solid ${viewingAI.AI_Predictions.recommendation === 'Replace' ? '#fca5a5' : '#6ee7b7'}`,
-                }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderRadius: '10px', marginBottom: '1.25rem', backgroundColor: viewingAI.AI_Predictions.recommendation === 'Replace' ? '#fee2e2' : C.mint, border: `2px solid ${viewingAI.AI_Predictions.recommendation === 'Replace' ? '#fca5a5' : '#6ee7b7'}` }}>
                   <span style={{ fontSize: '13px', fontWeight: '700', color: C.dark }}>Recommendation</span>
-                  <span style={{
-                    fontSize: '15px', fontWeight: '800',
-                    color: viewingAI.AI_Predictions.recommendation === 'Replace' ? '#991b1b' : '#065f46',
-                  }}>
-                    {viewingAI.AI_Predictions.recommendation}
-                  </span>
+                  <span style={{ fontSize: '15px', fontWeight: '800', color: viewingAI.AI_Predictions.recommendation === 'Replace' ? '#991b1b' : '#065f46' }}>{viewingAI.AI_Predictions.recommendation}</span>
                 </div>
               </div>
             ) : (
@@ -909,19 +904,12 @@ function AssetsPage() {
               </div>
             )}
 
-            {/* Generate / Regenerate */}
             <button
               onClick={handleGenerateAI}
               disabled={aiLoading}
               onMouseEnter={(e) => { if (!aiLoading) e.currentTarget.style.backgroundColor = C.dark; }}
               onMouseLeave={(e) => { if (!aiLoading) e.currentTarget.style.backgroundColor = C.primary; }}
-              style={{
-                width: '100%', padding: '11px', backgroundColor: aiLoading ? '#9ca3af' : C.primary,
-                color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700',
-                cursor: aiLoading ? 'not-allowed' : 'pointer', fontSize: '14px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                transition: 'background 0.2s', boxShadow: aiLoading ? 'none' : '0 2px 8px rgba(8,131,149,0.25)',
-              }}
+              style={{ width: '100%', padding: '11px', backgroundColor: aiLoading ? '#9ca3af' : C.primary, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: aiLoading ? 'not-allowed' : 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'background 0.2s', boxShadow: aiLoading ? 'none' : '0 2px 8px rgba(8,131,149,0.25)' }}
             >
               {aiLoading ? (
                 <><Loader2 size={16} className="animate-spin" /> Processing...</>
@@ -933,24 +921,13 @@ function AssetsPage() {
         </div>
       )}
 
-      {/* Add/Edit Modal */}
+      {/* ── Add / Edit Asset Modal ── */}
       {showAddModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: isMobile ? '1rem' : '0' }}
           onClick={() => { setShowAddModal(false); setEditingAsset(null); resetForm(); }}>
-          <div style={{
-            backgroundColor: 'white', borderRadius: '16px',
-            padding: isMobile ? '0 1.25rem 1.25rem' : '0 2rem 1.5rem',
-            width: isMobile ? '100%' : '90%', maxWidth: '560px',
-            maxHeight: '92vh', overflowY: 'auto',
-            boxShadow: '0 20px 60px rgba(8,131,149,0.2)',
-          }} onClick={(e) => e.stopPropagation()}>
+          <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: isMobile ? '0 1.25rem 1.25rem' : '0 2rem 1.5rem', width: isMobile ? '100%' : '90%', maxWidth: '560px', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(8,131,149,0.2)' }} onClick={(e) => e.stopPropagation()}>
 
-            <div style={{
-              position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 10,
-              display: 'flex', alignItems: 'center', gap: '0.75rem',
-              padding: isMobile ? '1.25rem 0 1rem' : '1.5rem 0 1rem',
-              borderBottom: `2px solid ${C.ice}`, marginBottom: '1.25rem',
-            }}>
+            <div style={{ position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 10, display: 'flex', alignItems: 'center', gap: '0.75rem', padding: isMobile ? '1.25rem 0 1rem' : '1.5rem 0 1rem', borderBottom: `2px solid ${C.ice}`, marginBottom: '1.25rem' }}>
               <div style={{ width: 40, height: 40, borderRadius: '10px', backgroundColor: C.ice, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <PackagePlus size={20} color={C.primary} />
               </div>
@@ -1017,52 +994,27 @@ function AssetsPage() {
                 ))}
                 <div>
                   <label style={{ ...labelStyle, color: '#065f46' }}>Usage Frequency</label>
-                  <select
-                    style={{ ...selectStyle, backgroundColor: 'white' }}
-                    value={newAsset.Financial_Details.usage_frequency || ""}
-                    onChange={(e) =>
-                      setNewAsset({
-                        ...newAsset,
-                        Financial_Details: {
-                          ...newAsset.Financial_Details,
-                          usage_frequency: e.target.value
-                        }
-                      })
-                    }
-                    onFocus={(e) => (e.target.style.borderColor = '#088395')}
-                    onBlur={(e) => (e.target.style.borderColor = '#EBF4F6')}
-                  >
+                  <select style={{ ...selectStyle, backgroundColor: 'white' }} value={newAsset.Financial_Details.usage_frequency || ""}
+                    onChange={(e) => setNewAsset({ ...newAsset, Financial_Details: { ...newAsset.Financial_Details, usage_frequency: e.target.value } })}
+                    onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.ice}>
                     <option value="">Select Usage</option>
                     <option value="Low">Low</option>
                     <option value="Medium">Medium</option>
                     <option value="High">High</option>
                   </select>
                 </div>
-
                 <div>
                   <label style={{ ...labelStyle, color: '#065f46' }}>Warranty (Years)</label>
-                  <input
-                    type="number"
-                    style={{ ...inputStyle, backgroundColor: 'white' }}
+                  <input type="number" style={{ ...inputStyle, backgroundColor: 'white' }}
                     value={newAsset.Financial_Details.warranty || ""}
-                    onChange={(e) =>
-                      setNewAsset({
-                        ...newAsset,
-                        Financial_Details: {
-                          ...newAsset.Financial_Details,
-                          warranty: e.target.value
-                        }
-                      })
-                    }
+                    onChange={(e) => setNewAsset({ ...newAsset, Financial_Details: { ...newAsset.Financial_Details, warranty: e.target.value } })}
                     placeholder="e.g., 5"
-                    onFocus={(e) => (e.target.style.borderColor = '#088395')}
-                    onBlur={(e) => (e.target.style.borderColor = '#EBF4F6')}
+                    onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.ice}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Modal actions */}
             <div style={{ display: 'flex', gap: '12px', flexDirection: isMobile ? 'column' : 'row' }}>
               <button
                 onClick={() => { setShowAddModal(false); setEditingAsset(null); resetForm(); }}
@@ -1077,13 +1029,7 @@ function AssetsPage() {
                 disabled={saving}
                 onMouseEnter={(e) => { if (!saving) e.currentTarget.style.backgroundColor = C.dark; }}
                 onMouseLeave={(e) => { if (!saving) e.currentTarget.style.backgroundColor = C.primary; }}
-                style={{
-                  flex: 1, padding: '11px', backgroundColor: saving ? '#9ca3af' : C.primary,
-                  color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700',
-                  cursor: saving ? 'not-allowed' : 'pointer', fontSize: '14px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                  transition: 'background 0.2s', boxShadow: saving ? 'none' : '0 2px 8px rgba(8,131,149,0.25)',
-                }}
+                style={{ flex: 1, padding: '11px', backgroundColor: saving ? '#9ca3af' : C.primary, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: saving ? 'not-allowed' : 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'background 0.2s', boxShadow: saving ? 'none' : '0 2px 8px rgba(8,131,149,0.25)' }}
               >
                 {saving ? (
                   <><Loader2 size={16} className="animate-spin" />{editingAsset ? "Updating..." : "Adding..."}</>

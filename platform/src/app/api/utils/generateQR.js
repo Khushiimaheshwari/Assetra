@@ -12,7 +12,7 @@ export async function generateQRCodeForAsset(assetId, baseUrl) {
 
   const qrPayload = {
     admin: `${baseUrl}/adminPanel/lab_management/lab/${asset.Lab_Name._id}/asset/${asset.PC_Name._id}`,
-    faculty: `${baseUrl}/facultyPanel/lab_management/lab/${asset.Lab_Name._id}/asset/${asset.PC_Name._id}`,
+    faculty: `${baseUrl}/facultyPanel/allLabs/lab/${asset.Lab_Name._id}/asset/${asset.PC_Name._id}`,
     lab_technician: `${baseUrl}/lab_technicianPanel/lab_management/lab/${asset.Lab_Name._id}/asset/${asset.PC_Name._id}`
   };
 

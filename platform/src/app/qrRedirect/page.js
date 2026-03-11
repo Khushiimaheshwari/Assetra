@@ -2,23 +2,40 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 export default function QrRedirectPage({ searchParams }) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const data = searchParams.data;
   const [isMobile, setIsMobile] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
     };
-    
+
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // If user is not logged in, send them to login with a callback back to this QR page
+  useEffect(() => {
+    if (!data) return;
+    if (status === "loading") return;
+
+    if (!session) {
+      const currentUrl =
+        typeof window !== "undefined" ? window.location.href : `/qrRedirect?data=${encodeURIComponent(data)}`;
+      const loginUrl = `/login?callbackUrl=${encodeURIComponent(currentUrl)}`;
+      router.replace(loginUrl);
+      return;
+    }
+  }, [data, session, status, router]);
+
+  // Once we have a session, decode QR payload and redirect based on role
   useEffect(() => {
     if (!data || !session) return;
 
@@ -38,7 +55,6 @@ export default function QrRedirectPage({ searchParams }) {
       }
 
       window.location.href = redirectUrl;
-
     } catch (err) {
       console.error("QR decode error:", err);
       alert("Invalid QR code!");
@@ -47,30 +63,30 @@ export default function QrRedirectPage({ searchParams }) {
 
   const styles = {
     container: {
-      width: isMobile ? '100%' : 'calc(100% - 255px)',
-      minHeight: '100vh',
-      backgroundColor: '#f9fafb',
-      padding: isMobile ? '1rem' : '2rem',
-      boxSizing: 'border-box',
-      marginLeft: isMobile ? '0' : '255px',
-      overflowX: 'hidden',
+      width: isMobile ? "100%" : "calc(100% - 255px)",
+      minHeight: "100vh",
+      backgroundColor: "#f9fafb",
+      padding: isMobile ? "1rem" : "2rem",
+      boxSizing: "border-box",
+      marginLeft: isMobile ? "0" : "255px",
+      overflowX: "hidden",
     },
     loaderContainer: {
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: '100vh',
-      width: '100%',
-      backgroundColor: '#f9fafb',
-      flexDirection: 'column',
-      gap: '1rem',
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: "100vh",
+      width: "100%",
+      backgroundColor: "#f9fafb",
+      flexDirection: "column",
+      gap: "1rem",
     },
     loaderText: {
-      color: '#6b7280',
-      fontSize: '16px',
-      fontWeight: '500',
+      color: "#6b7280",
+      fontSize: "16px",
+      fontWeight: "500",
     },
-  }
+  };
 
   return (
     <div style={styles.container}>
