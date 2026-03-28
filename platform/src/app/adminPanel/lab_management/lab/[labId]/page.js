@@ -1,9 +1,122 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Upload, ChevronDown, ChevronUp, Loader2, X, Edit, Trash2, Calendar, Clock, AlertCircle } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { ChevronLeft, ChevronRight, Plus, Upload, ChevronDown, ChevronUp, Loader2, X, Edit, Trash2, Calendar, Clock, AlertCircle, CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
 import { useParams } from 'next/navigation';
 
+/* ─────────────────────────────────────────────
+   TOAST SYSTEM
+───────────────────────────────────────────── */
+let _addToast = null;
+
+export const toast = {
+  success: (msg) => _addToast?.({ type: 'success', msg }),
+  error:   (msg) => _addToast?.({ type: 'error',   msg }),
+  warning: (msg) => _addToast?.({ type: 'warning', msg }),
+  info:    (msg) => _addToast?.({ type: 'info',    msg }),
+  confirm: (msg) => new Promise((resolve) => _addToast?.({ type: 'confirm', msg, resolve })),
+};
+
+function ToastContainer() {
+  const [toasts, setToasts] = useState([]);
+
+  useEffect(() => {
+    _addToast = (t) => {
+      const id = Date.now() + Math.random();
+      setToasts((prev) => [...prev, { ...t, id }]);
+      if (t.type !== 'confirm') {
+        setTimeout(() => setToasts((prev) => prev.filter((x) => x.id !== id)), 3800);
+      }
+    };
+    return () => { _addToast = null; };
+  }, []);
+
+  const remove = (id) => setToasts((prev) => prev.filter((x) => x.id !== id));
+
+  const cfg = {
+    success: { bg: '#D1F8EF', border: '#088395', color: '#065f46', Icon: CheckCircle,    label: 'Success'  },
+    error:   { bg: '#fee2e2', border: '#ef4444', color: '#991b1b', Icon: XCircle,        label: 'Error'    },
+    warning: { bg: '#fef3c7', border: '#f59e0b', color: '#92400e', Icon: AlertTriangle,  label: 'Warning'  },
+    info:    { bg: '#EBF4F6', border: '#176B87', color: '#176B87', Icon: Info,           label: 'Info'     },
+    confirm: { bg: '#fff',    border: '#088395', color: '#176B87', Icon: AlertCircle,    label: 'Confirm'  },
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', top: '1.25rem', right: '1.25rem',
+      zIndex: 99999, display: 'flex', flexDirection: 'column', gap: '10px',
+      maxWidth: '360px', width: '90vw',
+    }}>
+      {toasts.map((t) => {
+        const c = cfg[t.type] || cfg.info;
+        const { Icon } = c;
+        return (
+          <div key={t.id} style={{
+            background: c.bg,
+            border: `1.5px solid ${c.border}`,
+            borderRadius: '14px',
+            padding: '14px 16px',
+            boxShadow: '0 8px 32px rgba(8,131,149,0.18)',
+            display: 'flex', flexDirection: 'column', gap: '10px',
+            animation: 'toastIn 0.28s cubic-bezier(.4,0,.2,1)',
+            fontFamily: "'Segoe UI', sans-serif",
+          }}>
+            <style>{`
+              @keyframes toastIn {
+                from { opacity:0; transform:translateX(40px) scale(.95); }
+                to   { opacity:1; transform:translateX(0)    scale(1);   }
+              }
+            `}</style>
+
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              <Icon size={20} color={c.border} style={{ flexShrink: 0, marginTop: '1px' }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: '13px', color: c.border, letterSpacing: '0.03em', textTransform: 'uppercase', marginBottom: '3px' }}>
+                  {c.label}
+                </div>
+                <div style={{ fontSize: '14px', color: c.color, fontWeight: 500, lineHeight: 1.5 }}>
+                  {t.msg}
+                </div>
+              </div>
+              {t.type !== 'confirm' && (
+                <button onClick={() => remove(t.id)} style={{
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  color: c.color, display: 'flex', alignItems: 'center', padding: '2px', borderRadius: '6px',
+                }}>
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+
+            {t.type === 'confirm' && (
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button onClick={() => { t.resolve(false); remove(t.id); }} style={{
+                  padding: '7px 18px', borderRadius: '8px', border: '1.5px solid #d1d5db',
+                  background: 'white', color: '#374151', fontWeight: 600, fontSize: '13px',
+                  cursor: 'pointer',
+                }}>
+                  Cancel
+                </button>
+                <button onClick={() => { t.resolve(true); remove(t.id); }} style={{
+                  padding: '7px 18px', borderRadius: '8px', border: 'none',
+                  background: 'linear-gradient(135deg,#088395,#0a9fb5)', color: 'white',
+                  fontWeight: 700, fontSize: '13px', cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(8,131,149,0.25)',
+                }}>
+                  Confirm
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   MAIN COMPONENT
+───────────────────────────────────────────── */
 const LabInfo = () => {
   const { labId: id } = useParams();  
   const [currentWeek, setCurrentWeek] = useState(new Date());
@@ -130,60 +243,57 @@ const LabInfo = () => {
   ];
 
   const handleSubmitNotification = async () => {
-
     console.log(notifyFormData);
     
-      if(!notifyFormData.eventType || !notifyFormData.date || !notifyFormData.startTime || !notifyFormData.endTime || !notifyFormData.description) {
-        alert("Please fill in all required fields!");
-        return;
-      }
+    if(!notifyFormData.eventType || !notifyFormData.date || !notifyFormData.startTime || !notifyFormData.endTime || !notifyFormData.description) {
+      toast.warning("Please fill in all required fields!");
+      return;
+    }
+    
+    const payload = {
+      eventType: notifyFormData.eventType,
+      date: notifyFormData.date,
+      startTime: notifyFormData.startTime,
+      endTime: notifyFormData.endTime,
+      description: notifyFormData.description,
+    }
+
+    console.log(payload); 
+    console.log(id); 
+
+    try {
+      const res = await fetch(`/api/admin/addEventNotify/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       
-      const payload = {
-        eventType: notifyFormData.eventType,
-        date: notifyFormData.date,
-        startTime: notifyFormData.startTime,
-        endTime: notifyFormData.endTime,
-        description: notifyFormData.description,
-      }
+      const data = await res.json();
 
-      console.log(payload); 
-      console.log(id); 
-
-      try {
-        const res = await fetch(`/api/admin/addEventNotify/${id}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+      if (res.ok) {
+        toast.success("Event Notification added successfully!");
+        setNotifications(data.eventNotify);
+        setNotifyFormData({
+          eventType: '',
+          date: '',
+          startTime: '',
+          endTime: '',
+          description: ''
         });
-        
-        const data = await res.json();
-
-        if (res.ok) {
-          alert("Event Notification added successfully!");
-            setNotifications(data.eventNotify);
-            setNotifyFormData({
-              eventType: '',
-              date: '',
-              startTime: '',
-              endTime: '',
-              description: ''
-            });
-            setShowNotifyForm(false);
-          fetchLab();
-
-        } else {
-          alert(data.error || "Failed to add info");
-        }
-      } catch (error) {
-        console.error("Error adding info:", error);
-        alert("Something went wrong while adding the info.");
+        setShowNotifyForm(false);
+        fetchLab();
+      } else {
+        toast.error(data.error || "Failed to add notification");
       }
-    };
+    } catch (error) {
+      console.error("Error adding info:", error);
+      toast.error("Something went wrong while adding the notification.");
+    }
+  };
 
   const removeNotification = (id) => {
     setNotifications(notifications.filter(notif => notif.id !== id));
   };
-
 
   const addMoreInfo = () => {
     setShowAddModal(true);
@@ -192,9 +302,8 @@ const LabInfo = () => {
   const deviceType = ['Projector', 'Screen Board'];
 
   const handleAddInfo = async () => {
-
     if(!newInfo.hardwareSpecs || !newInfo.softwareSpecs || !newInfo.device[0].Device_Type || !newInfo.device[0].Brand || !newInfo.device[0].Serial_No) {
-      alert("Please fill in all required fields!");
+      toast.warning("Please fill in all required fields!");
       return;
     }
     
@@ -217,7 +326,7 @@ const LabInfo = () => {
       const data = await res.json();
 
       if (res.ok) {
-        alert("Additional Info added successfully!");
+        toast.success("Additional Info added successfully!");
         setShowAddModal(false);
         setNewInfo({
           hardwareSpecs: "",
@@ -225,18 +334,16 @@ const LabInfo = () => {
           device: [{ Device_Type: "", Brand: "", Serial_No: "" }],
         });
         fetchLab();
-
       } else {
-        alert(data.error || "Failed to add info");
+        toast.error(data.error || "Failed to add info");
       }
     } catch (error) {
       console.error("Error adding info:", error);
-      alert("Something went wrong while adding the info.");
+      toast.error("Something went wrong while adding the info.");
     }
   };
 
   const handleUpdateInfo = async () => {};
-
 
   const toggleExpand = (id) => {
     setExpandedId(expandedId === id ? null : id);
@@ -257,7 +364,7 @@ const LabInfo = () => {
       ];
       
       if (!allowedTypes.includes(file.type)) {
-        alert("Only PDF or DOCX files are allowed!");
+        toast.warning("Only PDF or DOCX files are allowed!");
         return;
       }
 
@@ -275,14 +382,14 @@ const LabInfo = () => {
 
         const data = await res.json();
         if (data.success) {
-          alert("File uploaded successfully ");
+          toast.success("File uploaded successfully!");
           window.location.reload(); 
         } else {
-          alert("Upload failed: " + data.error);
+          toast.error("Upload failed: " + data.error);
         }
       } catch (err) {
         console.error(err);
-        alert("Error uploading file.");
+        toast.error("Error uploading file.");
       }
     };
 
@@ -313,7 +420,7 @@ const LabInfo = () => {
     "15:10 PM - 16:00 PM",
   ];
 
-   const getWeekDates = () => {
+  const getWeekDates = () => {
     const start = new Date(currentWeek);
     start.setDate(start.getDate() - start.getDay() + 1);
     const end = new Date(start);
@@ -418,7 +525,7 @@ const LabInfo = () => {
     if (typeof status !== 'string') return status;
     const s = status.trim().toLowerCase();
     return s.charAt(0).toUpperCase() + s.slice(1);
-};
+  };
 
   const handleEditPC = (pc) => {
     setEditingPC(pc);
@@ -428,7 +535,7 @@ const LabInfo = () => {
 
   const handleAddPC = async () => {
     if (!newPC.PC_Name) {
-      alert("Please enter PC name");
+      toast.warning("Please enter PC name");
       return;
     }
     setSavingPC(true);
@@ -440,16 +547,16 @@ const LabInfo = () => {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Something went wrong!");
+        toast.error(data.error || "Something went wrong!");
         return;
       }
-      alert("Lab PC added successfully!");
+      toast.success("Lab PC added successfully!");
       setShowPcModal(false);
       resetPcForm();
       fetchLab();
     } catch (err) {
       console.error("Add PC Error:", err);
-      alert("Something went wrong while adding PC.");
+      toast.error("Something went wrong while adding PC.");
     } finally {
       setSavingPC(false);
     }
@@ -457,7 +564,7 @@ const LabInfo = () => {
 
   const handleUpdatePC = async () => {
     if (!newPC.PC_Name) {
-      alert("Please enter PC name");
+      toast.warning("Please enter PC name");
       return;
     }
     setSavingPC(true);
@@ -470,24 +577,25 @@ const LabInfo = () => {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Something went wrong!");
+        toast.error(data.error || "Something went wrong!");
         return;
       }
-      alert("PC updated successfully!");
+      toast.success("PC updated successfully!");
       setShowPcModal(false);
       setEditingPC(null);
       resetPcForm();
       fetchLab();
     } catch (err) {
       console.error("Update PC Error:", err);
-      alert("Something went wrong while updating PC.");
+      toast.error("Something went wrong while updating PC.");
     } finally {
       setSavingPC(false);
     }
   };
 
   const handleDeletePC = async (pcId) => {
-    if (!window.confirm("Are you sure you want to delete this PC?")) return;
+    const confirmed = await toast.confirm("Are you sure you want to delete this PC?");
+    if (!confirmed) return;
     try {
       const res = await fetch("/api/admin/deleteLabPC", {
         method: "POST",
@@ -496,14 +604,14 @@ const LabInfo = () => {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Failed to delete PC");
+        toast.error(data.error || "Failed to delete PC");
         return;
       }
-      alert("PC deleted successfully!");
+      toast.success("PC deleted successfully!");
       fetchLab();
     } catch (err) {
       console.error("Delete PC Error:", err);
-      alert("Something went wrong while deleting PC.");
+      toast.error("Something went wrong while deleting PC.");
     }
   };
 
@@ -521,26 +629,26 @@ const LabInfo = () => {
   const handleEditSlot = () => {
     if (!selectedSlot) return;
 
-	setFormData({
-		Subject: selectedSlot.subject || "",
-		Program: selectedSlot.course || "",
-		Faculty: selectedSlot.faculty || "",
-		Day: selectedSlot.day || "",
-		StartTimeSlot: selectedSlot.startTime,
-		EndTimeSlot: selectedSlot.endTime,
-		Status: selectedSlot.status || "",
-		Lab: id,
-	});
+    setFormData({
+      Subject: selectedSlot.subject || "",
+      Program: selectedSlot.course || "",
+      Faculty: selectedSlot.faculty || "",
+      Day: selectedSlot.day || "",
+      StartTimeSlot: selectedSlot.startTime,
+      EndTimeSlot: selectedSlot.endTime,
+      Status: selectedSlot.status || "",
+      Lab: id,
+    });
 
-	setIsEditing(true);
-	setShowForm(true);
+    setIsEditing(true);
+    setShowForm(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 	
     if (!formData.Subject || !formData.Program || !formData.Day || !formData.Status || !formData.StartTimeSlot || !formData.EndTimeSlot || !formData.Lab) {
-      alert("Please fill in all required fields!");
+      toast.warning("Please fill in all required fields!");
       return;
     }
 
@@ -552,7 +660,7 @@ const LabInfo = () => {
       TimeSlot: `${formData.StartTimeSlot} - ${formData.EndTimeSlot}`,
       Status: formData.Status,
       Lab: formData.Lab,
-     };
+    };
     console.log(payload);
 
     try {
@@ -565,7 +673,7 @@ const LabInfo = () => {
       const data = await res.json();
 
       if (res.ok) {
-        alert("Timetable Slot Booked successfully!");
+        toast.success("Timetable Slot booked successfully!");
         fetchLab();
         setShowForm(false);
         setFormData({
@@ -577,20 +685,20 @@ const LabInfo = () => {
           EndTimeSlot: "",
           Status: "",
           Lab: id, 
-        })
+        });
       } else {
-        alert(data.error || "Failed to book slot");
+        toast.error(data.error || "Failed to book slot");
       }
     } catch (error) {
       console.error("Error booking slot:", error);
-      alert("Something went wrong while booking the slot.");
+      toast.error("Something went wrong while booking the slot.");
     }
   };
 
   const handleEditSubmit = async (e) => {
-	e.preventDefault();
+    e.preventDefault();
 
-	console.log(selectedSlot.id);
+    console.log(selectedSlot.id);
 
     const payload = { 
       Subject: formData.Subject,
@@ -600,20 +708,20 @@ const LabInfo = () => {
       TimeSlot: `${formData.StartTimeSlot} - ${formData.EndTimeSlot}`,
       Status: formData.Status,
       Lab: formData.Lab,
-     };
+    };
     console.log(payload);
 
     try {
-	  const res = await fetch(`/api/admin/editTimetableSlot/${selectedSlot.id}`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(payload),
-	  });
+      const res = await fetch(`/api/admin/editTimetableSlot/${selectedSlot.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       const data = await res.json();
 
       if (res.ok) {
-        alert("Timetable Slot Booked successfully!");
+        toast.success("Timetable Slot updated successfully!");
         fetchLab();
         setShowForm(false);
         setFormData({
@@ -625,14 +733,14 @@ const LabInfo = () => {
           EndTimeSlot: "",
           Status: "",
           Lab: id, 
-        })
-		setSelectedSlot(null);
+        });
+        setSelectedSlot(null);
       } else {
-        alert(data.error || "Failed to book slot");
+        toast.error(data.error || "Failed to update slot");
       }
     } catch (error) {
       console.error("Error booking slot:", error);
-      alert("Something went wrong while booking the slot.");
+      toast.error("Something went wrong while updating the slot.");
     }
   };
 
@@ -1308,7 +1416,7 @@ const LabInfo = () => {
     viewButton: {
       color: "#3674B5",
     },
-	redirectButton: {
+    redirectButton: {
       color: '#EBF4F6'
     },
     expandButton: {
@@ -1581,7 +1689,7 @@ const LabInfo = () => {
       fontSize: '0.85rem',
       marginBottom: '1.5rem',
       textAlign: 'center',
-	  color: '#3674B5',
+      color: '#3674B5',
       fontWeight: '600'
     },
     buttonContainer: {
@@ -1917,6 +2025,7 @@ const LabInfo = () => {
   if (loading) {
     return (
       <div style={styles.container}>
+        <ToastContainer />
         <div style={styles.loaderContainer}>
           <Loader2 size={48} className="animate-spin" color="#088395" />
           <p style={styles.loaderText}>Loading lab data...</p>
@@ -1927,6 +2036,8 @@ const LabInfo = () => {
 
   return (
     <div style={styles.container}>
+      {/* ── Toast Container (always mounted) ── */}
+      <ToastContainer />
 
       <div style={styles.headerSection}>
         <div></div>
@@ -2090,7 +2201,7 @@ const LabInfo = () => {
               </button>
               <button
                 style={styles.notifySubmitBtn}
-                onClick={ handleSubmitNotification }
+                onClick={handleSubmitNotification}
                 onMouseEnter={(e) => {
                   e.target.style.transform = 'translateY(-1px)';
                   e.target.style.boxShadow = '0 6px 10px rgba(8, 131, 149, 0.4)';
@@ -2109,7 +2220,7 @@ const LabInfo = () => {
 
       {/* Lab Information Card */}
       {labData ? (
-         <div style={styles.labInfoCard}>
+        <div style={styles.labInfoCard}>
           <div style={styles.labHeader}>
             <h1 style={styles.labTitle}>{labData?.Lab_Name}</h1>
             <span style={styles.statusBadge}>{labData?.Status?.toUpperCase()}</span>
@@ -2169,7 +2280,6 @@ const LabInfo = () => {
             </div>
 
             <div style={styles.moreInfoContent}>
-              {/* Add Button for Specifications */}
               <div style={{display: 'flex', justifyContent: 'flex-end'}}>
                 <button 
                   style={styles.addButton}
@@ -2187,35 +2297,28 @@ const LabInfo = () => {
                 </button>
               </div>
 
-              {/* Hardware Specifications */}
               <div style={styles.infoSectionTitle}>
                 <span>Hardware Specifications</span>
               </div>
               {labData.Hardware_Specifications ? (
                 <div style={styles.specsBox}>
-                  <div style={styles.specsContent}>
-                    {labData.Hardware_Specifications}
-                  </div>
+                  <div style={styles.specsContent}>{labData.Hardware_Specifications}</div>
                 </div>
               ) : (
                 <div style={styles.emptyState}>No hardware specifications added yet</div>
               )}
 
-              {/* Software Specifications */}
               <div style={styles.infoSectionTitle}>
                 <span>Software Specifications</span>
               </div>
               {labData.Software_Specifications ? (
                 <div style={styles.specsBox}>
-                  <div style={styles.specsContent}>
-                    {labData.Software_Specifications}
-                  </div>
+                  <div style={styles.specsContent}>{labData.Software_Specifications}</div>
                 </div>
               ) : (
                 <div style={styles.emptyState}>No software specifications added yet</div>
               )}
 
-              {/* Screen Panel / Projector Details */}
               <div style={styles.infoSectionTitle}>
                 <span>Screen Board / Projector Details</span>
               </div>
@@ -2250,7 +2353,6 @@ const LabInfo = () => {
                 <div style={styles.emptyState}>No screen/projector details added yet</div>
               )} 
 
-              {/* Remarks */}
               <div style={styles.sectionTitle}>
                 <span>Remarks</span>
               </div>
@@ -2262,12 +2364,11 @@ const LabInfo = () => {
             </div>
           </div>
         </div>
-
       ) : (
         <p>Loading...</p> 
       )}
 
-      {/* PC List (Lab-style rows) */}
+      {/* PC List */}
       <div style={styles.pcSection}>
         <div style={styles.pcSectionHeader}>
           <div>
@@ -2330,25 +2431,14 @@ const LabInfo = () => {
                 key={pc._id || pc.id}
                 style={styles.pcRow}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow =
-                    '0 4px 16px rgba(8, 131, 149, 0.13)';
+                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(8, 131, 149, 0.13)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow =
-                    '0 1px 3px rgba(8, 131, 149, 0.08)';
+                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(8, 131, 149, 0.08)';
                 }}
               >
                 <div style={styles.pcIconBox}>
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#088395"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#088395" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
                     <line x1="8" y1="21" x2="16" y2="21" />
                     <line x1="12" y1="17" x2="12" y2="21" />
@@ -2362,13 +2452,7 @@ const LabInfo = () => {
 
                 <div style={styles.pcMetaSection}>
                   <div style={styles.pcMetaItem}>
-                    <svg
-                      style={styles.pcMetaIcon}
-                      width="15"
-                      height="15"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
+                    <svg style={styles.pcMetaIcon} width="15" height="15" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm0 2h10v10H5V5z" clipRule="evenodd" />
                     </svg>
                     <span>Assets:&nbsp;</span>
@@ -2384,14 +2468,8 @@ const LabInfo = () => {
                     type="button"
                     style={{ ...styles.pcIconButton, ...styles.pcEditButton }}
                     onClick={(e) => { e.stopPropagation(); handleEditPC(pc); }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#088395';
-                      e.currentTarget.style.transform = 'scale(1.08)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'transparent';
-                      e.currentTarget.style.transform = 'scale(1)';
-                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#088395'; e.currentTarget.style.transform = 'scale(1.08)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.transform = 'scale(1)'; }}
                     title="Edit PC"
                   >
                     <Edit size={18} />
@@ -2399,18 +2477,9 @@ const LabInfo = () => {
                   <button
                     type="button"
                     style={{ ...styles.pcIconButton, ...styles.pcDeleteButton }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeletePC(pc._id || pc.id);
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#E74C3C';
-                      e.currentTarget.style.transform = 'scale(1.08)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'transparent';
-                      e.currentTarget.style.transform = 'scale(1)';
-                    }}
+                    onClick={(e) => { e.stopPropagation(); handleDeletePC(pc._id || pc.id); }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#E74C3C'; e.currentTarget.style.transform = 'scale(1.08)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.transform = 'scale(1)'; }}
                     title="Delete PC"
                   >
                     <Trash2 size={18} />
@@ -2425,14 +2494,8 @@ const LabInfo = () => {
                         window.location.href = `/adminPanel/lab_management/lab/${id}/asset/${pcId}`;
                       }
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#3674B5';
-                      e.currentTarget.style.transform = 'scale(1.08)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'transparent';
-                      e.currentTarget.style.transform = 'scale(1)';
-                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#3674B5'; e.currentTarget.style.transform = 'scale(1.08)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.transform = 'scale(1)'; }}
                     title="View PC details"
                   >
                     <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
@@ -2516,10 +2579,7 @@ const LabInfo = () => {
 
       {/* Add/Edit Information Modal */}
       {showAddModal && (
-        <div style={styles.modal} onClick={() => {
-          setShowAddModal(false);
-          setEditing(null);
-        }}>
+        <div style={styles.modal} onClick={() => { setShowAddModal(false); setEditing(null); }}>
           <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <h2 style={styles.modalHeader}>{editing ? 'Update Information' : 'Add Information'}</h2>
             
@@ -2528,7 +2588,7 @@ const LabInfo = () => {
               <input 
                 type="text"
                 style={styles.input}
-              value={newInfo.hardwareSpecs}
+                value={newInfo.hardwareSpecs}
                 onChange={(e) => setNewInfo({...newInfo, hardwareSpecs: e.target.value})}
                 placeholder="Enter Hardware Specifications"
                 onFocus={(e) => e.target.style.borderColor = '#088395'}
@@ -2557,16 +2617,7 @@ const LabInfo = () => {
                 onChange={(e) =>
                   setNewInfo({
                     ...newInfo,
-                    device: [
-                      {
-                        ...((newInfo.device && newInfo.device[0]) || {
-                          Device_Type: "",
-                          Brand: "",
-                          Serial_No: "",
-                        }),
-                        Device_Type: e.target.value,
-                      },
-                    ],
+                    device: [{ ...((newInfo.device && newInfo.device[0]) || { Device_Type: "", Brand: "", Serial_No: "" }), Device_Type: e.target.value }],
                   })
                 }
                 onFocus={(e) => e.target.style.borderColor = '#088395'}
@@ -2574,9 +2625,7 @@ const LabInfo = () => {
               >
                 <option value="">Select Device_Type</option>
                 {deviceType.map((d, index) => (
-                  <option key={index} value={d}>
-                    {d}
-                  </option>
+                  <option key={index} value={d}>{d}</option>
                 ))}
               </select>
             </div>
@@ -2590,16 +2639,7 @@ const LabInfo = () => {
                 onChange={(e) =>
                   setNewInfo({
                     ...newInfo,
-                    device: [
-                      {
-                        ...((newInfo.device && newInfo.device[0]) || {
-                          Device_Type: "",
-                          Brand: "",
-                          Serial_No: "",
-                        }),
-                        Brand: e.target.value,
-                      },
-                    ],
+                    device: [{ ...((newInfo.device && newInfo.device[0]) || { Device_Type: "", Brand: "", Serial_No: "" }), Brand: e.target.value }],
                   })
                 }
                 placeholder="Enter Brand"
@@ -2617,16 +2657,7 @@ const LabInfo = () => {
                 onChange={(e) =>
                   setNewInfo({
                     ...newInfo,
-                    device: [
-                      {
-                        ...((newInfo.device && newInfo.device[0]) || {
-                          Device_Type: "",
-                          Brand: "",
-                          Serial_No: "",
-                        }),
-                        Serial_No: e.target.value,
-                      },
-                    ],
+                    device: [{ ...((newInfo.device && newInfo.device[0]) || { Device_Type: "", Brand: "", Serial_No: "" }), Serial_No: e.target.value }],
                   })
                 }
                 placeholder="Enter S/N"
@@ -2641,34 +2672,18 @@ const LabInfo = () => {
                 onClick={() => {
                   setShowAddModal(false);
                   setEditing(null);
-                  setNewInfo({
-                    hardwareSpecs: "",
-                    softwareSpecs: "",
-                    device: [{ Device_Type: "", Brand: "", Serial_No: "" }],
-                  });
+                  setNewInfo({ hardwareSpecs: "", softwareSpecs: "", device: [{ Device_Type: "", Brand: "", Serial_No: "" }] });
                 }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(8, 131, 149, 0.05)';
-                  e.target.style.borderColor = '#088395';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'white';
-                  e.target.style.borderColor = 'rgba(8, 131, 149, 0.3)';
-                }}
+                onMouseEnter={(e) => { e.target.style.background = 'rgba(8, 131, 149, 0.05)'; e.target.style.borderColor = '#088395'; }}
+                onMouseLeave={(e) => { e.target.style.background = 'white'; e.target.style.borderColor = 'rgba(8, 131, 149, 0.3)'; }}
               >
                 Cancel
               </button>
               <button 
                 style={styles.saveButton}
                 onClick={editing ? handleUpdateInfo : handleAddInfo}
-                onMouseEnter={(e) => {
-                  e.target.style.transform = 'translateY(-1px)';
-                  e.target.style.boxShadow = '0 6px 10px rgba(8, 131, 149, 0.4)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 6px rgba(8, 131, 149, 0.3)';
-                }}
+                onMouseEnter={(e) => { e.target.style.transform = 'translateY(-1px)'; e.target.style.boxShadow = '0 6px 10px rgba(8, 131, 149, 0.4)'; }}
+                onMouseLeave={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = '0 4px 6px rgba(8, 131, 149, 0.3)'; }}
               >
                 {editing ? 'Update Information' : 'Add Information'}
               </button>
@@ -2676,8 +2691,6 @@ const LabInfo = () => {
           </div>
         </div>
       )}
-
-      
 
     </div>
   );

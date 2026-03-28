@@ -1,16 +1,126 @@
 "use client"
 import React, { useEffect, useState } from 'react';
-import { Loader2, Cpu, Sparkles, QrCode, AlertTriangle, PackagePlus } from 'lucide-react';
+import { Loader2, Cpu, Sparkles, QrCode, AlertTriangle, PackagePlus, IndianRupee, CheckCircle, XCircle, AlertTriangle as AlertTriangleIcon, Info, X } from 'lucide-react';
 import { useParams } from "next/navigation"; 
 
+/* ─────────────────────────────────────────────
+   TOAST SYSTEM
+───────────────────────────────────────────── */
+let _addToast = null;
+
+const toast = {
+  success: (msg) => _addToast?.({ type: 'success', msg }),
+  error:   (msg) => _addToast?.({ type: 'error',   msg }),
+  warning: (msg) => _addToast?.({ type: 'warning', msg }),
+  info:    (msg) => _addToast?.({ type: 'info',    msg }),
+  confirm: (msg) => new Promise((resolve) => _addToast?.({ type: 'confirm', msg, resolve })),
+};
+
+function ToastContainer() {
+  const [toasts, setToasts] = useState([]);
+
+  useEffect(() => {
+    _addToast = (t) => {
+      const id = Date.now() + Math.random();
+      setToasts((prev) => [...prev, { ...t, id }]);
+      if (t.type !== 'confirm') {
+        setTimeout(() => setToasts((prev) => prev.filter((x) => x.id !== id)), 3800);
+      }
+    };
+    return () => { _addToast = null; };
+  }, []);
+
+  const remove = (id) => setToasts((prev) => prev.filter((x) => x.id !== id));
+
+  const cfg = {
+    success: { bg: '#D1F8EF', border: '#088395', color: '#065f46', Icon: CheckCircle,        label: 'Success' },
+    error:   { bg: '#fee2e2', border: '#ef4444', color: '#991b1b', Icon: XCircle,            label: 'Error'   },
+    warning: { bg: '#fef3c7', border: '#f59e0b', color: '#92400e', Icon: AlertTriangleIcon,  label: 'Warning' },
+    info:    { bg: '#EBF4F6', border: '#176B87', color: '#176B87', Icon: Info,               label: 'Info'    },
+    confirm: { bg: '#fff',    border: '#088395', color: '#176B87', Icon: AlertTriangleIcon,  label: 'Confirm' },
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', top: '1.25rem', right: '1.25rem',
+      zIndex: 99999, display: 'flex', flexDirection: 'column', gap: '10px',
+      maxWidth: '360px', width: '90vw', pointerEvents: 'none',
+    }}>
+      {toasts.map((t) => {
+        const c = cfg[t.type] || cfg.info;
+        const { Icon } = c;
+        return (
+          <div key={t.id} style={{
+            background: c.bg,
+            border: `1.5px solid ${c.border}`,
+            borderRadius: '14px',
+            padding: '14px 16px',
+            boxShadow: '0 8px 32px rgba(8,131,149,0.18)',
+            display: 'flex', flexDirection: 'column', gap: '10px',
+            animation: 'toastIn 0.28s cubic-bezier(.4,0,.2,1)',
+            fontFamily: "'Segoe UI', sans-serif",
+            pointerEvents: 'all',
+          }}>
+            <style>{`
+              @keyframes toastIn {
+                from { opacity:0; transform:translateX(40px) scale(.95); }
+                to   { opacity:1; transform:translateX(0)    scale(1);   }
+              }
+            `}</style>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              <Icon size={20} color={c.border} style={{ flexShrink: 0, marginTop: '1px' }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: '13px', color: c.border, letterSpacing: '0.03em', textTransform: 'uppercase', marginBottom: '3px' }}>
+                  {c.label}
+                </div>
+                <div style={{ fontSize: '14px', color: c.color, fontWeight: 500, lineHeight: 1.5 }}>
+                  {t.msg}
+                </div>
+              </div>
+              {t.type !== 'confirm' && (
+                <button onClick={() => remove(t.id)} style={{
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  color: c.color, display: 'flex', alignItems: 'center', padding: '2px', borderRadius: '6px',
+                }}>
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+            {t.type === 'confirm' && (
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button onClick={() => { t.resolve(false); remove(t.id); }} style={{
+                  padding: '7px 18px', borderRadius: '8px', border: '1.5px solid #d1d5db',
+                  background: 'white', color: '#374151', fontWeight: 600, fontSize: '13px', cursor: 'pointer',
+                }}>
+                  Cancel
+                </button>
+                <button onClick={() => { t.resolve(true); remove(t.id); }} style={{
+                  padding: '7px 18px', borderRadius: '8px', border: 'none',
+                  background: 'linear-gradient(135deg,#088395,#0a9fb5)', color: 'white',
+                  fontWeight: 700, fontSize: '13px', cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(8,131,149,0.25)',
+                }}>
+                  Confirm
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   MAIN COMPONENT
+───────────────────────────────────────────── */
 function AssetsPage() {
   const { assetId: id } = useParams();
   const [pcData, setPcData] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedType, setSelectedType] = useState("All");
   const [viewingQR, setViewingQR] = useState(null);
-  const [viewingAI, setViewingAI] = useState(null); 
-  const [aiLoading, setAiLoading] = useState(false);
+  const [viewingFinancial, setViewingFinancial] = useState(null);
   const [editingAsset, setEditingAsset] = useState(null);
   const [isMobile, setIsMobile] = useState(false); 
   const [loading, setLoading] = useState(true);
@@ -34,19 +144,14 @@ function AssetsPage() {
       warranty: 0,
     }
   });
-  const [movingAsset, setMovingAsset]   = useState(null);  
-  const [labs, setLabs]                 = useState([]);
-  const [labPCs, setLabPCs]             = useState([]);
+  const [movingAsset, setMovingAsset] = useState(null);  
+  const [labs, setLabs] = useState([]);
+  const [labPCs, setLabPCs] = useState([]);
   const [labPCsLoading, setLabPCsLoading] = useState(false);
-  const [moveSaving, setMoveSaving]     = useState(false);
-  const [moveForm, setMoveForm] = useState({
-    To_Lab: "",
-    To_PC:  "",
-    Reason: "",
-  });
+  const [moveSaving, setMoveSaving] = useState(false);
+  const [moveForm, setMoveForm] = useState({ To_Lab: "", To_PC: "", Reason: "" });
 
   const assetTypes = ["Monitor", "Keyboard", "Mouse", "CPU", "UPS", "Other"];
-
   const [assets, setAssets] = useState([]);
 
   const fetchPC = async () => {
@@ -68,29 +173,24 @@ function AssetsPage() {
     }
   };
 
-  useEffect(() => {
-    fetchPC();
-  }, [id]);
+  useEffect(() => { fetchPC(); }, [id]);
 
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
+    const checkMobile = () => { setIsMobile(window.innerWidth < 1024); };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const filteredAssets = selectedType === "All" 
-    ? assets 
+  const filteredAssets = selectedType === "All"
+    ? assets
     : assets.filter(asset => asset.Asset_Type === selectedType.toLowerCase());
 
   const handleAddAsset = async () => {
     if (!newAsset.Asset_Name || !newAsset.Asset_Type || !newAsset.Assest_Status) {
-      alert("Please fill all required fields");
+      toast.warning("Please fill all required fields");
       return;
     }
-  
     setSaving(true);
     try {
       const res = await fetch("/api/admin/addAsset", {
@@ -113,24 +213,20 @@ function AssetsPage() {
             usage_frequency: newAsset.Financial_Details.usage_frequency,
             warranty: Number(newAsset.Financial_Details.warranty || 0)
           }
-        }), 
+        }),
       });
-
       const data = await res.json();
-
       if (!res.ok) {
-        alert(data.error || "Something went wrong!");
+        toast.error(data.error || "Something went wrong!");
         return;
       }
-
-      alert("Asset added successfully!");
+      toast.success("Asset added successfully!");
       setShowAddModal(false);
       resetForm();
       await fetchPC();
-      
     } catch (err) {
       console.error("Asset Error:", err);
-      alert("Something went wrong while adding asset.");
+      toast.error("Something went wrong while adding asset.");
     } finally {
       setSaving(false);
     }
@@ -144,10 +240,9 @@ function AssetsPage() {
 
   const handleUpdateAsset = async () => {
     if (!newAsset.Asset_Name || !newAsset.Asset_Type || !newAsset.Assest_Status) {
-      alert("Please fill all required fields");
+      toast.warning("Please fill all required fields");
       return;
     }
-
     setSaving(true);
     try {
       const res = await fetch("/api/admin/updateAsset", {
@@ -161,53 +256,43 @@ function AssetsPage() {
           Brand: newAsset.Brand,
         }),
       });
-
       const data = await res.json();
-
       if (!res.ok) {
-        alert(data.error || "Something went wrong!");
+        toast.error(data.error || "Something went wrong!");
         return;
       }
-
-      alert("Asset updated successfully!");
+      toast.success("Asset updated successfully!");
       setShowAddModal(false);
       setEditingAsset(null);
       resetForm();
       await fetchPC();
-      
     } catch (err) {
       console.error("Update Asset Error:", err);
-      alert("Something went wrong while updating asset.");
+      toast.error("Something went wrong while updating asset.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteAsset = async (assetId) => {
-    if (!window.confirm("Are you sure you want to delete this asset?")) {
-      return;
-    }
-
+    const confirmed = await toast.confirm("Are you sure you want to delete this asset?");
+    if (!confirmed) return;
     try {
       const res = await fetch("/api/admin/deleteAsset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: assetId }),
       });
-
       const data = await res.json();
-
       if (!res.ok) {
-        alert(data.error || "Failed to delete asset");
+        toast.error(data.error || "Failed to delete asset");
         return;
       }
-
-      alert("Asset deleted successfully!");
+      toast.success("Asset deleted successfully!");
       await fetchPC();
-      
     } catch (err) {
       console.error("Delete Asset Error:", err);
-      alert("Something went wrong while deleting asset.");
+      toast.error("Something went wrong while deleting asset.");
     }
   };
 
@@ -219,44 +304,19 @@ function AssetsPage() {
       Brand: "",
       Issue_Reported: "",
       Financial_Details: {
-        purchase_year: "",
-        purchase_cost: "",
-        scrap_value: "",
-        useful_life: "",
-        breakdown_frequency: "",
-        total_maintenance_cost: "",
-        usage_frequency: "", 
-        warranty: ""
+        purchase_year: "", purchase_cost: "", scrap_value: "", useful_life: "",
+        breakdown_frequency: "", total_maintenance_cost: "", usage_frequency: "", warranty: ""
       }
     });
   };
 
-  const openIssueModal = (issue) => {
-    setViewingIssue(issue);
-    setCurrentIssueIndex(0);
-  };
-
-  const nextIssue = () => {
-    if (!viewingIssue) return;
-    setCurrentIssueIndex((prev) => 
-      prev + 1 < viewingIssue.Issue_Reported.length ? prev + 1 : prev
-    );
-  };
-
-  const prevIssue = () => {
-    if (!viewingIssue) return;
-    setCurrentIssueIndex((prev) =>
-      prev - 1 >= 0 ? prev - 1 : prev
-    );
-  };
+  const openIssueModal = (issue) => { setViewingIssue(issue); setCurrentIssueIndex(0); };
+  const nextIssue = () => { if (!viewingIssue) return; setCurrentIssueIndex((prev) => prev + 1 < viewingIssue.Issue_Reported.length ? prev + 1 : prev); };
+  const prevIssue = () => { if (!viewingIssue) return; setCurrentIssueIndex((prev) => prev - 1 >= 0 ? prev - 1 : prev); };
 
   function formatStatus(status) {
     if (!status) return "Pending";
-    const map = {
-      "pending": "Pending",
-      "resolved by technician": "Resolved By Technician",
-      "approved": "Approved"
-    };
+    const map = { "pending": "Pending", "resolved by technician": "Resolved By Technician", "approved": "Approved" };
     return map[status] || status;
   }
 
@@ -280,64 +340,31 @@ function AssetsPage() {
 
   const getStatusColor = (status) => {
     switch(status) {
-      case "Yes": return { bg: '#d1fae5', text: '#065f46' };
-      case "No": return { bg: '#fee2e2', text: '#991b1b' };
+      case "Yes":   return { bg: '#d1fae5', text: '#065f46' };
+      case "No":    return { bg: '#fee2e2', text: '#991b1b' };
       case "Other": return { bg: '#fef3c7', text: '#92400e' };
-      default: return { bg: '#e5e7eb', text: '#374151' };
+      default:      return { bg: '#e5e7eb', text: '#374151' };
     }
   };
 
-  const handleGenerateAI = async () => {
-    try {
-      setAiLoading(true);
-      const response = await fetch("/api/ai/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assetId: viewingAI._id })
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        alert(data.error || "AI generation failed");
-        return;
-      }
-      setViewingAI(prev => ({ ...prev, AI_Predictions: data.AI_Predictions }));
-    } catch (error) {
-      console.error("AI generation error:", error);
-      alert("Something went wrong while generating AI report.");
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  // ── FIXED: openMoveModal — fetch all labs and store their PCs in a map ──────
   const openMoveModal = async (asset) => {
     setMovingAsset(asset);
     setMoveForm({ To_Lab: "", To_PC: "", Reason: "" });
     setLabPCs([]);
     try {
-      const res  = await fetch("/api/admin/getLabs");
+      const res = await fetch("/api/admin/getLabs");
       const data = await res.json();
-      if (res.ok) {
-        setLabs(data.labs || []);
-        // labPCs will be populated when a lab is selected via fetchPCsForLab
-      }
+      if (res.ok) setLabs(data.labs || []);
     } catch (err) {
       console.error("Error fetching labs:", err);
     }
   };
 
-  // ── FIXED: fetchPCsForLab — find the selected lab from the already-fetched
-  //    labs array and extract its PCs (the API already populates PCs via
-  //    .populate('PCs'), so no extra network call is needed) ─────────────────
   const fetchPCsForLab = (labId) => {
-    if (!labId) {
-      setLabPCs([]);
-      return;
-    }
+    if (!labId) { setLabPCs([]); return; }
     setLabPCsLoading(true);
     try {
       const selectedLab = labs.find(lab => lab._id === labId);
-      // PCs is already populated — it's an array of PC objects
       setLabPCs(selectedLab?.PCs || []);
     } finally {
       setLabPCsLoading(false);
@@ -345,7 +372,7 @@ function AssetsPage() {
   };
 
   const handleMoveAsset = async () => {
-    if (!moveForm.To_Lab) { alert("Please select a destination lab."); return; }
+    if (!moveForm.To_Lab) { toast.warning("Please select a destination lab."); return; }
     setMoveSaving(true);
     try {
       const res = await fetch("/api/admin/moveAsset", {
@@ -353,32 +380,27 @@ function AssetsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           assetId: movingAsset._id || movingAsset.id,
-          To_Lab:  moveForm.To_Lab,
-          To_PC:   moveForm.To_PC || null,
-          Reason:  moveForm.Reason,
+          To_Lab: moveForm.To_Lab,
+          To_PC: moveForm.To_PC || null,
+          Reason: moveForm.Reason,
         }),
       });
       const data = await res.json();
-      if (!res.ok) { alert(data.error || "Failed to move asset."); return; }
-      alert("Asset moved successfully!");
+      if (!res.ok) { toast.error(data.error || "Failed to move asset."); return; }
+      toast.success("Asset moved successfully!");
       setMovingAsset(null);
       await fetchPC();
     } catch (err) {
       console.error("Move Asset Error:", err);
-      alert("Something went wrong while moving the asset.");
+      toast.error("Something went wrong while moving the asset.");
     } finally {
       setMoveSaving(false);
     }
   };
-  
+
   const C = { primary: '#088395', dark: '#176B87', sky: '#86B6F6', ice: '#EBF4F6', mint: '#D1F8EF' };
 
-  const inputStyle = {
-    width: '100%', padding: '9px 12px',
-    border: '2px solid #EBF4F6', borderRadius: '8px', fontSize: '13px',
-    boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s',
-    color: '#1f2937', backgroundColor: 'white',
-  };
+  const inputStyle = { width: '100%', padding: '9px 12px', border: '2px solid #EBF4F6', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.2s', color: '#1f2937', backgroundColor: 'white' };
   const labelStyle = { display: 'block', fontSize: '11px', fontWeight: '700', color: C.dark, marginBottom: '5px', letterSpacing: '0.04em', textTransform: 'uppercase' };
   const selectStyle = { ...inputStyle, cursor: 'pointer' };
 
@@ -407,7 +429,6 @@ function AssetsPage() {
     statusBadge: { display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' },
     issueBlock: { backgroundColor: '#fef3c7', border: '1px solid #fbbf24', borderRadius: '20px', padding: '2px 12px', cursor: 'pointer', fontSize: '12px', color: '#92400e', fontWeight: '600', transition: 'all 0.2s' },
     noIssueText: { color: '#10b981', fontWeight: '500', fontSize: '13px' },
-    qrImage: { width: '22px', height: '22px', display: 'block' },
     actionButtons: { display: 'flex', gap: '0.5rem', marginTop: '1rem', paddingTop: '1rem', borderTop: `1px solid ${C.mint}` },
     iconButton: { padding: isMobile ? '0.625rem' : '0.5rem', background: C.ice, border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 },
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(23, 107, 135, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' },
@@ -421,11 +442,9 @@ function AssetsPage() {
     navButtons: { display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', gap: '0.5rem' },
     navBtn: { fontSize: '14px', fontWeight: '700', padding: '6px 14px', borderRadius: '8px', border: `2px solid ${C.ice}`, cursor: 'pointer', background: C.ice, color: C.dark, transition: 'all 0.15s' },
     formGroup: { marginBottom: '16px' },
-    formLabel: { display: 'block', fontSize: '11px', fontWeight: '700', color: C.dark, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' },
     textarea: { width: '100%', padding: '10px 12px', border: `2px solid ${C.ice}`, borderRadius: '8px', fontSize: '14px', minHeight: '100px', resize: 'vertical', fontFamily: 'inherit', transition: 'border-color 0.2s', outline: 'none', boxSizing: 'border-box', color: C.dark },
     modal: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(23, 107, 135, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: isMobile ? '1rem' : '0' },
     modalContent: { background: 'white', borderRadius: '20px', padding: isMobile ? '1.5rem' : '2rem', width: isMobile ? '100%' : '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(8,131,149,0.25)', border: '1px solid rgba(8, 131, 149, 0.1)' },
-    modalHeader: { fontSize: isMobile ? '20px' : '26px', fontWeight: 800, color: C.dark, marginBottom: '1.5rem', paddingBottom: '14px', borderBottom: `2px solid ${C.mint}`, letterSpacing: '-0.5px' },
     label: { display: 'block', fontSize: '11px', fontWeight: '700', color: C.dark, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.04em' },
     input: { width: '100%', padding: isMobile ? '0.625rem' : '14px', border: `2px solid rgba(8, 131, 149, 0.2)`, borderRadius: '10px', fontSize: '14px', transition: 'border-color 0.2s ease', boxSizing: 'border-box', color: C.dark, fontWeight: '500' },
     readonlyInput: { width: '100%', padding: isMobile ? '0.625rem' : '14px', border: `2px solid rgba(8, 131, 149, 0.1)`, borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', color: '#64748b', fontWeight: '500', backgroundColor: '#f8fafc', cursor: 'not-allowed' },
@@ -445,6 +464,7 @@ function AssetsPage() {
   if (loading) {
     return (
       <div style={styles.container}>
+        <ToastContainer />
         <div style={styles.loaderContainer}>
           <Loader2 size={48} className="animate-spin" color={C.primary} />
           <p style={{ color: C.dark, fontSize: '16px', fontWeight: '500' }}>Loading asset data...</p>
@@ -455,6 +475,7 @@ function AssetsPage() {
 
   return (
     <div style={styles.container}>
+      <ToastContainer />
 
       {/* ── Header ── */}
       <header style={styles.header}>
@@ -465,12 +486,9 @@ function AssetsPage() {
             <p style={styles.headerSub}>Asset inventory and management</p>
           </div>
         </div>
-        <button
-          style={styles.addButton}
-          onClick={() => setShowAddModal(true)}
+        <button style={styles.addButton} onClick={() => setShowAddModal(true)}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.dark}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.primary}
-        >
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.primary}>
           <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
           </svg>
@@ -523,9 +541,7 @@ function AssetsPage() {
                     <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
                     Status
                   </div>
-                  <span style={{ ...styles.statusBadge, backgroundColor: statusColors.bg, color: statusColors.text }}>
-                    {asset.Assest_Status}
-                  </span>
+                  <span style={{ ...styles.statusBadge, backgroundColor: statusColors.bg, color: statusColors.text }}>{asset.Assest_Status}</span>
                 </div>
 
                 <div style={styles.assetDetail}>
@@ -533,13 +549,11 @@ function AssetsPage() {
                     <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
                     Issues
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flex: "1 1 0%"}}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flex: "1 1 0%" }}>
                     {asset.Issue_Reported.length > 0 ? (
-                      <div style={styles.issueBlock}
-                        onClick={() => openIssueModal(asset)}
+                      <div style={styles.issueBlock} onClick={() => openIssueModal(asset)}
                         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fde68a'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fef3c7'; }}
-                      >
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fef3c7'; }}>
                         {asset.Issue_Reported.length} Issue{asset.Issue_Reported.length !== 1 ? 's' : ''}
                       </div>
                     ) : (
@@ -559,17 +573,12 @@ function AssetsPage() {
                 </div>
 
                 <div style={styles.assetDetail}>
-                  <div style={styles.detailLabel}>
-                    <Sparkles size={14} color={C.primary} />
-                    AI Insights
-                  </div>
-                  <div
-                    onClick={() => setViewingAI(asset)}
+                  <div style={styles.detailLabel}><IndianRupee size={14} color={C.primary} />Financial</div>
+                  <div onClick={() => setViewingFinancial(asset)}
                     onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.primary; e.currentTarget.style.color = 'white'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.ice; e.currentTarget.style.color = C.primary; }}
-                    style={{ padding: '3px 12px', backgroundColor: C.ice, borderRadius: '20px', fontSize: '12px', fontWeight: '700', color: C.primary, cursor: 'pointer', transition: 'all 0.2s' }}
-                  >
-                    View Report
+                    style={{ padding: '3px 12px', backgroundColor: C.ice, borderRadius: '20px', fontSize: '12px', fontWeight: '700', color: C.primary, cursor: 'pointer', transition: 'all 0.2s' }}>
+                    View Details
                   </div>
                 </div>
 
@@ -579,10 +588,7 @@ function AssetsPage() {
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.ice}>
                     <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
                   </button>
-                  <button
-                    style={{ ...styles.iconButton, color: '#3674B5' }}
-                    onClick={() => openMoveModal(asset)}
-                    title="Move Asset to another Lab/PC"
+                  <button style={{ ...styles.iconButton, color: '#3674B5' }} onClick={() => openMoveModal(asset)} title="Move Asset to another Lab/PC"
                     onMouseEnter={(e) => e.currentTarget.style.background = '#dbeafe'}
                     onMouseLeave={(e) => e.currentTarget.style.background = C.ice}>
                     <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
@@ -606,32 +612,61 @@ function AssetsPage() {
         )}
       </div>
 
+      {/* ── Financial Details Modal ── */}
+      {viewingFinancial && (
+        <div style={styles.qrModal} onClick={() => setViewingFinancial(null)}>
+          <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: isMobile ? '1.5rem' : '0 2rem 1.5rem', maxWidth: '500px', width: isMobile ? '100%' : '90%', position: 'relative', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(8,131,149,0.2)' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 10, display: 'flex', alignItems: 'center', gap: '0.75rem', padding: isMobile ? '1.25rem 0 1rem' : '1.5rem 0 1rem', borderBottom: `2px solid ${C.ice}`, marginBottom: '1.25rem' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '10px', backgroundColor: C.ice, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <IndianRupee size={20} color={C.primary} />
+              </div>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: C.dark }}>Financial Details</h2>
+                <p style={{ margin: 0, fontSize: '12px', color: C.primary, fontWeight: '500' }}>{viewingFinancial.Asset_Name}</p>
+              </div>
+              <button style={{ marginLeft: 'auto', background: C.ice, border: 'none', width: 32, height: 32, borderRadius: '8px', cursor: 'pointer', color: C.dark, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setViewingFinancial(null)}>✕</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+              {[
+                { label: 'Purchase Year',        value: viewingFinancial.Financial_Details?.purchase_year        || '—' },
+                { label: 'Purchase Cost (₹)',     value: viewingFinancial.Financial_Details?.purchase_cost        ? `₹${viewingFinancial.Financial_Details.purchase_cost}`        : '—' },
+                { label: 'Scrap Value (₹)',       value: viewingFinancial.Financial_Details?.scrap_value          ? `₹${viewingFinancial.Financial_Details.scrap_value}`          : '—' },
+                { label: 'Useful Life (Years)',   value: viewingFinancial.Financial_Details?.useful_life          ? `${viewingFinancial.Financial_Details.useful_life} yrs`        : '—' },
+                { label: 'Breakdown Frequency',  value: viewingFinancial.Financial_Details?.breakdown_frequency  ?? '0' },
+                { label: 'Maintenance Cost (₹)', value: viewingFinancial.Financial_Details?.total_maintenance_cost ? `₹${viewingFinancial.Financial_Details.total_maintenance_cost}` : '₹0' },
+                { label: 'Usage Frequency',      value: viewingFinancial.Financial_Details?.usage_frequency      || '—' },
+                { label: 'Warranty (Years)',      value: viewingFinancial.Financial_Details?.warranty             ? `${viewingFinancial.Financial_Details.warranty} yrs`           : '—' },
+              ].map(({ label, value }) => (
+                <div key={label} style={{ backgroundColor: C.ice, borderRadius: '10px', padding: '12px 14px' }}>
+                  <div style={{ fontSize: '10px', fontWeight: '700', color: C.dark, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{label}</div>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: C.primary }}>{value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Move Asset Modal ── */}
       {movingAsset && (
         <div style={styles.modal} onClick={() => setMovingAsset(null)}>
           <div style={{ ...styles.modalContent, maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
-
-            {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', paddingBottom: '14px', borderBottom: `2px solid ${C.mint}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{ width: 36, height: 36, borderRadius: '8px', backgroundColor: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="18" height="18" viewBox="0 0 20 20" fill="#3674B5">
-                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
-                  </svg>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="#3674B5"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
                 </div>
                 <h2 style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: 800, color: C.dark, margin: 0 }}>Move Asset</h2>
               </div>
               <button style={styles.closeBtn} onClick={() => setMovingAsset(null)}>✕</button>
             </div>
 
-            {/* Asset name chip */}
             <div style={{ backgroundColor: C.ice, borderRadius: '8px', padding: '10px 14px', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <svg width="14" height="14" viewBox="0 0 20 20" fill={C.primary}><path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"/></svg>
               <span style={{ fontSize: '13px', fontWeight: '700', color: C.dark }}>{movingAsset.Asset_Name}</span>
               <span style={{ fontSize: '12px', color: '#6b7280', marginLeft: '4px', textTransform: 'capitalize' }}>({movingAsset.Asset_Type})</span>
             </div>
 
-            {/* Current location — read-only */}
             <div style={{ backgroundColor: '#f8fafc', border: `1px solid rgba(8,131,149,0.1)`, borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem' }}>
               <p style={{ fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px', marginTop: 0 }}>Current Location — Read-only</p>
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
@@ -650,70 +685,36 @@ function AssetsPage() {
               </div>
             </div>
 
-            {/* To Lab dropdown */}
             <div style={styles.formGroup}>
               <label style={styles.label}>To Lab *</label>
-              <select
-                style={styles.select}
-                value={moveForm.To_Lab}
-                onChange={(e) => {
-                  const labId = e.target.value;
-                  // Reset PC selection when lab changes
-                  setMoveForm(prev => ({ ...prev, To_Lab: labId, To_PC: "" }));
-                  // Load PCs for the newly selected lab from the already-fetched labs data
-                  fetchPCsForLab(labId);
-                }}
+              <select style={styles.select} value={moveForm.To_Lab}
+                onChange={(e) => { const labId = e.target.value; setMoveForm(prev => ({ ...prev, To_Lab: labId, To_PC: "" })); fetchPCsForLab(labId); }}
                 onFocus={(e) => e.target.style.borderColor = C.primary}
-                onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
-              >
+                onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}>
                 <option value="">Select destination lab…</option>
-                {labs
-                  // Exclude the current lab so the user can't move to the same lab
-                  .filter(lab => lab._id !== (pcData.Lab?._id || pcData.Lab))
-                  .map(lab => (
-                    <option key={lab._id} value={lab._id}>
-                      {lab.Lab_ID}{lab.Lab_Name ? ` — ${lab.Lab_Name}` : ""}
-                    </option>
-                  ))}
+                {labs.filter(lab => lab._id !== (pcData.Lab?._id || pcData.Lab)).map(lab => (
+                  <option key={lab._id} value={lab._id}>{lab.Lab_ID}{lab.Lab_Name ? ` — ${lab.Lab_Name}` : ""}</option>
+                ))}
               </select>
             </div>
 
-            {/* To PC dropdown — shown only after a lab is selected */}
             {moveForm.To_Lab && (
               <div style={styles.formGroup}>
-                <label style={styles.label}>
-                  To PC{" "}
-                  <span style={{ fontWeight: '400', textTransform: 'none', color: '#94a3b8', fontSize: '10px' }}>
-                    (Optional — leave blank for lab-level)
-                  </span>
-                </label>
-
+                <label style={styles.label}>To PC <span style={{ fontWeight: '400', textTransform: 'none', color: '#94a3b8', fontSize: '10px' }}>(Optional)</span></label>
                 {labPCsLoading ? (
-                  /* Loading spinner while PCs are being resolved */
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '14px', border: `2px solid rgba(8,131,149,0.2)`, borderRadius: '10px', fontSize: '14px', color: C.dark }}>
                     <Loader2 size={14} className="animate-spin" color={C.primary} /> Loading PCs…
                   </div>
                 ) : (
-                  <select
-                    style={styles.select}
-                    value={moveForm.To_PC}
+                  <select style={styles.select} value={moveForm.To_PC}
                     onChange={(e) => setMoveForm(prev => ({ ...prev, To_PC: e.target.value }))}
                     onFocus={(e) => e.target.style.borderColor = C.primary}
-                    onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}
-                  >
+                    onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}>
                     <option value="">No specific PC (lab-level)</option>
-                    {labPCs.map(pc => (
-                      <option key={pc._id} value={pc._id}>
-                        {pc.PC_Name}
-                      </option>
-                    ))}
-                    {labPCs.length === 0 && (
-                      <option disabled>No PCs found in this lab</option>
-                    )}
+                    {labPCs.map(pc => <option key={pc._id} value={pc._id}>{pc.PC_Name}</option>)}
+                    {labPCs.length === 0 && <option disabled>No PCs found in this lab</option>}
                   </select>
                 )}
-
-                {/* Helpful count badge */}
                 {!labPCsLoading && labPCs.length > 0 && (
                   <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#6b7280', fontWeight: '500' }}>
                     {labPCs.length} PC{labPCs.length !== 1 ? 's' : ''} available in this lab
@@ -722,48 +723,26 @@ function AssetsPage() {
               </div>
             )}
 
-            {/* Reason */}
             <div style={styles.formGroup}>
               <label style={styles.label}>Reason for Move</label>
-              <textarea
-                style={styles.textarea}
-                value={moveForm.Reason}
+              <textarea style={styles.textarea} value={moveForm.Reason}
                 onChange={(e) => setMoveForm(prev => ({ ...prev, Reason: e.target.value }))}
                 placeholder="Describe the reason for moving this asset…"
                 onFocus={(e) => e.target.style.borderColor = C.primary}
-                onBlur={(e) => e.target.style.borderColor = C.ice}
-              />
+                onBlur={(e) => e.target.style.borderColor = C.ice} />
             </div>
 
-            {/* Actions */}
             <div style={styles.modalActions}>
-              <button
-                style={styles.cancelButton}
-                onClick={() => setMovingAsset(null)}
+              <button style={styles.cancelButton} onClick={() => setMovingAsset(null)}
                 onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(8, 131, 149, 0.05)'; e.currentTarget.style.borderColor = C.primary; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = 'rgba(8, 131, 149, 0.3)'; }}
-              >
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; e.currentTarget.style.borderColor = 'rgba(8, 131, 149, 0.3)'; }}>
                 Cancel
               </button>
               <button
-                style={{
-                  ...styles.saveButton,
-                  background: (moveSaving || !moveForm.To_Lab) ? '#9ca3af' : 'linear-gradient(135deg, #3674B5 0%, #088395 100%)',
-                  cursor: (moveSaving || !moveForm.To_Lab) ? 'not-allowed' : 'pointer',
-                  boxShadow: (moveSaving || !moveForm.To_Lab) ? 'none' : '0 4px 6px rgba(54,116,181,0.3)',
-                }}
-                onClick={handleMoveAsset}
-                disabled={moveSaving || !moveForm.To_Lab}
-              >
-                {moveSaving ? (
-                  <><Loader2 size={16} className="animate-spin" /> Moving…</>
-                ) : (
-                  <>
-                    <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
-                    </svg>
-                    Confirm Move
-                  </>
+                style={{ ...styles.saveButton, background: (moveSaving || !moveForm.To_Lab) ? '#9ca3af' : 'linear-gradient(135deg, #3674B5 0%, #088395 100%)', cursor: (moveSaving || !moveForm.To_Lab) ? 'not-allowed' : 'pointer', boxShadow: (moveSaving || !moveForm.To_Lab) ? 'none' : '0 4px 6px rgba(54,116,181,0.3)' }}
+                onClick={handleMoveAsset} disabled={moveSaving || !moveForm.To_Lab}>
+                {moveSaving ? (<><Loader2 size={16} className="animate-spin" /> Moving…</>) : (
+                  <><svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/></svg>Confirm Move</>
                 )}
               </button>
             </div>
@@ -782,17 +761,13 @@ function AssetsPage() {
               </div>
               <button style={styles.closeBtn} onClick={() => setViewingIssue(null)}>✕</button>
             </div>
-
             {viewingIssue.Issue_Reported.length > 1 && (
               <div style={styles.navButtons}>
                 <button style={styles.navBtn} onClick={prevIssue} disabled={currentIssueIndex === 0}>‹ Prev</button>
-                <span style={{ fontSize: '13px', color: C.dark, fontWeight: '600', alignSelf: 'center' }}>
-                  {currentIssueIndex + 1} / {viewingIssue.Issue_Reported.length}
-                </span>
+                <span style={{ fontSize: '13px', color: C.dark, fontWeight: '600', alignSelf: 'center' }}>{currentIssueIndex + 1} / {viewingIssue.Issue_Reported.length}</span>
                 <button style={styles.navBtn} onClick={nextIssue} disabled={currentIssueIndex === viewingIssue.Issue_Reported.length - 1}>Next ›</button>
               </div>
             )}
-
             {(() => {
               const issue = viewingIssue.Issue_Reported[currentIssueIndex];
               return (
@@ -810,9 +785,7 @@ function AssetsPage() {
                   ))}
                   <div style={{ marginTop: '10px' }}>
                     <div style={styles.issueDetailLabel}>Status</div>
-                    <span style={{ ...styles.issueStatusBadge, ...getIssueStatusColor(issue.Status) }}>
-                      {formatStatus(issue.Status)}
-                    </span>
+                    <span style={{ ...styles.issueStatusBadge, ...getIssueStatusColor(issue.Status) }}>{formatStatus(issue.Status)}</span>
                   </div>
                 </>
               );
@@ -828,9 +801,7 @@ function AssetsPage() {
             <button style={styles.closeButton} onClick={() => setViewingQR(null)}
               onMouseEnter={(e) => e.currentTarget.style.background = C.mint}
               onMouseLeave={(e) => e.currentTarget.style.background = C.ice}>
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
             </button>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '1.25rem' }}>
               <QrCode size={20} color={C.primary} />
@@ -840,82 +811,8 @@ function AssetsPage() {
             <button style={styles.downloadButton} onClick={() => handleDownloadQR(viewingQR.QR_Code, viewingQR.Asset_Name)}
               onMouseEnter={(e) => e.currentTarget.style.background = C.dark}
               onMouseLeave={(e) => e.currentTarget.style.background = C.primary}>
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
               Download QR Code
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── AI Asset Intelligence Modal ── */}
-      {viewingAI && (
-        <div style={styles.qrModal} onClick={() => setViewingAI(null)}>
-          <div style={{
-            backgroundColor: 'white', borderRadius: '16px',
-            padding: isMobile ? '1.5rem' : '0 2rem 1.5rem',
-            maxWidth: '480px', width: isMobile ? '100%' : '90%',
-            position: 'relative', maxHeight: '92vh', overflowY: 'auto',
-            boxShadow: '0 20px 60px rgba(8,131,149,0.2)',
-          }} onClick={(e) => e.stopPropagation()}>
-
-            <div style={{
-              position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 10,
-              display: 'flex', alignItems: 'center', gap: '0.75rem',
-              padding: isMobile ? '1.25rem 0 1rem' : '1.5rem 0 1rem',
-              borderBottom: `2px solid ${C.ice}`, marginBottom: '1.25rem',
-            }}>
-              <div style={{ width: 40, height: 40, borderRadius: '10px', backgroundColor: C.ice, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Sparkles size={20} color={C.primary} />
-              </div>
-              <div>
-                <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: C.dark }}>AI Asset Intelligence</h2>
-                <p style={{ margin: 0, fontSize: '12px', color: C.primary, fontWeight: '500' }}>{viewingAI.Asset_Name}</p>
-              </div>
-              <button
-                style={{ marginLeft: 'auto', background: C.ice, border: 'none', width: 32, height: 32, borderRadius: '8px', cursor: 'pointer', color: C.dark, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                onClick={() => setViewingAI(null)}
-              >✕</button>
-            </div>
-
-            {viewingAI.AI_Predictions ? (
-              <div>
-                {[
-                  { label: 'Failure Probability', value: `${(viewingAI.AI_Predictions.failureProbability * 100).toFixed(2)}%`, accent: viewingAI.AI_Predictions.failureProbability > 0.6 ? '#fee2e2' : C.mint, textColor: viewingAI.AI_Predictions.failureProbability > 0.6 ? '#991b1b' : '#065f46' },
-                  { label: 'Remaining Life', value: `${viewingAI.AI_Predictions.remainingLifePrediction?.toFixed(1)} Years`, accent: C.ice, textColor: C.dark },
-                  { label: 'Predicted Book Value', value: `₹${viewingAI.AI_Predictions.depreciationPrediction?.toFixed(0)}`, accent: C.ice, textColor: C.dark },
-                  { label: 'Next Year Maintenance', value: `₹${viewingAI.AI_Predictions.maintenanceCostPrediction?.toFixed(0)}`, accent: C.ice, textColor: C.dark },
-                ].map((row, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '10px', marginBottom: '8px', backgroundColor: row.accent }}>
-                    <span style={{ fontSize: '13px', color: C.dark, fontWeight: '600' }}>{row.label}</span>
-                    <span style={{ fontSize: '15px', fontWeight: '800', color: row.textColor }}>{row.value}</span>
-                  </div>
-                ))}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderRadius: '10px', marginBottom: '1.25rem', backgroundColor: viewingAI.AI_Predictions.recommendation === 'Replace' ? '#fee2e2' : C.mint, border: `2px solid ${viewingAI.AI_Predictions.recommendation === 'Replace' ? '#fca5a5' : '#6ee7b7'}` }}>
-                  <span style={{ fontSize: '13px', fontWeight: '700', color: C.dark }}>Recommendation</span>
-                  <span style={{ fontSize: '15px', fontWeight: '800', color: viewingAI.AI_Predictions.recommendation === 'Replace' ? '#991b1b' : '#065f46' }}>{viewingAI.AI_Predictions.recommendation}</span>
-                </div>
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '2rem', color: C.primary, fontSize: '14px', fontWeight: '500' }}>
-                <Sparkles size={36} color={C.sky} style={{ margin: '0 auto 0.75rem', display: 'block' }} />
-                No AI predictions yet. Generate a report below.
-              </div>
-            )}
-
-            <button
-              onClick={handleGenerateAI}
-              disabled={aiLoading}
-              onMouseEnter={(e) => { if (!aiLoading) e.currentTarget.style.backgroundColor = C.dark; }}
-              onMouseLeave={(e) => { if (!aiLoading) e.currentTarget.style.backgroundColor = C.primary; }}
-              style={{ width: '100%', padding: '11px', backgroundColor: aiLoading ? '#9ca3af' : C.primary, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: aiLoading ? 'not-allowed' : 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'background 0.2s', boxShadow: aiLoading ? 'none' : '0 2px 8px rgba(8,131,149,0.25)' }}
-            >
-              {aiLoading ? (
-                <><Loader2 size={16} className="animate-spin" /> Processing...</>
-              ) : (
-                <><Sparkles size={16} />{viewingAI.AI_Predictions ? 'Regenerate AI Report' : 'Generate AI Report'}</>
-              )}
             </button>
           </div>
         </div>
@@ -931,12 +828,9 @@ function AssetsPage() {
               <div style={{ width: 40, height: 40, borderRadius: '10px', backgroundColor: C.ice, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <PackagePlus size={20} color={C.primary} />
               </div>
-              <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800', color: C.dark }}>
-                {editingAsset ? "Edit Asset" : "Add New Asset"}
-              </h2>
+              <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800', color: C.dark }}>{editingAsset ? "Edit Asset" : "Add New Asset"}</h2>
             </div>
 
-            {/* Basic Info */}
             <div style={{ backgroundColor: C.ice, borderRadius: '12px', padding: '1rem', marginBottom: '1rem' }}>
               <p style={{ margin: '0 0 0.875rem', fontSize: '11px', fontWeight: '800', color: C.dark, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Basic Information</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
@@ -969,7 +863,6 @@ function AssetsPage() {
               </div>
             </div>
 
-            {/* Financial Details */}
             <div style={{ backgroundColor: C.ice, borderRadius: '12px', padding: '1rem', marginBottom: '1.25rem' }}>
               <p style={{ margin: '0 0 0.875rem', fontSize: '11px', fontWeight: '800', color: '#065f46', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Financial Details</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
@@ -988,8 +881,7 @@ function AssetsPage() {
                       onChange={(e) => setNewAsset({ ...newAsset, Financial_Details: { ...newAsset.Financial_Details, [field.key]: e.target.value } })}
                       placeholder={field.placeholder}
                       onFocus={(e) => e.target.style.borderColor = C.primary}
-                      onBlur={(e) => e.target.style.borderColor = C.ice}
-                    />
+                      onBlur={(e) => e.target.style.borderColor = C.ice} />
                   </div>
                 ))}
                 <div>
@@ -1009,33 +901,23 @@ function AssetsPage() {
                     value={newAsset.Financial_Details.warranty || ""}
                     onChange={(e) => setNewAsset({ ...newAsset, Financial_Details: { ...newAsset.Financial_Details, warranty: e.target.value } })}
                     placeholder="e.g., 5"
-                    onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.ice}
-                  />
+                    onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = C.ice} />
                 </div>
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', flexDirection: isMobile ? 'column' : 'row' }}>
-              <button
-                onClick={() => { setShowAddModal(false); setEditingAsset(null); resetForm(); }}
+              <button onClick={() => { setShowAddModal(false); setEditingAsset(null); resetForm(); }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.ice}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
-                style={{ flex: 1, padding: '11px', backgroundColor: 'white', color: '#6b7280', border: '2px solid #e2e8f0', borderRadius: '10px', fontWeight: '600', cursor: 'pointer', fontSize: '14px', transition: 'background 0.15s' }}
-              >
+                style={{ flex: 1, padding: '11px', backgroundColor: 'white', color: '#6b7280', border: '2px solid #e2e8f0', borderRadius: '10px', fontWeight: '600', cursor: 'pointer', fontSize: '14px', transition: 'background 0.15s' }}>
                 Cancel
               </button>
-              <button
-                onClick={editingAsset ? handleUpdateAsset : handleAddAsset}
-                disabled={saving}
+              <button onClick={editingAsset ? handleUpdateAsset : handleAddAsset} disabled={saving}
                 onMouseEnter={(e) => { if (!saving) e.currentTarget.style.backgroundColor = C.dark; }}
                 onMouseLeave={(e) => { if (!saving) e.currentTarget.style.backgroundColor = C.primary; }}
-                style={{ flex: 1, padding: '11px', backgroundColor: saving ? '#9ca3af' : C.primary, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: saving ? 'not-allowed' : 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'background 0.2s', boxShadow: saving ? 'none' : '0 2px 8px rgba(8,131,149,0.25)' }}
-              >
-                {saving ? (
-                  <><Loader2 size={16} className="animate-spin" />{editingAsset ? "Updating..." : "Adding..."}</>
-                ) : (
-                  editingAsset ? "Update Asset" : "Add Asset"
-                )}
+                style={{ flex: 1, padding: '11px', backgroundColor: saving ? '#9ca3af' : C.primary, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: saving ? 'not-allowed' : 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'background 0.2s', boxShadow: saving ? 'none' : '0 2px 8px rgba(8,131,149,0.25)' }}>
+                {saving ? (<><Loader2 size={16} className="animate-spin" />{editingAsset ? "Updating..." : "Adding..."}</>) : (editingAsset ? "Update Asset" : "Add Asset")}
               </button>
             </div>
           </div>
