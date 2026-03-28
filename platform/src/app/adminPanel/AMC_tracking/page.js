@@ -381,31 +381,119 @@ export default function AMCDashboard() {
           </div>
         )}
 
-        {/* ── Expiry Alerts ── */}
-        {alertList.length > 0 && (
-          <div className="fade-in" style={{ backgroundColor:"#fffbeb", borderRadius:16, border:"1px solid #fde68a", marginBottom:"1.5rem", overflow:"hidden", boxShadow:"0 4px 6px rgba(8,131,149,0.06)", animationDelay:".1s" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:10, padding: isMobile?"12px 16px":"14px 20px", borderBottom:"1px solid #fde68a", backgroundColor:"#fef9c3" }}>
-              <Icon.Bell />
-              <span style={{ fontSize:15, fontWeight:700, color:"#92400e" }}>Warranty Expiry Alerts</span>
-              <span style={{ marginLeft:"auto", background:"#fde68a", color:"#92400e", fontSize:11, fontWeight:700, padding:"2px 10px", borderRadius:99 }}>{alertList.length}</span>
+{/* ── Expiry Alerts ── */}
+
+{alertList.length > 0 && (
+  <div className="fade-in" style={{
+    borderRadius: 16,
+    border: "1px solid rgba(8,131,149,0.15)",
+    marginBottom: "1.5rem",
+    overflow: "hidden",
+    backgroundColor: "white",
+    boxShadow: "0 4px 6px -1px rgba(8,131,149,0.08)",
+    animationDelay: ".1s",
+  }}>
+
+    {/* Header strip */}
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10,
+      padding: isMobile ? "12px 16px" : "14px 22px",
+      background: "linear-gradient(135deg,#088395,#176B87)",
+      borderBottom: "none",
+    }}>
+      <div style={{
+        width: 32, height: 32, borderRadius: 8,
+        background: "rgba(255,255,255,0.15)",
+        display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
+        flexShrink: 0,
+      }}>
+        <Icon.Bell />
+      </div>
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>Warranty Expiry Alerts</div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", marginTop: 1 }}>
+          Assets expiring within 60 days
+        </div>
+      </div>
+      <span style={{
+        marginLeft: "auto", background: "rgba(255,255,255,0.2)",
+        color: "#fff", fontSize: 12, fontWeight: 700,
+        padding: "3px 12px", borderRadius: 99,
+        border: "1px solid rgba(255,255,255,0.3)",
+      }}>
+        {alertList.length} alert{alertList.length !== 1 ? "s" : ""}
+      </span>
+    </div>
+
+    {/* Alert rows */}
+    {alertList.map((a, i) => {
+      const isCritical = a.days <= 14;
+      return (
+        <div key={a._id} style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: isMobile ? "12px 16px" : "13px 22px",
+          borderBottom: i < alertList.length - 1 ? "1px solid #EBF4F6" : "none",
+          gap: 12, flexWrap: "wrap",
+          backgroundColor: i % 2 === 0 ? "#fff" : "#F8FDFE",
+          transition: "background 0.15s",
+        }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = "#EBF4F6"}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = i % 2 === 0 ? "#fff" : "#F8FDFE"}
+        >
+          {/* Left: icon + asset info */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", minWidth: 0 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 9, flexShrink: 0,
+              background: isCritical ? "#FEE2E2" : "#FEF9C3",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 15, color: isCritical ? "#dc2626" : "#d97706",
+            }}>
+              ⚠
             </div>
-            {alertList.map((a, i) => (
-              <div key={a._id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding: isMobile?"12px 16px":"12px 20px", borderBottom: i < alertList.length-1 ? "1px solid #fef3c7" : "none", gap:8, flexWrap:"wrap" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
-                  <span style={{ fontSize:16 }}>⚠</span>
-                  <span style={{ fontWeight:700, color:"#176B87", fontSize:14 }}>{a.assetId}</span>
-                  <span style={{ color:"#d1d5db" }}>·</span>
-                  <span style={{ color:"#6b7280", fontSize:13 }}>{a.assetName}</span>
-                  <span style={{ color:"#d1d5db" }}>·</span>
-                  <span style={{ color:"#9ca3af", fontSize:12 }}>Expires {fmtDate(a.warrantyEnd)}</span>
-                </div>
-                <span style={{ fontSize:11, fontWeight:700, padding:"4px 12px", borderRadius:99, background: a.days <= 14 ? "#fee2e2" : "#fef3c7", color: a.days <= 14 ? "#991b1b" : "#92400e", whiteSpace:"nowrap" }}>
-                  {a.days}d remaining
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span style={{
+                  fontFamily: "monospace", fontWeight: 700,
+                  color: "#088395", fontSize: 13,
+                  background: "#EBF4F6", padding: "1px 8px", borderRadius: 6,
+                }}>
+                  {a.assetId}
                 </span>
+                <span style={{ fontWeight: 600, color: "#176B87", fontSize: 14 }}>{a.assetName}</span>
               </div>
-            ))}
+              <div style={{
+                display: "flex", alignItems: "center", gap: 5, marginTop: 3,
+                fontSize: 12, color: "#94a3b8",
+              }}>
+                <Icon.Calendar />
+                Expires {fmtDate(a.warrantyEnd)}
+              </div>
+            </div>
           </div>
-        )}
+
+          {/* Right: days remaining badge */}
+          <div style={{ flexShrink: 0 }}>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 5,
+              fontSize: 12, fontWeight: 700,
+              padding: "5px 14px", borderRadius: 99,
+              background: isCritical ? "#FEE2E2" : "#FEF9C3",
+              color: isCritical ? "#991b1b" : "#92400e",
+              border: `1px solid ${isCritical ? "#FCA5A5" : "#FDE047"}`,
+            }}>
+              <span style={{
+                width: 6, height: 6, borderRadius: "50%",
+                background: isCritical ? "#EF4444" : "#EAB308",
+                display: "inline-block",
+              }} />
+              {a.days}d remaining
+            </span>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+)}
 
         {/* ── Warranty / Contracts Table ── */}
         <div className="fade-in" style={{ ...card, animationDelay:".12s" }}>

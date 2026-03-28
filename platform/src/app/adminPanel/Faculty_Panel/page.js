@@ -18,6 +18,7 @@ export default function FacultyManagement() {
   const [isMobile, setIsMobile] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
   const labAccessDropdownRef = useRef(null);
   const labInchargeDropdownRef = useRef(null);
   const [newFaculty, setNewFaculty] = useState({
@@ -29,6 +30,11 @@ export default function FacultyManagement() {
     labAccess: [],
     labIncharge: [],
   });
+
+  const showToast = (type, msg) => {
+    setToast({ type, msg });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -104,7 +110,6 @@ export default function FacultyManagement() {
     });
   };
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (labAccessDropdownRef.current && !labAccessDropdownRef.current.contains(event.target)) {
@@ -128,7 +133,6 @@ export default function FacultyManagement() {
     return password;
   };
 
-  // ── Lab Access handlers ──
   const handleLabAccessSelect = (labObj) => {
     setNewFaculty((prev) => {
       const alreadySelected = prev.labAccess.some(l => l.Lab_id === labObj.Lab_id);
@@ -148,7 +152,6 @@ export default function FacultyManagement() {
     }));
   };
 
-  // ── Lab Incharge handlers ──
   const handleLabInchargeSelect = (labObj) => {
     setNewFaculty((prev) => {
       const alreadySelected = prev.labIncharge.some(l => l.Lab_id === labObj.Lab_id);
@@ -170,7 +173,7 @@ export default function FacultyManagement() {
 
   const handleAddFaculty = async () => {
     if (!newFaculty.name || !newFaculty.email || !newFaculty.password) {
-      alert("Please fill all required fields");
+      showToast("warning", "Please fill all required fields");
       return;
     }
 
@@ -192,11 +195,14 @@ export default function FacultyManagement() {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) { alert(data.error || "Something went wrong!"); return; }
+      if (!res.ok) {
+        showToast("error", data.error || "Something went wrong!");
+        return;
+      }
 
-       // await emailjs.send(
-      //   "service_2xk0xdb",  
-      //   "template_mq4w3fc",    
+      // await emailjs.send(
+      //   "service_2xk0xdb",
+      //   "template_mq4w3fc",
       //   {
       //     to_name: newFaculty.name,
       //     to_email: newFaculty.email,
@@ -205,13 +211,13 @@ export default function FacultyManagement() {
       //   "JVeTTsN2NUeZ0UlPA"
       // );
 
-      alert("Faculty added successfully!");
+      showToast("success", "Faculty added successfully!");
       setShowAddModal(false);
       resetForm();
       await fetchFaculty();
     } catch (err) {
       console.error("Add Faculty Error:", err);
-      alert("Something went wrong while adding Faculty.");
+      showToast("error", "Something went wrong while adding faculty.");
     } finally {
       setSaving(false);
     }
@@ -220,7 +226,6 @@ export default function FacultyManagement() {
   const handleEditFaculty = (user) => {
     setEditingFaculty(user);
     setShowAddModal(true);
-    // Normalize labAccess/labIncharge to array of {Lab, Lab_id} objects
     setNewFaculty({
       ...user,
       labAccess: Array.isArray(user.labAccess)
@@ -234,7 +239,7 @@ export default function FacultyManagement() {
 
   const handleUpdateFaculty = async () => {
     if (!newFaculty.name || !newFaculty.email) {
-      alert("Please fill all required fields");
+      showToast("warning", "Please fill all required fields");
       return;
     }
 
@@ -256,11 +261,14 @@ export default function FacultyManagement() {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) { alert(data.error || "Something went wrong!"); return; }
+      if (!res.ok) {
+        showToast("error", data.error || "Something went wrong!");
+        return;
+      }
 
-       // await emailjs.send(
-      //   "service_2xk0xdb",  
-      //   "template_mq4w3fc",    
+      // await emailjs.send(
+      //   "service_2xk0xdb",
+      //   "template_mq4w3fc",
       //   {
       //     to_name: newFaculty.name,
       //     to_email: newFaculty.email,
@@ -269,14 +277,14 @@ export default function FacultyManagement() {
       //   "JVeTTsN2NUeZ0UlPA"
       // );
 
-      alert("Faculty updated successfully!");
+      showToast("success", "Faculty updated successfully!");
       setShowAddModal(false);
       setEditingFaculty(null);
       resetForm();
       await fetchFaculty();
     } catch (err) {
       console.error("Edit Faculty Error:", err);
-      alert("Something went wrong while editing Faculty.");
+      showToast("error", "Something went wrong while editing faculty.");
     } finally {
       setSaving(false);
     }
@@ -309,7 +317,6 @@ export default function FacultyManagement() {
 
   const selectStyle = { ...inputStyle, cursor: 'pointer', appearance: 'none' };
 
-  // Reusable multi-select lab dropdown renderer
   const renderLabDropdown = ({
     label, selected, onSelect, onRemove,
     isOpen, setIsOpen, dropdownRef, placeholder,
@@ -369,7 +376,6 @@ export default function FacultyManagement() {
         )}
       </div>
 
-      {/* Summary */}
       <div style={{ marginTop: '8px', padding: '8px 14px', backgroundColor: C.ice, borderRadius: '8px', fontSize: '13px', color: C.dark, fontWeight: '500' }}>
         <strong>Selected:</strong>{' '}
         {selected.length > 0
@@ -394,8 +400,62 @@ export default function FacultyManagement() {
     );
   }
 
+  const toastColors = {
+    success: { bar: '#22C55E', border: '#86EFAC', iconBg: '#DCFCE7', titleColor: '#166534', icon: '✓' },
+    error:   { bar: '#EF4444', border: '#FCA5A5', iconBg: '#FEE2E2', titleColor: '#991B1B', icon: '✕' },
+    warning: { bar: '#EAB308', border: '#FDE047', iconBg: '#FEF9C3', titleColor: '#854D0E', icon: '⚠' },
+  };
+
   return (
     <div style={containerStyle}>
+
+      <style>{`
+        @keyframes slideInRight {
+          from { opacity: 0; transform: translateX(40px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
+
+      {/* ── Toast Notification ── */}
+      {toast && (() => {
+        const t = toastColors[toast.type];
+        return (
+          <div style={{
+            position: 'fixed', top: '1.25rem', right: '1.25rem',
+            zIndex: 9999, minWidth: 280, maxWidth: 380,
+            backgroundColor: 'white', borderRadius: 14,
+            boxShadow: '0 8px 24px rgba(8,131,149,0.18)',
+            border: `1.5px solid ${t.border}`,
+            overflow: 'hidden',
+            animation: 'slideInRight 0.3s ease',
+          }}>
+            <div style={{ height: 4, backgroundColor: t.bar }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 9, flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                backgroundColor: t.iconBg, fontSize: 16, color: t.titleColor, fontWeight: 700,
+              }}>
+                {t.icon}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: t.titleColor }}>
+                  {toast.type === 'success' ? 'Success' : toast.type === 'error' ? 'Error' : 'Warning'}
+                </div>
+                <div style={{ fontSize: 13, color: '#374151', marginTop: 2 }}>{toast.msg}</div>
+              </div>
+              <button
+                onClick={() => setToast(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 4, display: 'flex', borderRadius: 6 }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Header ── */}
       <div style={{
@@ -441,7 +501,6 @@ export default function FacultyManagement() {
             }}>
               {/* Card Header */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-                {/* Left: avatar + info */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 220 }}>
                   <div style={{ width: 48, height: 48, borderRadius: '10px', backgroundColor: C.ice, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                     {member.profileImage
@@ -454,29 +513,24 @@ export default function FacultyManagement() {
                   </div>
                 </div>
 
-                {/* Right: designation + labs pills + status + actions */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                  {/* Designation + Department */}
                   <div style={{ textAlign: 'right' }}>
                     <p style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: C.dark }}>{member.designation || 'N/A'}</p>
                     <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>{member.department || 'No Department'}</p>
                   </div>
 
-                  {/* Lab Access pill */}
                   <span style={{ backgroundColor: C.ice, color: C.dark, padding: '0.25rem 0.875rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700' }}>
                     {member.labAccess && member.labAccess.length > 0
                       ? `${member.labAccess.length} Lab${member.labAccess.length !== 1 ? 's' : ''}`
                       : 'No Labs'}
                   </span>
 
-                  {/* Lab Incharge pill */}
                   <span style={{ backgroundColor: C.mint, color: '#065f46', padding: '0.25rem 0.875rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700' }}>
                     {member.labIncharge && member.labIncharge.length > 0
                       ? `${member.labIncharge.length} Incharge`
                       : 'No Incharge'}
                   </span>
 
-                  {/* Status badge */}
                   <span style={{
                     padding: '0.3rem 0.875rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700',
                     display: 'inline-flex', alignItems: 'center', gap: '5px',
@@ -492,7 +546,6 @@ export default function FacultyManagement() {
                     {(member?.status || "").charAt(0).toUpperCase() + (member?.status || "").slice(1)}
                   </span>
 
-                  {/* Action buttons */}
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button onClick={() => handleEditFaculty(member)}
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#d1fae5'}
@@ -518,7 +571,6 @@ export default function FacultyManagement() {
               {/* Expanded content */}
               {expandedCard === member.id && (
                 <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: `1px solid ${C.ice}` }}>
-                  {/* Info blocks */}
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.875rem', marginBottom: '1rem' }}>
                     {[
                       { icon: <Phone size={14} color={C.primary} />, label: 'Phone', value: member.phoneNumber || 'Not provided' },
@@ -535,7 +587,6 @@ export default function FacultyManagement() {
                     ))}
                   </div>
 
-                  {/* Lab Access section */}
                   <div style={{ backgroundColor: C.ice, borderRadius: '10px', padding: '1rem', marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                       <FlaskConical size={14} color={C.primary} />
@@ -560,7 +611,6 @@ export default function FacultyManagement() {
                     </div>
                   </div>
 
-                  {/* Lab Incharge section */}
                   <div style={{ backgroundColor: C.mint, borderRadius: '10px', padding: '1rem', marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                       <ShieldCheck size={14} color="#065f46" />
@@ -606,7 +656,6 @@ export default function FacultyManagement() {
             style={{ backgroundColor: 'white', borderRadius: '16px', padding: isMobile ? '0 1.25rem 1.25rem' : '0 2rem 1.5rem', width: isMobile ? '100%' : '90%', maxWidth: '580px', maxHeight: isMobile ? '95vh' : '92vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(8,131,149,0.2)' }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Sticky modal header */}
             <div style={{ position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 10, display: 'flex', alignItems: 'center', gap: '0.75rem', padding: isMobile ? '1.25rem 0 1rem' : '1.5rem 0 1rem', borderBottom: `2px solid ${C.ice}`, marginBottom: '1.25rem' }}>
               <div style={{ width: 40, height: 40, borderRadius: '10px', backgroundColor: C.ice, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <GraduationCap size={20} color={C.primary} />
@@ -616,21 +665,18 @@ export default function FacultyManagement() {
               </h2>
             </div>
 
-            {/* Name */}
             <div style={{ marginBottom: '1rem' }}>
               <label style={labelStyle}>Name</label>
               <input type="text" style={inputStyle} value={newFaculty.name} onChange={(e) => setNewFaculty({ ...newFaculty, name: e.target.value })} placeholder="Enter full name"
                 onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'} />
             </div>
 
-            {/* Email */}
             <div style={{ marginBottom: '1rem' }}>
               <label style={labelStyle}>Email</label>
               <input type="email" style={inputStyle} value={newFaculty.email} onChange={(e) => setNewFaculty({ ...newFaculty, email: e.target.value })} placeholder="Enter email"
                 onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'} />
             </div>
 
-            {/* Password */}
             <div style={{ marginBottom: '1rem' }}>
               <label style={labelStyle}>Password</label>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -650,7 +696,6 @@ export default function FacultyManagement() {
               </div>
             </div>
 
-            {/* Department */}
             <div style={{ marginBottom: '1rem' }}>
               <label style={labelStyle}>Department</label>
               <select style={selectStyle} value={newFaculty.department} onChange={(e) => setNewFaculty({ ...newFaculty, department: e.target.value })}
@@ -662,14 +707,12 @@ export default function FacultyManagement() {
               </select>
             </div>
 
-            {/* Designation */}
             <div style={{ marginBottom: '1rem' }}>
               <label style={labelStyle}>Designation</label>
               <input type="text" style={inputStyle} value={newFaculty.designation} onChange={(e) => setNewFaculty({ ...newFaculty, designation: e.target.value })} placeholder="e.g., Professor"
                 onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'} />
             </div>
 
-            {/* Lab Access Dropdown */}
             {renderLabDropdown({
               label: "Lab Access",
               selected: newFaculty.labAccess,
@@ -681,7 +724,6 @@ export default function FacultyManagement() {
               placeholder: "Select lab access",
             })}
 
-            {/* Lab Incharge Dropdown */}
             {renderLabDropdown({
               label: "Lab Incharge",
               selected: newFaculty.labIncharge,
@@ -693,7 +735,6 @@ export default function FacultyManagement() {
               placeholder: "Select incharge labs",
             })}
 
-            {/* Modal actions */}
             <div style={{ display: 'flex', gap: '12px', flexDirection: isMobile ? 'column' : 'row' }}>
               <button
                 onClick={() => { setShowAddModal(false); setEditingFaculty(null); setIsLabAccessDropdownOpen(false); setIsLabInchargeDropdownOpen(false); resetForm(); }}
