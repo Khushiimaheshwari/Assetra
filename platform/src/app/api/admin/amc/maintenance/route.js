@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { connectDB } from "../../../utils/db";
 import AMCMaintenance from "../../../../../models/AMC_Maintenance";
 import Assets from "../../../../../models/Asset";
+import appEventEmitter, {
+  MAINTENANCE_EVENTS,
+} from "../../../../../events/appEventEmitter";
+import { registerMaintenanceListeners } from "../../../../../events/maintenanceEventListener";
 
 export async function GET() {
   try {
@@ -112,6 +116,15 @@ export async function POST(req) {
       Cost: cost ? Number(cost) : 0,
       Status: status || "Scheduled",
       Notes: notes || "",
+    });
+
+    registerMaintenanceListeners();
+    appEventEmitter.emit(MAINTENANCE_EVENTS.CREATED, {
+      maintenanceId: record._id.toString(),
+      assetName: record.Asset_Name,
+      scheduledDate: record.Scheduled_Date,
+      status: record.Status,
+      serviceOfficerName: record.Service_Officer_Name,
     });
 
     return NextResponse.json({ maintenance: record }, { status: 201 });

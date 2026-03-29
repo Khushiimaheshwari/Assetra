@@ -34,6 +34,8 @@ const AssetSchema = new mongoose.Schema({
       Status: { type: String, enum: ["pending", "resolved by technician", "approved"], default: "pending" },
       Assigned_To: { type: mongoose.Schema.Types.ObjectId, ref: "LabTechnician" },
       ResolveDescription: { type: String, default: "" },
+      Reported_At: { type: Date, default: Date.now },
+      Last_Overdue_Notification_At: { type: Date, default: null },
     }
   ], 
   Movement_History: [
