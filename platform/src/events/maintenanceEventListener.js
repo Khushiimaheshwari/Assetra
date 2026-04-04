@@ -17,13 +17,15 @@ function formatDate(d) {
   }
 }
 
-async function notifyAllAdmins({ title, message, emailSubject }) {
+async function notifyAllAdmins({ title, message, emailSubject, maintenanceId }) {
   await connectDB();
   const admins = await User.find({ Role: "admin" }).select("_id Email Name").lean();
   if (!admins.length) return;
 
+  const links = maintenanceId ? { maintenanceId } : {};
+
   const tasks = admins.flatMap((admin) => [
-    sendInAppNotification(admin._id, title, message, "maintenance"),
+    sendInAppNotification(admin._id, title, message, "maintenance", links),
     sendEmailNotification(admin.Email, emailSubject, message),
   ]);
 
@@ -51,7 +53,12 @@ function onMaintenanceCreated(payload) {
 
   const emailSubject = `[Assetra] ${title}`;
 
-  return notifyAllAdmins({ title, message, emailSubject }).catch((err) => {
+  return notifyAllAdmins({
+    title,
+    message,
+    emailSubject,
+    maintenanceId: maintenanceId,
+  }).catch((err) => {
     console.error("[maintenanceEventListener] MAINTENANCE_CREATED handler error:", err);
   });
 }
@@ -73,7 +80,12 @@ function onMaintenanceStatusChanged(payload) {
 
   const emailSubject = `[Assetra] ${title}`;
 
-  return notifyAllAdmins({ title, message, emailSubject }).catch((err) => {
+  return notifyAllAdmins({
+    title,
+    message,
+    emailSubject,
+    maintenanceId: maintenanceId,
+  }).catch((err) => {
     console.error(
       "[maintenanceEventListener] MAINTENANCE_STATUS_CHANGED handler error:",
       err

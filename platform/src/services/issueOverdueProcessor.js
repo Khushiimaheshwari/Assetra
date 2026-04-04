@@ -75,7 +75,11 @@ async function notifyOverdueForIssue(asset, issue) {
     if (!id || seen.has(id)) continue;
     seen.add(id);
     const email = t.email ?? (await emailForUser(t.userId));
-    await notifyUserInAppAndEmail(t.userId, email, title, message, ISSUE);
+    await notifyUserInAppAndEmail(t.userId, email, title, message, ISSUE, {
+      labId: asset.Lab_Name,
+      pcId: asset.PC_Name,
+      hardwareAssetId: asset._id,
+    });
   }
 }
 

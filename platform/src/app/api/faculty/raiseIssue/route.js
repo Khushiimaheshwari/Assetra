@@ -73,6 +73,8 @@ export async function POST(req) {
     registerIssueListeners();
     appEventEmitter.emit(ISSUE_EVENTS.CREATED, {
       assetId: asset._id.toString(),
+      labId: asset.Lab_Name?.toString?.() || String(asset.Lab_Name),
+      pcId: asset.PC_Name?.toString?.() || null,
       issueId: newIssue._id.toString(),
       assetName: asset.Asset_Name,
       issueDescription: description,

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import AdminSidebar from "@/app/adminPanel/components/Admin_Sidebar";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -59,6 +60,31 @@ function StatusBadge({ label, map }) {
       {label}
     </span>
   );
+}
+
+/** Scrolls to maintenance row when URL has ?m=<recordId> (e.g. from notification bell). */
+function ScrollToMaintenanceRow({ maintenance, loadingM }) {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const mid = searchParams.get("m");
+    if (!mid || loadingM || !maintenance?.length) return;
+
+    const raf = requestAnimationFrame(() => {
+      const el = document.getElementById(`maintenance-row-${mid}`);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.style.transition = "box-shadow 0.25s ease";
+      el.style.boxShadow = "0 0 0 3px rgba(8, 131, 149, 0.55)";
+      setTimeout(() => {
+        el.style.boxShadow = "";
+      }, 2600);
+    });
+
+    return () => cancelAnimationFrame(raf);
+  }, [searchParams, loadingM, maintenance]);
+
+  return null;
 }
 
 // ─── InputField ───────────────────────────────────────────────────────────────
@@ -282,6 +308,9 @@ export default function AMCDashboard() {
 
   return (
     <>
+      <Suspense fallback={null}>
+        <ScrollToMaintenanceRow maintenance={maintenance} loadingM={loadingM} />
+      </Suspense>
       <AdminSidebar />
 
       <style>{`
@@ -584,7 +613,7 @@ export default function AMCDashboard() {
                     </td></tr>
                   )
                   : maintenance.map((m, i) => (
-                    <tr key={m._id} className="row-hover" style={{ backgroundColor: i%2===0?"#fff":"#EBF4F6", transition:"background 0.15s" }}>
+                    <tr key={m._id} id={m._id ? `maintenance-row-${m._id}` : undefined} className="row-hover" style={{ backgroundColor: i%2===0?"#fff":"#EBF4F6", transition:"background 0.15s" }}>
                       <td style={{ ...td, fontFamily:"monospace", fontWeight:700, color:"#088395" }}>{m.assetId}</td>
                       <td style={{ ...td, fontWeight:600 }}>{m.assetName}</td>
                       <td style={td}><span style={{ display:"inline-flex", alignItems:"center", gap:5 }}><Icon.Calendar /> {fmtDate(m.scheduledDate)}</span></td>

@@ -63,9 +63,21 @@ export async function POST(req) {
       return NextResponse.json({ error: "Asset not found" }, { status: 404 });
     }
 
+    const labId =
+      assetBefore.Lab_Name?._id?.toString?.() ||
+      assetBefore.Lab_Name?.toString?.() ||
+      String(assetBefore.Lab_Name || "");
+
+    const pcId =
+      assetBefore.PC_Name?._id?.toString?.() ||
+      assetBefore.PC_Name?.toString?.() ||
+      null;
+
     registerIssueListeners();
     appEventEmitter.emit(ISSUE_EVENTS.PENDING_TO_RESOLVED, {
       assetId: assetId.toString(),
+      labId,
+      pcId,
       issueId: issueId.toString(),
       assetName: updatedAsset.Asset_Name,
       facultyUserId,

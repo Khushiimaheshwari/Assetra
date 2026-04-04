@@ -17,6 +17,27 @@ const NotificationSchema = new mongoose.Schema(
     },
     isRead: { type: Boolean, default: false, index: true },
     createdAt: { type: Date, default: Date.now },
+    linkLabId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Lab",
+      default: null,
+    },
+    /** Hardware asset document id (optional; not used for in-app URLs). */
+    linkAssetId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Assets",
+      default: null,
+    },
+    /** PC document id — used in /lab/[labId]/asset/[pcId] (param is PC, not hardware asset). */
+    linkPcId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PCs",
+      default: null,
+    },
+    linkMaintenanceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+    },
   },
   { versionKey: false }
 );

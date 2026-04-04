@@ -16,6 +16,8 @@ export async function onIssueCreated(payload) {
     issueDescription,
     issueId,
     assetId,
+    labId,
+    pcId,
   } = payload;
 
   if (!labTechnicianUserId) return;
@@ -30,12 +32,18 @@ export async function onIssueCreated(payload) {
     `Asset ID: ${assetId}`,
   ].join("\n");
 
+  const links =
+    labId && pcId
+      ? { labId, pcId, hardwareAssetId: assetId }
+      : {};
+
   await notifyUserInAppAndEmail(
     labTechnicianUserId,
     email,
     title,
     message,
-    ISSUE
+    ISSUE,
+    links
   );
 }
 
@@ -46,6 +54,8 @@ export async function onIssuePendingToResolved(payload) {
     resolveDescription,
     issueId,
     assetId,
+    labId,
+    pcId,
   } = payload;
 
   if (!facultyUserId) return;
@@ -60,11 +70,30 @@ export async function onIssuePendingToResolved(payload) {
     `Asset ID: ${assetId}`,
   ].join("\n");
 
-  await notifyUserInAppAndEmail(facultyUserId, email, title, message, ISSUE);
+  const links =
+    labId && pcId
+      ? { labId, pcId, hardwareAssetId: assetId }
+      : {};
+
+  await notifyUserInAppAndEmail(
+    facultyUserId,
+    email,
+    title,
+    message,
+    ISSUE,
+    links
+  );
 }
 
 export async function onIssueResolvedToApproved(payload) {
-  const { labTechnicianUserId, assetName, issueId, assetId } = payload;
+  const {
+    labTechnicianUserId,
+    assetName,
+    issueId,
+    assetId,
+    labId,
+    pcId,
+  } = payload;
 
   if (!labTechnicianUserId) return;
 
@@ -77,11 +106,17 @@ export async function onIssueResolvedToApproved(payload) {
     `Asset ID: ${assetId}`,
   ].join("\n");
 
+  const links =
+    labId && pcId
+      ? { labId, pcId, hardwareAssetId: assetId }
+      : {};
+
   await notifyUserInAppAndEmail(
     labTechnicianUserId,
     email,
     title,
     message,
-    ISSUE
+    ISSUE,
+    links
   );
 }
