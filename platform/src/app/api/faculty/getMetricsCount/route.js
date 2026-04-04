@@ -1,31 +1,18 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "../../../../app/api/utils/db";
 import Lab from "../../../../models/Labs";
-import Asset from "../../../../models/Asset";
+import PCs from "../../../../models/Lab_PCs";
 import Faculty from "../../../../models/Faculty";
+import { User } from "../../../../models/User";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/authOptions";
-import { cookies } from "next/headers";
- 
-async function callInternal(url) {
-  const cookieHeader = cookies().toString();
-
-  const res = await fetch(url, {
-    method: "GET",
-    headers: {
-      Cookie: cookieHeader
-    },
-    cache: "no-store"
-  });
-
-  return res.json();
-}
 
 export async function GET(req) {
   try {
     await connectDB();
 
     const session = await getServerSession(authOptions);
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -34,50 +21,61 @@ export async function GET(req) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const faculty = await Faculty.findOne({ Email: session.user.email }).lean();
+    const user = await User.findOne({ Email: session.user.email });
+
+    const faculty = await Faculty.findOne({ UserDetails: user._id })
+      .populate("Labs")
+      .populate("Incharge_Labs")
+      .lean();
+
     if (!faculty) {
       return NextResponse.json({ error: "Faculty not found" }, { status: 404 });
     }
 
-    const baseUrl = req.nextUrl.origin;
+    const normalLabs = faculty.Labs || [];
+    const inchargeLabs = faculty.Incharge_Labs || [];
 
-    const labResponse = await callInternal(`${baseUrl}/api/faculty/getLabs`);
-    const labs = labResponse.labs || [];
+    // ✅ Merge labs
+    const labsMap = new Map();
+    [...normalLabs, ...inchargeLabs].forEach((lab) => {
+      labsMap.set(lab._id.toString(), lab);
+    });
 
-    const assetsResponse = await callInternal(`${baseUrl}/api/faculty/getlabPCs`);
-    const labAssets = assetsResponse.pcs || [];
+    const labs = Array.from(labsMap.values());
 
-    const totalLabAssets = labAssets.reduce((total, lab) => {
-      const pcAssetCount = lab.pcs.reduce((sum, pc) => {
-        const assetCount = Array.isArray(pc.Assets) ? pc.Assets.length : 0;
-        return sum + assetCount;
-      }, 0);
+    // ✅ Metrics
+    let totalLabAssets = 0;
 
-      return total + pcAssetCount;
-    }, 0);
+    for (const lab of labs) {
+      const pcs = await PCs.find({ Lab: lab._id }).select("Assets").lean();
 
+      pcs.forEach((pc) => {
+        if (Array.isArray(pc.Assets)) {
+          totalLabAssets += pc.Assets.length;
+        }
+      });
+    }
 
     const metrics = {
       totalLabs: labs.length,
       totalLabAssets,
     };
 
-    // ASSET DISTRIBUTION CHART
+    // ✅ Category
     let technical = 0;
     let nonTechnical = 0;
 
-    labs.forEach((item) => {
-      const name = item.lab?.Lab_Name?.toLowerCase() || item.Lab_Name?.toLowerCase() || "";
+    labs.forEach((lab) => {
+      const name = lab.Lab_Name.toLowerCase();
 
       if (
         name.includes("computer science") ||
         name.includes("electronics") ||
-        name.includes("mechanics") ||
-        name.includes("technical")
+        name.includes("mechanics")
       ) {
-        technical += 1;
+        technical++;
       } else {
-        nonTechnical += 1;
+        nonTechnical++;
       }
     });
 
@@ -86,7 +84,7 @@ export async function GET(req) {
       { name: "Non-Technical", value: nonTechnical, color: "#3b82f6" }
     ];
 
-    // LAB DISTRIBUTION CHART
+    // ✅ Lab Distribution
     const labDistributionMap = {
       "Computer Science": 0,
       Chemistry: 0,
@@ -95,41 +93,38 @@ export async function GET(req) {
       Others: 0
     };
 
-    labs.forEach((item) => {
-      const name = item.lab?.Lab_Name?.toLowerCase() || item.Lab_Name?.toLowerCase() || "";
+    labs.forEach((lab) => {
+      const name = lab.Lab_Name.toLowerCase();
 
-      if (name.includes("computer science")) labDistributionMap["Computer Science"] += 1;
-      else if (name.includes("chemistry")) labDistributionMap["Chemistry"] += 1;
-      else if (name.includes("mechanics")) labDistributionMap["Mechanics"] += 1;
-      else if (name.includes("electronics")) labDistributionMap["Electronics"] += 1;
-      else labDistributionMap["Others"] += 1;
+      if (name.includes("computer science")) labDistributionMap["Computer Science"]++;
+      else if (name.includes("chemistry")) labDistributionMap["Chemistry"]++;
+      else if (name.includes("mechanics")) labDistributionMap["Mechanics"]++;
+      else if (name.includes("electronics")) labDistributionMap["Electronics"]++;
+      else labDistributionMap["Others"]++;
     });
 
     const colors = ["#10b981", "#3b82f6", "#f59e0b", "#8b5cf6", "#ec4899"];
 
     const labDistributionData = Object.entries(labDistributionMap).map(
-      ([name, value], index) => ({
-        name,
-        value,
-        color: colors[index]
-      })
+      ([name, value], index) => ({ name, value, color: colors[index] })
     );
 
-    return NextResponse.json(
-      {
-        facultyName: faculty.Name,
-        facultyEmail: faculty.Email,
-        metrics,
-        labs,
-        labAssets,
-        assetCategoryData,
-        labDistributionData
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({
+      facultyName: user.Name,
+      facultyEmail: user.Email,
+      metrics,
+      labs,
+      inchargeLabs, // ✅ added
+      assetCategoryData,
+      labDistributionData
+    });
 
   } catch (error) {
-    console.error("Error fetching dashboard data:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error("Error:", error);
+
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

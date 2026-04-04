@@ -1,6 +1,6 @@
 "use client"
 import React, { useEffect, useState } from 'react';
-import { Loader2, Cpu } from 'lucide-react';
+import { Loader2, Cpu, IndianRupee } from 'lucide-react';
 import { useParams } from "next/navigation";
 
 function AssetsPage() {
@@ -10,6 +10,7 @@ function AssetsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedType, setSelectedType] = useState("All");
   const [viewingQR, setViewingQR] = useState(null);
+  const [viewingFinancial, setViewingFinancial] = useState(null);
   const [editingAsset, setEditingAsset] = useState(null);
   const [isMobile, setIsMobile] = useState(false); 
   const [loading, setLoading] = useState(true);
@@ -1054,7 +1055,17 @@ function AssetsPage() {
                     onClick={() => setViewingQR(asset)}
                     title="Click to view QR code"
                   >
-                    <img src={asset.QR_Code} alt="QR Code" style={styles.qrImage} />
+                  <img src={asset.QR_Code} alt="QR Code" style={styles.qrImage} />
+                  </div>
+                </div>
+
+                <div style={styles.assetDetail}>
+                  <div style={styles.detailLabel}><IndianRupee size={14} color={C.primary} />Financial</div>
+                  <div onClick={() => setViewingFinancial(asset)}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.primary; e.currentTarget.style.color = 'white'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.ice; e.currentTarget.style.color = C.primary; }}
+                    style={{ padding: '3px 12px', backgroundColor: C.ice, borderRadius: '20px', fontSize: '12px', fontWeight: '700', color: C.primary, cursor: 'pointer', transition: 'all 0.2s' }}>
+                    View Details
                   </div>
                 </div>
 
@@ -1092,9 +1103,51 @@ function AssetsPage() {
         )}
       </div>
 
+      {/* ── Financial Details Modal ── */}
+      {viewingFinancial && (
+        <div style={styles.qrModal} onClick={() => setViewingFinancial(null)}>
+          <div style={styles.qrModalContent} onClick={(e) => e.stopPropagation()}>
+            <button
+              style={styles.closeButton}
+              onClick={() => setViewingFinancial(null)}
+              onMouseEnter={(e) => e.currentTarget.style.background = C.mint}
+              onMouseLeave={(e) => e.currentTarget.style.background = C.ice}
+            >
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
+              </svg>
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '1.25rem', paddingBottom: '16px', borderBottom: `2px solid ${C.mint}` }}>
+              <IndianRupee size={20} color={C.primary} />
+              <h3 style={styles.qrModalHeader}>Financial Details</h3>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem', maxHeight: '400px', overflowY: 'auto' }}>
+              {[
+                { label: 'Purchase Year', value: viewingFinancial.Financial_Details?.purchase_year || 'N/A' },
+                { label: 'Purchase Cost', value: viewingFinancial.Financial_Details?.purchase_cost || 'N/A' },
+                { label: 'Scrap Value', value: viewingFinancial.Financial_Details?.scrap_value || 'N/A' },
+{ label: 'Expected Life', value: viewingFinancial.Financial_Details?.useful_life || viewingFinancial.Financial_Details?.expected_life_years || 'N/A' },
+{ label: 'Breakdowns', value: viewingFinancial.Financial_Details?.breakdown_frequency || viewingFinancial.Financial_Details?.total_breakdowns || 'N/A' },
+                { label: 'Maint. Cost', value: viewingFinancial.Financial_Details?.total_maintenance_cost || 'N/A' },
+                { label: 'Usage Freq.', value: viewingFinancial.Financial_Details?.usage_frequency || 'N/A' },
+{ label: 'Warranty', value: viewingFinancial.Financial_Details?.warranty || viewingFinancial.Financial_Details?.warranty_years || 'N/A' }
+              ].map(({ label, value }, i) => (
+                <div key={i} style={{ backgroundColor: C.ice, padding: '12px 16px', borderRadius: '8px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '11px', color: C.sky, fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>{label}</div>
+                  <div style={{ fontSize: '16px', fontWeight: '700', color: C.dark }}>{value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* View Issue Modal */}
       {viewingIssue && (
         <div style={styles.modalOverlay} onClick={() => setViewingIssue(null)}>
+
           <div style={styles.issueModal} onClick={(e) => e.stopPropagation()}>
             <div style={styles.issueModalHeader}>
               <span>Issue Details</span>

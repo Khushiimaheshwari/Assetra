@@ -13,7 +13,8 @@ const AssetsPage = () => {
   const [faculty, setFaculty] = useState([]);
   const [pcData, setPcData] = useState([]);
   const [selectedType, setSelectedType] = useState("All");
-  const [viewingQR, setViewingQR] = useState(null);
+const [viewingQR, setViewingQR] = useState(null);
+  const [viewingFinancial, setViewingFinancial] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [assets, setAssets] = useState([]);
   const [viewingIssue, setViewingIssue] = useState(null);
@@ -349,6 +350,16 @@ const AssetsPage = () => {
                   </div>
                 </div>
 
+                <div style={styles.assetDetail}>
+                  <div style={styles.detailLabel}><IndianRupee size={14} color={C.primary} />Financial</div>
+                  <div onClick={() => setViewingFinancial(asset)}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.primary; e.currentTarget.style.color = 'white'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.ice; e.currentTarget.style.color = C.primary; }}
+                    style={{ padding: '3px 12px', backgroundColor: C.ice, borderRadius: '20px', fontSize: '12px', fontWeight: '700', color: C.primary, cursor: 'pointer', transition: 'all 0.2s' }}>
+                    View Details
+                  </div>
+                </div>
+
               </div>
             );
           })
@@ -500,6 +511,41 @@ const AssetsPage = () => {
               </svg>
               Download QR Code
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Financial Details Modal ── */}
+      {viewingFinancial && (
+        <div style={styles.qrModal} onClick={() => setViewingFinancial(null)}>
+          <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: isMobile ? '1.5rem' : '0 2rem 1.5rem', maxWidth: '500px', width: isMobile ? '100%' : '90%', position: 'relative', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(8,131,149,0.2)' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 10, display: 'flex', alignItems: 'center', gap: '0.75rem', padding: isMobile ? '1.25rem 0 1rem' : '1.5rem 0 1rem', borderBottom: `2px solid ${C.ice}`, marginBottom: '1.25rem' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '10px', backgroundColor: C.ice, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <IndianRupee size={20} color={C.primary} />
+              </div>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: C.dark }}>Financial Details</h2>
+                <p style={{ margin: 0, fontSize: '12px', color: C.primary, fontWeight: '500' }}>{viewingFinancial.Asset_Name}</p>
+              </div>
+              <button style={{ marginLeft: 'auto', background: C.ice, border: 'none', width: 32, height: 32, borderRadius: '8px', cursor: 'pointer', color: C.dark, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setViewingFinancial(null)}>✕</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+              {[
+                { label: 'Purchase Year',        value: viewingFinancial.Financial_Details?.purchase_year        || '—' },
+                { label: 'Purchase Cost (₹)',     value: viewingFinancial.Financial_Details?.purchase_cost        ? `₹${viewingFinancial.Financial_Details.purchase_cost}`        : '—' },
+                { label: 'Scrap Value (₹)',       value: viewingFinancial.Financial_Details?.scrap_value          ? `₹${viewingFinancial.Financial_Details.scrap_value}`          : '—' },
+                { label: 'Useful Life (Years)',   value: viewingFinancial.Financial_Details?.useful_life          ? `${viewingFinancial.Financial_Details.useful_life} yrs`        : '—' },
+                { label: 'Breakdown Frequency',  value: viewingFinancial.Financial_Details?.breakdown_frequency  ?? '0' },
+                { label: 'Maintenance Cost (₹)', value: viewingFinancial.Financial_Details?.total_maintenance_cost ? `₹${viewingFinancial.Financial_Details.total_maintenance_cost}` : '₹0' },
+                { label: 'Usage Frequency',      value: viewingFinancial.Financial_Details?.usage_frequency      || '—' },
+                { label: 'Warranty (Years)',      value: viewingFinancial.Financial_Details?.warranty             ? `${viewingFinancial.Financial_Details.warranty} yrs`           : '—' },
+              ].map(({ label, value }) => (
+                <div key={label} style={{ backgroundColor: C.ice, borderRadius: '10px', padding: '12px 14px' }}>
+                  <div style={{ fontSize: '10px', fontWeight: '700', color: C.dark, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{label}</div>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: C.primary }}>{value}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

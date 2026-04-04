@@ -6,7 +6,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState({
-    totalAssets: 0, 
+    totalLabAssets: 0, 
     totalLabs: 0,
     totalTechnicians: 0,
     totalFaculty: 0,
@@ -32,7 +32,7 @@ export default function Dashboard() {
     fetchAllData();
   }, []);
 
-  async function fetchMetrics() {
+async function fetchMetrics() {
     try {
       const res = await fetch("/api/faculty/getMetricsCount"); 
       const data = await res.json();
@@ -267,7 +267,7 @@ export default function Dashboard() {
               </svg>
             </div>
           </div>
-          <div style={metricValueStyle}>{metrics.totalAssets.toLocaleString()}</div>
+          <div style={metricValueStyle}>{metrics.totalLabAssets.toLocaleString()}</div>
         </div>
 
         <div 

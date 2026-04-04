@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "../../../../app/api/utils/db";
-import Lab from "../../../../models/Labs";
 import PCs from "../../../../models/Lab_PCs";
-import Asset from "../../../../models/Asset";
 import LabTechnician from "../../../../models/Lab_Technician";
+import { User } from "../../../../models/User";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/authOptions";
 
@@ -12,6 +11,7 @@ export async function GET() {
     await connectDB();
 
     const session = await getServerSession(authOptions);
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -20,20 +20,28 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const technician = await LabTechnician.findOne({ Email: session.user.email })
-      .populate("Labs") // populate assigned labs
+    // ✅ Step 1: User
+    const user = await User.findOne({ Email: session.user.email });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // ✅ Step 2: Technician
+    const technician = await LabTechnician.findOne({
+      UserDetails: user._id,
+    })
+      .populate("Labs")
       .lean();
 
     if (!technician) {
-      return NextResponse.json({ error: "Lab Technician not found" }, { status: 404 });
+      return NextResponse.json({ error: "Technician not found" }, { status: 404 });
     }
 
     const assignedLabs = technician.Labs || [];
 
-    // ---------- TOTAL LABS MANAGED ----------
     const totalLabs = assignedLabs.length;
 
-    // ---------- TOTAL ASSETS (via PCs → Assets) ----------
+    // ✅ Total Assets
     let totalAssets = 0;
 
     for (const lab of assignedLabs) {
@@ -51,21 +59,22 @@ export async function GET() {
       totalAssets,
     };
 
-    // ---------- ASSET CATEGORY DATA ----------
+    // ✅ Category
     let technical = 0;
     let nonTechnical = 0;
 
     assignedLabs.forEach((lab) => {
       const name = lab.Lab_Name.toLowerCase();
+
       if (
         name.includes("computer science") ||
         name.includes("electronics") ||
         name.includes("mechanics") ||
         name.includes("technical")
       ) {
-        technical += 1;
+        technical++;
       } else {
-        nonTechnical += 1;
+        nonTechnical++;
       }
     });
 
@@ -74,7 +83,7 @@ export async function GET() {
       { name: "Non-Technical", value: nonTechnical, color: "#3b82f6" },
     ];
 
-    // ---------- LAB DISTRIBUTION DATA ----------
+    // ✅ Distribution
     const labDistributionMap = {
       "Computer Science": 0,
       Chemistry: 0,
@@ -85,11 +94,12 @@ export async function GET() {
 
     assignedLabs.forEach((lab) => {
       const name = lab.Lab_Name.toLowerCase();
-      if (name.includes("computer science")) labDistributionMap["Computer Science"] += 1;
-      else if (name.includes("chemistry")) labDistributionMap["Chemistry"] += 1;
-      else if (name.includes("mechanics")) labDistributionMap["Mechanics"] += 1;
-      else if (name.includes("electronics")) labDistributionMap["Electronics"] += 1;
-      else labDistributionMap["Others"] += 1;
+
+      if (name.includes("computer science")) labDistributionMap["Computer Science"]++;
+      else if (name.includes("chemistry")) labDistributionMap["Chemistry"]++;
+      else if (name.includes("mechanics")) labDistributionMap["Mechanics"]++;
+      else if (name.includes("electronics")) labDistributionMap["Electronics"]++;
+      else labDistributionMap["Others"]++;
     });
 
     const labDistributionData = Object.entries(labDistributionMap).map(
@@ -99,19 +109,21 @@ export async function GET() {
       }
     );
 
-    return NextResponse.json(
-      {
-        technicianName: technician.Name,
-        technicianEmail: technician.Email,
-        metrics,
-        assignedLabs,
-        assetCategoryData,
-        labDistributionData,
-      },
-    );
+    return NextResponse.json({
+      technicianName: user.Name,
+      technicianEmail: user.Email,
+      metrics,
+      assignedLabs,
+      assetCategoryData,
+      labDistributionData,
+    });
 
   } catch (error) {
-    console.error("Error fetching dashboard data:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error("Error fetching technician dashboard:", error);
+
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

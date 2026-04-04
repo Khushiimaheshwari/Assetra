@@ -44,7 +44,7 @@ export default function Dashboard() {
     fetchAllData();
   }, []);
 
-  async function fetchMetrics() {
+async function fetchMetrics() {
     try {
       const res = await fetch("/api/lab_technician/getMetricsCount"); 
       const data = await res.json();
@@ -59,7 +59,7 @@ export default function Dashboard() {
     }
   }
 
-  async function fetchAssetBreakdown() {
+async function fetchAssetBreakdown() {
     try {
       const res = await fetch("/api/lab_technician/getAssetBreakdown");
       const data = await res.json();
