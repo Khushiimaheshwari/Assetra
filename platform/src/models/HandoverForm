@@ -2,30 +2,53 @@ import mongoose from "mongoose";
 
 const EquipmentItemSchema = new mongoose.Schema(
   {
-    serialNo:      { type: String, default: "" },
+    serialNo: { type: String, default: "" },
     equipmentType: { type: String, default: "" },
-    brand:         { type: String, default: "" },
-    remarks:       { type: String, default: "" },
+    brand: { type: String, default: "" },
+    remarks: { type: String, default: "" },
   },
   { _id: false }
 );
 
 const HandoverFormSchema = new mongoose.Schema(
   {
-    formName:               { type: String, required: true, trim: true },
-    labName:                { type: String, default: "" },
-    handoverDate:           { type: String, default: "" }, // kept as string to match UI date input
-    handoverByName:         { type: String, required: true, trim: true },
-    handoverByDesignation:  { type: String, default: "" },
-    handoverToName:         { type: String, required: true, trim: true },
-    handoverToDesignation:  { type: String, default: "" },
-    purpose:                { type: String, default: "" },
-    equipment:              { type: [EquipmentItemSchema], default: [] },
+    formName: { type: String, required: true, trim: true },
+    labName: { type: String, default: "" },
+    handoverDate: { type: String, default: "" },
+    handoverByName: { type: String, required: true, trim: true },
+    handoverByDesignation: { type: String, default: "" },
+    handoverToName: { type: String, required: true, trim: true },
+    handoverToDesignation: { type: String, default: "" },
+    purpose: { type: String, default: "" },
+    equipment: { type: [EquipmentItemSchema], default: [] },
     status: {
       type: String,
       enum: ["Pending", "In Progress", "Completed"],
       default: "Pending",
     },
+    createdByUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    createdByRole: {
+      type: String,
+      enum: ["admin", "lab_technician"],
+      default: "admin",
+    },
+    /** Admin-created forms skip approval; lab tech submissions start as pending. */
+    approvalStatus: {
+      type: String,
+      enum: ["not_required", "pending", "approved", "rejected"],
+      default: "not_required",
+    },
+    rejectionReason: { type: String, default: "" },
+    reviewedByUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    reviewedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
