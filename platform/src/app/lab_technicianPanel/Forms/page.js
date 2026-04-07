@@ -1,9 +1,24 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { ChevronDown, Loader2, FileText, Info, Monitor, AlertTriangle } from 'lucide-react';
 
+const emptyBreakdownLabForm = () => ({
+  formName: '',
+  dateOfReport: '',
+  labName: '',
+  reportedByName: '',
+  reportedByDesignation: '',
+  reportedIssue: '',
+  equipment: [{ equipmentName: '', brand: '', serialNo: '', reportedIssue: '' }],
+  department: '',
+  reportedToName: '',
+  reportedToDesignation: '',
+});
+
 export default function HandoverFormPage() {
+  const { status: sessionStatus } = useSession();
   // ── Handover state ──
   const [handoverForms, setHandoverForms] = useState([]);
   const [showAddModal, setShowAddModal]   = useState(false);
@@ -24,28 +39,7 @@ export default function HandoverFormPage() {
   const [showBreakdownModal, setShowBreakdownModal] = useState(false);
 
   const [expandedBreakdown, setExpandedBreakdown] = useState(null);
-  const [newBreakdownForm, setNewBreakdownForm] = useState({
-    formName: '',
-    dateOfReport: '',
-    labName: '',
-    reportedByName: '',
-    reportedByDesignation: '',
-    reportedIssue: '',
-    equipment: [{ equipmentName: '', brand: '', serialNo: '', reportedIssue: '' }],
-    department: '',
-    reportedToName: '',
-    reportedToDesignation: '',
-    actionTaken: '',
-    dateOfResolution: '',
-    resolutionRemarks: '',
-    verifiedByAdmin: '',
-    verifiedByName: '',
-    verifiedByDate: '',
-    finalStatus: 'Pending',
-    closureRemarks: '',
-    approvedBy: '',
-    status: 'Pending',
-  });
+  const [newBreakdownForm, setNewBreakdownForm] = useState(emptyBreakdownLabForm);
 
   // ── Responsive ──
   const [isMobile, setIsMobile] = useState(false);
@@ -65,35 +59,35 @@ export default function HandoverFormPage() {
   // ── Fetch handover forms ──
   const fetchHandoverForms = async () => {
     try {
-      const res  = await fetch("/api/admin/getHandoverForms");
+      const res = await fetch("/api/handover-forms", { credentials: "include" });
       const data = await res.json();
       if (res.ok) setHandoverForms(data.handoverForms);
-      else        console.error("Failed to fetch handover forms:", data.error);
+      else console.error("Failed to fetch handover forms:", data.error);
     } catch {
       console.error("Network error fetching handover forms.");
     }
   };
 
-  // ── Fetch breakdown forms ──
   const fetchBreakdownForms = async () => {
     try {
-      const res  = await fetch("/api/admin/getBreakdownForms");
+      const res = await fetch("/api/breakdown-forms", { credentials: "include" });
       const data = await res.json();
       if (res.ok) setBreakdownForms(data.breakdownForms);
-      else        console.error("Failed to fetch breakdown forms:", data.error);
+      else console.error("Failed to fetch breakdown forms:", data.error);
     } catch {
       console.error("Network error fetching breakdown forms.");
     }
   };
 
   useEffect(() => {
+    if (sessionStatus === "loading") return;
     const load = async () => {
       setLoading(true);
       await Promise.all([fetchHandoverForms(), fetchBreakdownForms()]);
       setLoading(false);
     };
     load();
-  }, []);
+  }, [sessionStatus]);
 
   // ── Handover helpers ──
   const handleAddEquipment = () =>
@@ -113,8 +107,10 @@ export default function HandoverFormPage() {
       alert("Please fill in all required fields!"); return;
     }
     try {
-      const res  = await fetch("/api/admin/addHandoverForm", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+      const res = await fetch("/api/handover-forms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(newHandoverForm),
       });
       const data = await res.json();
@@ -144,18 +140,32 @@ export default function HandoverFormPage() {
     if (!newBreakdownForm.formName || !newBreakdownForm.reportedByName || !newBreakdownForm.reportedIssue) {
       alert("Please fill in all required fields!"); return;
     }
+    const payload = {
+      formName: newBreakdownForm.formName,
+      dateOfReport: newBreakdownForm.dateOfReport,
+      labName: newBreakdownForm.labName,
+      reportedByName: newBreakdownForm.reportedByName,
+      reportedByDesignation: newBreakdownForm.reportedByDesignation,
+      reportedIssue: newBreakdownForm.reportedIssue,
+      equipment: newBreakdownForm.equipment,
+      department: newBreakdownForm.department,
+      reportedToName: newBreakdownForm.reportedToName,
+      reportedToDesignation: newBreakdownForm.reportedToDesignation,
+    };
     try {
-      const res  = await fetch("/api/admin/addBreakdownForm", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newBreakdownForm),
+      const res = await fetch("/api/breakdown-forms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Breakdown form added successfully!");
+        alert("Breakdown report submitted to admin.");
         setShowBreakdownModal(false);
-        setNewBreakdownForm({ formName: '', dateOfReport: '', labName: '', reportedByName: '', reportedByDesignation: '', reportedIssue: '', equipment: [{ equipmentName: '', brand: '', serialNo: '', reportedIssue: '' }], department: '', reportedToName: '', reportedToDesignation: '', actionTaken: '', dateOfResolution: '', resolutionRemarks: '', verifiedByAdmin: '', verifiedByName: '', verifiedByDate: '', finalStatus: 'Pending', closureRemarks: '', approvedBy: '', status: 'Pending' });
+        setNewBreakdownForm(emptyBreakdownLabForm());
         fetchBreakdownForms();
-      } else alert(data.error || "Failed to add breakdown form");
+      } else alert(data.error || "Failed to submit breakdown form");
     } catch { alert("Something went wrong."); }
   };
 
@@ -190,6 +200,13 @@ export default function HandoverFormPage() {
     return                                            { backgroundColor: '#fef3c7', color: '#92400e' };
   };
 
+  const getApprovalStyle = (approvalStatus) => {
+    if (approvalStatus === 'pending') return { backgroundColor: '#fef3c7', color: '#92400e' };
+    if (approvalStatus === 'approved') return { backgroundColor: C.mint, color: '#065f46' };
+    if (approvalStatus === 'rejected') return { backgroundColor: '#fee2e2', color: '#991b1b' };
+    return { backgroundColor: '#f3f4f6', color: '#4b5563' };
+  };
+
   // ── Reusable section header ──
   const SectionHeader = ({ icon, title, subtitle, onAdd, addLabel }) => (
     <div style={{
@@ -210,16 +227,18 @@ export default function HandoverFormPage() {
           <p style={{ color: C.primary, fontSize: '0.875rem', fontWeight: '500', margin: 0 }}>{subtitle}</p>
         </div>
       </div>
-      <button onClick={onAdd}
-        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.dark}
-        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.primary}
-        style={{ padding: '10px 22px', backgroundColor: C.primary, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', transition: 'background 0.2s', boxShadow: '0 2px 8px rgba(8,131,149,0.25)' }}
-      >
-        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-        </svg>
-        {addLabel}
-      </button>
+      {onAdd && (
+        <button type="button" onClick={onAdd}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.dark}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.primary}
+          style={{ padding: '10px 22px', backgroundColor: C.primary, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', transition: 'background 0.2s', boxShadow: '0 2px 8px rgba(8,131,149,0.25)' }}
+        >
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+          </svg>
+          {addLabel}
+        </button>
+      )}
     </div>
   );
 
@@ -241,7 +260,7 @@ export default function HandoverFormPage() {
     </span>
   );
 
-  if (loading) {
+  if (loading || sessionStatus === "loading") {
     return (
       <div style={containerStyle}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', flexDirection: 'column', gap: '1rem' }}>
@@ -264,7 +283,7 @@ export default function HandoverFormPage() {
       <SectionHeader
         icon={<FileText size={24} color={C.primary} />}
         title="Equipment Handover Forms"
-        subtitle="Track and manage lab equipment handovers"
+        subtitle="Submit handovers for admin approval"
         onAdd={() => setShowAddModal(true)}
         addLabel="Add New"
       />
@@ -294,8 +313,13 @@ export default function HandoverFormPage() {
                 <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>{form.handoverToDesignation}</p>
               </div>
               {/* Status */}
-              <div style={{ display: 'flex', justifyContent: (isMobile || isTablet) ? 'flex-start' : 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', justifyContent: 'center', alignItems: (isMobile || isTablet) ? 'flex-start' : 'center' }}>
                 <StatusBadge status={form.status} />
+                {form.approvalStatus && form.approvalStatus !== 'not_required' && (
+                  <span style={{ padding: '0.25rem 0.65rem', borderRadius: '20px', fontSize: '0.7rem', fontWeight: '700', ...getApprovalStyle(form.approvalStatus) }}>
+                    {form.approvalStatus === 'pending' ? 'Awaiting approval' : form.approvalStatus === 'approved' ? 'Approved' : 'Rejected'}
+                  </span>
+                )}
               </div>
               {/* Actions */}
               <div style={{ display: 'flex', gap: '6px', justifyContent: (isMobile || isTablet) ? 'flex-start' : 'center', alignItems: 'center' }}>
@@ -317,6 +341,17 @@ export default function HandoverFormPage() {
             {/* Expanded handover */}
             {expandedForm === form._id && (
               <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: `1px solid ${C.ice}` }}>
+                {form.approvalStatus === 'pending' && (
+                  <div style={{ backgroundColor: '#fffbeb', borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '1rem', border: '1px solid #fde68a' }}>
+                    <p style={{ margin: 0, fontSize: '12px', fontWeight: '600', color: '#92400e' }}>Waiting for admin approval before this handover is final.</p>
+                  </div>
+                )}
+                {form.approvalStatus === 'rejected' && form.rejectionReason && (
+                  <div style={{ backgroundColor: '#fef2f2', borderRadius: '10px', padding: '1rem', marginBottom: '1rem', border: '1px solid #fecaca' }}>
+                    <p style={{ margin: 0, fontSize: '12px', fontWeight: '700', color: '#991b1b' }}>Rejection reason</p>
+                    <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#374151' }}>{form.rejectionReason}</p>
+                  </div>
+                )}
                 <div style={{ backgroundColor: C.mint, borderRadius: '10px', padding: '1rem', marginBottom: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
                     <Info size={14} color="#065f46" />
@@ -378,9 +413,9 @@ export default function HandoverFormPage() {
       <SectionHeader
         icon={<AlertTriangle size={24} color={C.primary} />}
         title="Breakdown Forms"
-        subtitle="Track and manage lab equipment breakdowns"
+        subtitle="Report equipment failures — admin will record resolution and closure"
         onAdd={() => setShowBreakdownModal(true)}
-        addLabel="Add New"
+        addLabel="Report breakdown"
       />
 
       <TableHeader cols={['Form Details', 'Reported By', 'Reported To', 'Status', 'Actions']} template={BREAKDOWN_COLS} />
@@ -443,7 +478,6 @@ export default function HandoverFormPage() {
                     { label: 'Lab Name/Number',   value: form.labName            || 'N/A' },
                     { label: 'Reported Issue',    value: form.reportedIssue      || 'N/A' },
                     { label: 'Department',        value: form.department         || 'N/A' },
-                    { label: 'Action Taken',      value: form.actionTaken        || 'N/A' },
                   ].map((row, i, arr) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: i < arr.length - 1 ? `1px solid rgba(146,64,14,0.1)` : 'none' }}>
                       <span style={{ fontSize: '13px', color: '#92400e', fontWeight: '600' }}>{row.label}</span>
@@ -492,13 +526,15 @@ export default function HandoverFormPage() {
                     <span style={{ fontSize: '11px', fontWeight: '700', color: '#065f46', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Resolution & Verification</span>
                   </div>
                   {[
+                    { label: 'Action Taken', value: form.actionTaken || 'N/A' },
                     { label: 'Date of Resolution', value: form.dateOfResolution || 'N/A' },
                     { label: 'Resolution Remarks', value: form.resolutionRemarks || 'N/A' },
-                    { label: 'Verified By',         value: form.verifiedByName  || 'N/A' },
-                    { label: 'Verified Date',       value: form.verifiedByDate  || 'N/A' },
-                    { label: 'Final Status',        value: form.finalStatus     || 'N/A' },
-                    { label: 'Closure Remarks',     value: form.closureRemarks  || 'N/A' },
-                    { label: 'Approved By (Dean)',  value: form.approvedBy      || 'N/A' },
+                    { label: 'Verified By (Admin)', value: form.verifiedByAdmin || 'N/A' },
+                    { label: 'Verified By (Name)', value: form.verifiedByName || 'N/A' },
+                    { label: 'Verified Date', value: form.verifiedByDate || 'N/A' },
+                    { label: 'Final Status', value: form.finalStatus || 'N/A' },
+                    { label: 'Closure Remarks', value: form.closureRemarks || 'N/A' },
+                    { label: 'Approved By (Dean)', value: form.approvedBy || 'N/A' },
                   ].map((row, i, arr) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: i < arr.length - 1 ? `1px solid rgba(6,95,70,0.1)` : 'none' }}>
                       <span style={{ fontSize: '13px', color: '#065f46', fontWeight: '600' }}>{row.label}</span>
@@ -588,19 +624,13 @@ export default function HandoverFormPage() {
               </button>
             </div>
 
-            {/* Status */}
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={labelStyle}>Status</label>
-              <select style={{ ...inputStyle, cursor: 'pointer' }} value={newHandoverForm.status} onChange={(e) => setNewHandoverForm({ ...newHandoverForm, status: e.target.value })} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}>
-                <option value="Pending">Pending</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-              </select>
+            <div style={{ marginBottom: '1rem', padding: '12px 14px', backgroundColor: '#fffbeb', borderRadius: '10px', border: '1px solid #fde68a' }}>
+              <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#92400e' }}>This form is sent to an administrator for approval. Operational status will start as Pending.</p>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', flexDirection: isMobile ? 'column' : 'row' }}>
               <button onClick={() => setShowAddModal(false)} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.ice} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'} style={{ flex: 1, padding: '11px', backgroundColor: 'white', color: '#6b7280', border: '2px solid #e2e8f0', borderRadius: '10px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancel</button>
-              <button onClick={handleAddHandoverForm} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.dark} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.primary} style={{ flex: 1, padding: '11px', backgroundColor: C.primary, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '14px', boxShadow: '0 2px 8px rgba(8,131,149,0.25)' }}>Add Handover Form</button>
+              <button onClick={handleAddHandoverForm} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.dark} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.primary} style={{ flex: 1, padding: '11px', backgroundColor: C.primary, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '14px', boxShadow: '0 2px 8px rgba(8,131,149,0.25)' }}>Submit for approval</button>
             </div>
           </div>
         </div>
@@ -684,55 +714,16 @@ export default function HandoverFormPage() {
                 <div><label style={{ ...labelStyle, color: '#065f46' }}>Department</label><input type="text" style={inputStyle} value={newBreakdownForm.department} onChange={(e) => setNewBreakdownForm({ ...newBreakdownForm, department: e.target.value })} placeholder="e.g., IT Department" onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'} /></div>
                 <div><label style={{ ...labelStyle, color: '#065f46' }}>Reported To (Name)</label><input type="text" style={inputStyle} value={newBreakdownForm.reportedToName} onChange={(e) => setNewBreakdownForm({ ...newBreakdownForm, reportedToName: e.target.value })} placeholder="Enter name" onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'} /></div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0.875rem' }}>
-                <div><label style={{ ...labelStyle, color: '#065f46' }}>Designation</label><input type="text" style={inputStyle} value={newBreakdownForm.reportedToDesignation} onChange={(e) => setNewBreakdownForm({ ...newBreakdownForm, reportedToDesignation: e.target.value })} placeholder="Enter designation" onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'} /></div>
-                <div><label style={{ ...labelStyle, color: '#065f46' }}>Action Taken</label><input type="text" style={inputStyle} value={newBreakdownForm.actionTaken} onChange={(e) => setNewBreakdownForm({ ...newBreakdownForm, actionTaken: e.target.value })} placeholder="Enter action taken" onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'} /></div>
-              </div>
+              <div><label style={{ ...labelStyle, color: '#065f46' }}>Designation</label><input type="text" style={inputStyle} value={newBreakdownForm.reportedToDesignation} onChange={(e) => setNewBreakdownForm({ ...newBreakdownForm, reportedToDesignation: e.target.value })} placeholder="Enter designation" onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'} /></div>
             </div>
 
-            {/* Section 4: Resolution */}
-            <div style={{ backgroundColor: C.ice, borderRadius: '12px', padding: '1.25rem', marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '1rem' }}>
-                <Info size={15} color={C.dark} />
-                <span style={{ fontSize: '13px', fontWeight: '700', color: C.dark, textTransform: 'uppercase', letterSpacing: '0.05em' }}>4. Resolution</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0.875rem', marginBottom: '0.875rem' }}>
-                <div><label style={labelStyle}>Date of Resolution</label><input type="date" style={inputStyle} value={newBreakdownForm.dateOfResolution} onChange={(e) => setNewBreakdownForm({ ...newBreakdownForm, dateOfResolution: e.target.value })} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'} /></div>
-                <div><label style={labelStyle}>Remarks (If Any)</label><input type="text" style={inputStyle} value={newBreakdownForm.resolutionRemarks} onChange={(e) => setNewBreakdownForm({ ...newBreakdownForm, resolutionRemarks: e.target.value })} placeholder="Enter remarks" onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'} /></div>
-              </div>
-            </div>
-
-            {/* Section 5: Verification & Closure */}
-            <div style={{ backgroundColor: C.mint, borderRadius: '12px', padding: '1.25rem', marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '1rem' }}>
-                <Info size={15} color="#065f46" />
-                <span style={{ fontSize: '13px', fontWeight: '700', color: '#065f46', textTransform: 'uppercase', letterSpacing: '0.05em' }}>5. Verification & Closure</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0.875rem', marginBottom: '0.875rem' }}>
-                <div><label style={{ ...labelStyle, color: '#065f46' }}>Verified By (Admin)</label><input type="text" style={inputStyle} value={newBreakdownForm.verifiedByAdmin} onChange={(e) => setNewBreakdownForm({ ...newBreakdownForm, verifiedByAdmin: e.target.value })} placeholder="Admin name" onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'} /></div>
-                <div><label style={{ ...labelStyle, color: '#065f46' }}>Name</label><input type="text" style={inputStyle} value={newBreakdownForm.verifiedByName} onChange={(e) => setNewBreakdownForm({ ...newBreakdownForm, verifiedByName: e.target.value })} placeholder="Enter name" onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'} /></div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0.875rem', marginBottom: '0.875rem' }}>
-                <div><label style={{ ...labelStyle, color: '#065f46' }}>Date</label><input type="date" style={inputStyle} value={newBreakdownForm.verifiedByDate} onChange={(e) => setNewBreakdownForm({ ...newBreakdownForm, verifiedByDate: e.target.value })} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'} /></div>
-                <div>
-                  <label style={{ ...labelStyle, color: '#065f46' }}>Final Status</label>
-                  <select style={{ ...inputStyle, cursor: 'pointer' }} value={newBreakdownForm.finalStatus} onChange={(e) => setNewBreakdownForm({ ...newBreakdownForm, finalStatus: e.target.value })} onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}>
-                    <option value="Pending">Pending</option>
-                    <option value="Resolved">Resolved</option>
-                    <option value="Referred to Vendor">Referred to Vendor</option>
-                    <option value="Under Observation">Under Observation</option>
-                  </select>
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0.875rem' }}>
-                <div><label style={{ ...labelStyle, color: '#065f46' }}>Closure Remarks</label><input type="text" style={inputStyle} value={newBreakdownForm.closureRemarks} onChange={(e) => setNewBreakdownForm({ ...newBreakdownForm, closureRemarks: e.target.value })} placeholder="Enter remarks" onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'} /></div>
-                <div><label style={{ ...labelStyle, color: '#065f46' }}>Approved By (Dean)</label><input type="text" style={inputStyle} value={newBreakdownForm.approvedBy} onChange={(e) => setNewBreakdownForm({ ...newBreakdownForm, approvedBy: e.target.value })} placeholder="Dean's name" onFocus={(e) => e.target.style.borderColor = C.primary} onBlur={(e) => e.target.style.borderColor = '#e2e8f0'} /></div>
-              </div>
+            <div style={{ marginBottom: '1rem', padding: '12px 14px', backgroundColor: '#fffbeb', borderRadius: '10px', border: '1px solid #fde68a' }}>
+              <p style={{ margin: 0, fontSize: '12px', fontWeight: '600', color: '#92400e' }}>Resolution, verification, and closure are completed by an administrator after you submit.</p>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', flexDirection: isMobile ? 'column' : 'row' }}>
               <button onClick={() => setShowBreakdownModal(false)} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.ice} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'} style={{ flex: 1, padding: '11px', backgroundColor: 'white', color: '#6b7280', border: '2px solid #e2e8f0', borderRadius: '10px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Cancel</button>
-              <button onClick={handleAddBreakdownForm} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.dark} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.primary} style={{ flex: 1, padding: '11px', backgroundColor: C.primary, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '14px', boxShadow: '0 2px 8px rgba(8,131,149,0.25)' }}>Add Breakdown Form</button>
+              <button onClick={handleAddBreakdownForm} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = C.dark} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.primary} style={{ flex: 1, padding: '11px', backgroundColor: C.primary, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', fontSize: '14px', boxShadow: '0 2px 8px rgba(8,131,149,0.25)' }}>Submit to admin</button>
             </div>
           </div>
         </div>
