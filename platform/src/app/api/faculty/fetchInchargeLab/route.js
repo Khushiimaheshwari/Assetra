@@ -37,7 +37,13 @@ export async function GET(req) {
 
     const labs = await Lab.find({ _id: { $in: labIds } })
       .select("Lab_ID Lab_Name Block Lab_Room Total_Capacity Status LabTechnician")
-      .populate("LabTechnician", "Name Email")
+      .populate({
+        path: "LabTechnician",
+        populate: {
+          path: "UserDetails",
+          select: "Name Email",
+        },
+      })
       .lean();
 
     return NextResponse.json({ inchargeLabs: labs }, { status: 200 });

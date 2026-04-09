@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Upload, ChevronDown, ChevronUp, Loader2, Calendar, Clock, AlertCircle, X } from 'lucide-react';
 import { useParams } from 'next/navigation';
+import { toast } from 'react-toastify';
 
 const LabInfoPage = () => {
   const { labId: id } = useParams();  
@@ -99,7 +100,7 @@ const LabInfoPage = () => {
   const handleAddInfo = async () => {
 
     if(!newInfo.hardwareSpecs || !newInfo.softwareSpecs || !newInfo.device[0].Device_Type || !newInfo.device[0].Brand || !newInfo.device[0].Serial_No) {
-      alert("Please fill in all required fields!");
+      toast.warning("Please fill in all required fields!");
       return;
     }
     
@@ -122,7 +123,7 @@ const LabInfoPage = () => {
       const data = await res.json();
 
       if (res.ok) {
-        alert("Additional Info added successfully!");
+        toast.success("Additional info added successfully!");
         setShowAddModal(false);
         setNewInfo({
           hardwareSpecs: "",
@@ -132,11 +133,11 @@ const LabInfoPage = () => {
         fetchLab();
 
       } else {
-        alert(data.error || "Failed to add info");
+        toast.error(data.error || "Failed to add info");
       }
     } catch (error) {
       console.error("Error adding info:", error);
-      alert("Something went wrong while adding the info.");
+      toast.error("Something went wrong while adding the info.");
     }
   };
 

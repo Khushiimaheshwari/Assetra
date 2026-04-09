@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./onboarding.module.css";
+import { toast } from "react-toastify";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -102,7 +103,7 @@ export default function OnboardingPage() {
       else router.push("/login");
     } catch (err) {
       console.error(err.message);
-      alert("Error: " + err.message);
+      toast.error("Error: " + err.message);
     } finally {
       setIsUploading(false);
     }

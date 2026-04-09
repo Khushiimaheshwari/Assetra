@@ -2,48 +2,75 @@ from flask import Flask, request, jsonify
 import joblib
 import numpy as np
 from datetime import datetime
+from pathlib import Path
 import traceback
+from base_model import ensure_models
 
 app = Flask(__name__)
 
-# Load trained models
-model_failure = joblib.load("models/failure_model.pkl")
-model_rul = joblib.load("models/rul_model.pkl")
-model_dep = joblib.load("models/depreciation_model.pkl")
-model_cost = joblib.load("models/cost_model.pkl")
+ROOT_DIR = Path(__file__).resolve().parent
+MODEL_DIR = ROOT_DIR / "model"
+
+# Ensure model files exist before loading.
+ensure_models()
+model_failure = joblib.load(MODEL_DIR / "failure_model.pkl")
+model_rul = joblib.load(MODEL_DIR / "rul_model.pkl")
+model_dep = joblib.load(MODEL_DIR / "depreciation_model.pkl")
+model_cost = joblib.load(MODEL_DIR / "cost_model.pkl")
+
+
+def _num(value, default=0.0):
+    try:
+        if value is None or value == "":
+            return float(default)
+        return float(value)
+    except Exception:
+        return float(default)
 
 
 def preprocess_input(data):
     current_year = datetime.now().year
 
-    purchase_year = data["purchase_year"]
-    purchase_cost = data["purchase_cost"]
-    scrap_value = data["scrap_value"]
-    useful_life = data["useful_life"]
-    breakdown_frequency = data["breakdown_frequency"]
-    total_maintenance_cost = data["total_maintenance_cost"]
+    purchase_year = int(_num(data.get("purchase_year"), current_year))
+    purchase_cost = _num(data.get("purchase_cost"), 0)
+    useful_life = max(_num(data.get("useful_life"), 0), 0)
+    breakdown_frequency = max(_num(data.get("breakdown_frequency"), 0), 0)
+    total_maintenance_cost = max(_num(data.get("total_maintenance_cost"), 0), 0)
 
-    usage_frequency_map = {"Low": 1, "Medium": 2, "High": 3}
-    usage_frequency = usage_frequency_map.get(data["usage_frequency"], 1)
+    usage_raw = str(data.get("usage_frequency", "Low")).strip().lower()
+    usage_frequency_map = {"low": 1, "medium": 2, "high": 3}
+    usage_frequency = usage_frequency_map.get(usage_raw, 1)
 
     asset_age = current_year - purchase_year
-    maintenance_ratio = total_maintenance_cost / purchase_cost
+    maintenance_ratio = (
+        total_maintenance_cost / purchase_cost if purchase_cost > 0 else 0
+    )
     remaining_life = max(0, useful_life - asset_age)
-    annual_depreciation = (purchase_cost - scrap_value) / useful_life
+    # Do not depend on frontend-provided scrap value; derive a conservative estimate.
+    derived_scrap_value = max(0.0, purchase_cost * (remaining_life / useful_life)) if useful_life > 0 else 0.0
+    annual_depreciation = (
+        (purchase_cost - derived_scrap_value) / useful_life if useful_life > 0 else 0
+    )
     current_book_value = max(
-    scrap_value,
-    purchase_cost - (annual_depreciation * asset_age)
-)
+        derived_scrap_value,
+        purchase_cost - (annual_depreciation * asset_age),
+    )
+    cost_pressure = (
+        total_maintenance_cost / derived_scrap_value if derived_scrap_value > 0 else 0
+    )
 
     return {
         "asset_age": asset_age,
         "purchase_cost": purchase_cost,
+        "scrap_value": derived_scrap_value,
+        "useful_life": useful_life,
         "usage_frequency": usage_frequency,
         "breakdown_frequency": breakdown_frequency,
         "maintenance_ratio": maintenance_ratio,
+        "cost_pressure": cost_pressure,
         "remaining_life": remaining_life,
         "current_book_value": current_book_value,
-        "total_maintenance_cost": total_maintenance_cost
+        "total_maintenance_cost": total_maintenance_cost,
     }
 
 
@@ -55,23 +82,29 @@ def predict():
         processed = preprocess_input(data)
 
         # Failure Prediction
-        failure_features = np.array([[
-            processed["asset_age"],
-            processed["purchase_cost"],
-            processed["usage_frequency"],
-            processed["breakdown_frequency"],
-            processed["maintenance_ratio"]
-        ]])
+        failure_features = np.array(
+            [[
+                processed["asset_age"],
+                processed["purchase_cost"],
+                processed["usage_frequency"],
+                processed["breakdown_frequency"],
+                processed["maintenance_ratio"],
+                processed["cost_pressure"],
+            ]]
+        )
 
         failure_pred = model_failure.predict(failure_features)[0]
         failure_prob = model_failure.predict_proba(failure_features)[0][1]
 
         # Remaining Useful Life
-        rul_features = np.array([[
-            processed["asset_age"],
-            processed["breakdown_frequency"],
-            processed["maintenance_ratio"]
-        ]])
+        rul_features = np.array(
+            [[
+                processed["asset_age"],
+                processed["breakdown_frequency"],
+                processed["maintenance_ratio"],
+                processed["cost_pressure"],
+            ]]
+        )
 
         rul_pred = model_rul.predict(rul_features)[0]
 
@@ -106,7 +139,8 @@ def predict():
             "remainingLifePrediction": float(rul_pred),
             "depreciationPrediction": float(dep_pred),
             "maintenanceCostPrediction": float(cost_pred),
-            "recommendation": recommendation
+            "recommendation": recommendation,
+            "lastPredictedAt": datetime.utcnow().isoformat() + "Z",
         })
 
     except Exception as e:
@@ -116,4 +150,4 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)

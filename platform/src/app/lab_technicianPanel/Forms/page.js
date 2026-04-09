@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { ChevronDown, Loader2, FileText, Info, Monitor, AlertTriangle } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const emptyBreakdownLabForm = () => ({
   formName: '',
@@ -104,7 +105,7 @@ export default function HandoverFormPage() {
 
   const handleAddHandoverForm = async () => {
     if (!newHandoverForm.formName || !newHandoverForm.handoverByName || !newHandoverForm.handoverToName) {
-      alert("Please fill in all required fields!"); return;
+      toast.warning("Please fill in all required fields!"); return;
     }
     try {
       const res = await fetch("/api/handover-forms", {
@@ -115,12 +116,12 @@ export default function HandoverFormPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Handover form added successfully!");
+        toast.success("Handover form added successfully!");
         setShowAddModal(false);
         setNewHandoverForm({ formName: '', labName: '', handoverDate: '', handoverByName: '', handoverByDesignation: '', handoverToName: '', handoverToDesignation: '', purpose: '', equipment: [{ serialNo: '', equipmentType: '', brand: '', remarks: '' }], status: 'Pending' });
         fetchHandoverForms();
-      } else alert(data.error || "Failed to add handover form");
-    } catch { alert("Something went wrong."); }
+      } else toast.error(data.error || "Failed to add handover form");
+    } catch { toast.error("Something went wrong."); }
   };
 
   // ── Breakdown helpers ──
@@ -138,7 +139,7 @@ export default function HandoverFormPage() {
 
   const handleAddBreakdownForm = async () => {
     if (!newBreakdownForm.formName || !newBreakdownForm.reportedByName || !newBreakdownForm.reportedIssue) {
-      alert("Please fill in all required fields!"); return;
+      toast.warning("Please fill in all required fields!"); return;
     }
     const payload = {
       formName: newBreakdownForm.formName,
@@ -161,12 +162,12 @@ export default function HandoverFormPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Breakdown report submitted to admin.");
+        toast.success("Breakdown report submitted to admin.");
         setShowBreakdownModal(false);
         setNewBreakdownForm(emptyBreakdownLabForm());
         fetchBreakdownForms();
-      } else alert(data.error || "Failed to submit breakdown form");
-    } catch { alert("Something went wrong."); }
+      } else toast.error(data.error || "Failed to submit breakdown form");
+    } catch { toast.error("Something went wrong."); }
   };
 
   // ── Design tokens ──

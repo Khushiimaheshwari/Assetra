@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { toast } from "react-toastify";
 
 export default function QrRedirectPage({ searchParams }) {
   const { data: session, status } = useSession();
@@ -50,14 +51,14 @@ export default function QrRedirectPage({ searchParams }) {
       else if (role === "faculty") redirectUrl = qrPayload.faculty;
       else if (role === "lab_technician") redirectUrl = qrPayload.lab_technician;
       else {
-        alert("Invalid role");
+        toast.error("Invalid role");
         return;
       }
 
       window.location.href = redirectUrl;
     } catch (err) {
       console.error("QR decode error:", err);
-      alert("Invalid QR code!");
+      toast.error("Invalid QR code!");
     }
   }, [data, session]);
 

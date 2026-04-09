@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2, Cpu, IndianRupee } from 'lucide-react';
 import { useParams } from "next/navigation";
+import { toast } from 'react-toastify';
 
 function AssetsPage() {
   const { assetId: id } = useParams();
@@ -20,7 +21,16 @@ function AssetsPage() {
     Asset_Type: "Monitor",
     Assest_Status: "Yes",
     Brand: "",
-    QR_Code: ""
+    QR_Code: "",
+    Financial_Details: {
+      purchase_year: "",
+      purchase_cost: "",
+      useful_life: "",
+      breakdown_frequency: "",
+      total_maintenance_cost: "",
+      usage_frequency: "",
+      warranty: "",
+    }
   });
   const [viewingIssue, setViewingIssue] = useState(null);
   const [currentIssueIndex, setCurrentIssueIndex] = useState(0);
@@ -76,7 +86,7 @@ function AssetsPage() {
 
   const handleAddAsset = async () => {
     if (!newAsset.Asset_Name || !newAsset.Asset_Type || !newAsset.Assest_Status) {
-      alert("Please fill all required fields");
+      toast.warning("Please fill all required fields");
       return;
     }
 
@@ -92,23 +102,32 @@ function AssetsPage() {
           Brand: newAsset.Brand,
           PC: pcData._id,
           Lab: pcData.Lab?._id,
+          Financial_Details: {
+            purchase_year: Number(newAsset.Financial_Details.purchase_year || 0),
+            purchase_cost: Number(newAsset.Financial_Details.purchase_cost || 0),
+            useful_life: Number(newAsset.Financial_Details.useful_life || 0),
+            breakdown_frequency: Number(newAsset.Financial_Details.breakdown_frequency || 0),
+            total_maintenance_cost: Number(newAsset.Financial_Details.total_maintenance_cost || 0),
+            usage_frequency: newAsset.Financial_Details.usage_frequency || "",
+            warranty: Number(newAsset.Financial_Details.warranty || 0),
+          },
         }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "Something went wrong!");
+        toast.error(data.error || "Something went wrong!");
         return;
       }
 
-      alert("Asset added successfully!");
+      toast.success("Asset added successfully!");
       setShowAddModal(false);
       resetForm();
       await fetchPC();
     } catch (err) {
       console.error("Asset Error:", err);
-      alert("Something went wrong while adding asset.");
+      toast.error("Something went wrong while adding asset.");
     } finally {
       setSaving(false);
     }
@@ -117,12 +136,23 @@ function AssetsPage() {
   const handleEditAsset = (asset) => {
     setEditingAsset(asset);
     setShowAddModal(true);
-    setNewAsset(asset);
+    setNewAsset({
+      ...asset,
+      Financial_Details: {
+        purchase_year: asset?.Financial_Details?.purchase_year ?? "",
+        purchase_cost: asset?.Financial_Details?.purchase_cost ?? "",
+        useful_life: asset?.Financial_Details?.useful_life ?? "",
+        breakdown_frequency: asset?.Financial_Details?.breakdown_frequency ?? "",
+        total_maintenance_cost: asset?.Financial_Details?.total_maintenance_cost ?? "",
+        usage_frequency: asset?.Financial_Details?.usage_frequency ?? "",
+        warranty: asset?.Financial_Details?.warranty ?? "",
+      },
+    });
   };
 
   const handleUpdateAsset = async () => {
     if (!newAsset.Asset_Name || !newAsset.Asset_Type || !newAsset.Assest_Status) {
-      alert("Please fill all required fields");
+      toast.warning("Please fill all required fields");
       return;
     }
 
@@ -143,18 +173,18 @@ function AssetsPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "Something went wrong!");
+        toast.error(data.error || "Something went wrong!");
         return;
       }
 
-      alert("Asset updated successfully!");
+      toast.success("Asset updated successfully!");
       setShowAddModal(false);
       setEditingAsset(null);
       resetForm();
       await fetchPC();
     } catch (err) {
       console.error("Update Asset Error:", err);
-      alert("Something went wrong while updating asset.");
+      toast.error("Something went wrong while updating asset.");
     } finally {
       setSaving(false);
     }
@@ -175,15 +205,15 @@ function AssetsPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "Failed to delete asset");
+        toast.error(data.error || "Failed to delete asset");
         return;
       }
 
-      alert("Asset deleted successfully!");
+      toast.success("Asset deleted successfully!");
       await fetchPC();
     } catch (err) {
       console.error("Delete Asset Error:", err);
-      alert("Something went wrong while deleting asset.");
+      toast.error("Something went wrong while deleting asset.");
     }
   };
 
@@ -193,7 +223,16 @@ function AssetsPage() {
       Asset_Type: "Monitor",
       Assest_Status: "Yes",
       Brand: "",
-      QR_Code: ""
+      QR_Code: "",
+      Financial_Details: {
+        purchase_year: "",
+        purchase_cost: "",
+        useful_life: "",
+        breakdown_frequency: "",
+        total_maintenance_cost: "",
+        usage_frequency: "",
+        warranty: "",
+      }
     });
   };
 
@@ -229,7 +268,7 @@ function AssetsPage() {
 
   const handleResolveIssue = async (issueId, assetId) => {
     if (!assetId || !issueId || !issueForm.resolveDescription) {
-      alert("Please fill all required fields");
+      toast.warning("Please fill all required fields");
       return;
     }
 
@@ -248,16 +287,16 @@ function AssetsPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "Something went wrong!");
+        toast.error(data.error || "Something went wrong!");
         return;
       }
 
-      alert("Issue Resolved successfully!");
+      toast.success("Issue resolved successfully!");
       setViewingIssue(null);
       await fetchPC();
     } catch (err) {
       console.error("Update Asset Error:", err);
-      alert("Something went wrong while updating asset.");
+      toast.error("Something went wrong while updating asset.");
     } finally {
       setSaving(false);
     }
@@ -1127,7 +1166,6 @@ function AssetsPage() {
               {[
                 { label: 'Purchase Year', value: viewingFinancial.Financial_Details?.purchase_year || 'N/A' },
                 { label: 'Purchase Cost', value: viewingFinancial.Financial_Details?.purchase_cost || 'N/A' },
-                { label: 'Scrap Value', value: viewingFinancial.Financial_Details?.scrap_value || 'N/A' },
 { label: 'Expected Life', value: viewingFinancial.Financial_Details?.useful_life || viewingFinancial.Financial_Details?.expected_life_years || 'N/A' },
 { label: 'Breakdowns', value: viewingFinancial.Financial_Details?.breakdown_frequency || viewingFinancial.Financial_Details?.total_breakdowns || 'N/A' },
                 { label: 'Maint. Cost', value: viewingFinancial.Financial_Details?.total_maintenance_cost || 'N/A' },
@@ -1170,7 +1208,7 @@ function AssetsPage() {
                 <>
                   {[
                     { label: 'Asset Name',        value: viewingIssue.Asset_Name },
-                    { label: 'Faculty Name',       value: issue?.FacultyDetails?.Name || "N/A" },
+                    { label: 'Faculty Name',       value: issue?.FacultyDetails?.UserDetails?.Name || "N/A" },
                     { label: 'Issue Description',  value: issue?.IssueDescription },
                     ...(issue?.Status === 'resolved by technician' ? [{ label: 'Resolve Description', value: issue?.ResolveDescription }] : []),
                   ].map((row, i) => (
@@ -1353,6 +1391,107 @@ function AssetsPage() {
                 placeholder="Enter QR code URL"
                 onFocus={(e) => e.target.style.borderColor = C.primary}
                 onBlur={(e) => e.target.style.borderColor = 'rgba(8,131,149,0.2)'}
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Purchase Year</label>
+              <input
+                type="number"
+                style={styles.input}
+                value={newAsset.Financial_Details?.purchase_year || ""}
+                onChange={(e) => setNewAsset({
+                  ...newAsset,
+                  Financial_Details: { ...newAsset.Financial_Details, purchase_year: e.target.value }
+                })}
+                placeholder="e.g., 2021"
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Purchase Cost (Rs.)</label>
+              <input
+                type="number"
+                style={styles.input}
+                value={newAsset.Financial_Details?.purchase_cost || ""}
+                onChange={(e) => setNewAsset({
+                  ...newAsset,
+                  Financial_Details: { ...newAsset.Financial_Details, purchase_cost: e.target.value }
+                })}
+                placeholder="e.g., 15000"
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Useful Life (Years)</label>
+              <input
+                type="number"
+                style={styles.input}
+                value={newAsset.Financial_Details?.useful_life || ""}
+                onChange={(e) => setNewAsset({
+                  ...newAsset,
+                  Financial_Details: { ...newAsset.Financial_Details, useful_life: e.target.value }
+                })}
+                placeholder="e.g., 5"
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Breakdown Frequency</label>
+              <input
+                type="number"
+                style={styles.input}
+                value={newAsset.Financial_Details?.breakdown_frequency || ""}
+                onChange={(e) => setNewAsset({
+                  ...newAsset,
+                  Financial_Details: { ...newAsset.Financial_Details, breakdown_frequency: e.target.value }
+                })}
+                placeholder="e.g., 2"
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Maintenance Cost (Rs.)</label>
+              <input
+                type="number"
+                style={styles.input}
+                value={newAsset.Financial_Details?.total_maintenance_cost || ""}
+                onChange={(e) => setNewAsset({
+                  ...newAsset,
+                  Financial_Details: { ...newAsset.Financial_Details, total_maintenance_cost: e.target.value }
+                })}
+                placeholder="e.g., 2000"
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Usage Frequency</label>
+              <select
+                style={styles.select}
+                value={newAsset.Financial_Details?.usage_frequency || ""}
+                onChange={(e) => setNewAsset({
+                  ...newAsset,
+                  Financial_Details: { ...newAsset.Financial_Details, usage_frequency: e.target.value }
+                })}
+              >
+                <option value="">Select Usage</option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Warranty (Years)</label>
+              <input
+                type="number"
+                style={styles.input}
+                value={newAsset.Financial_Details?.warranty || ""}
+                onChange={(e) => setNewAsset({
+                  ...newAsset,
+                  Financial_Details: { ...newAsset.Financial_Details, warranty: e.target.value }
+                })}
+                placeholder="e.g., 2"
               />
             </div>
 

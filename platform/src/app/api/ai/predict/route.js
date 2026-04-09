@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "../../../../app/api/utils/db";
 import Assets from "../../../../models/Asset";
+import NonTechAssets from "../../../../models/NonTechAssets";
 
 export async function POST(req) {
   try {
@@ -16,7 +17,12 @@ export async function POST(req) {
       );
     }
 
-    const asset = await Assets.findById(assetId);
+    let asset = await Assets.findById(assetId);
+    let assetCollection = "Assets";
+    if (!asset) {
+      asset = await NonTechAssets.findById(assetId);
+      assetCollection = "NonTechAssets";
+    }
 
     if (!asset) {
       return NextResponse.json(
@@ -41,7 +47,11 @@ export async function POST(req) {
       );
     }
 
-    const aiResponse = await fetch(pythonServiceURL, {
+    const targetURL = pythonServiceURL.endsWith("/predict")
+      ? pythonServiceURL
+      : `${pythonServiceURL.replace(/\/$/, "")}/predict`;
+
+    const aiResponse = await fetch(targetURL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -50,8 +60,9 @@ export async function POST(req) {
     });
 
     if (!aiResponse.ok) {
+      const aiErrorText = await aiResponse.text();
       return NextResponse.json(
-        { error: "AI service failed" },
+        { error: "AI service failed", details: aiErrorText },
         { status: 500 }
       );
     }
@@ -64,6 +75,7 @@ export async function POST(req) {
     return NextResponse.json({
       message: "AI prediction generated successfully",
       AI_Predictions,
+      assetCollection,
     });
 
   } catch (error) {

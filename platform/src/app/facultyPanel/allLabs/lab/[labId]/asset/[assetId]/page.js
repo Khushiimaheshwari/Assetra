@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useSession } from "next-auth/react";
 import { Loader2, Cpu, AlertTriangle, QrCode, PackagePlus, IndianRupee } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const AssetsPage = () => {
   const { assetId: id } = useParams();
@@ -76,7 +77,7 @@ const [viewingQR, setViewingQR] = useState(null);
   // ── Raise Issue (faculty logic — unchanged) ──
   const handleRaiseIssue = async () => {
     if (!issueForm.asset_id || !issueForm.facultyId || !issueForm.issueDescription) {
-      alert("Please fill all required fields"); return;
+      toast.warning("Please fill all required fields"); return;
     }
     try {
       const res = await fetch("/api/faculty/raiseIssue", {
@@ -89,20 +90,20 @@ const [viewingQR, setViewingQR] = useState(null);
         }),
       });
       const data = await res.json();
-      if (!res.ok) { alert(data.error || "Something went wrong!"); return; }
-      alert("Issue raised successfully!");
+      if (!res.ok) { toast.error(data.error || "Something went wrong!"); return; }
+      toast.success("Issue raised successfully!");
       setAddingIssue(null);
       setIssueForm({ facultyId: '', issueDescription: '' });
       await fetchPC();
     } catch (err) {
       console.error("Raise Issue Error:", err);
-      alert("Something went wrong while adding Faculty.");
+      toast.error("Something went wrong while adding faculty.");
     }
   };
 
   // ── Approve Issue (faculty logic — unchanged) ──
   const handleApproveIssue = async (issueId, asset_id) => {
-    if (!asset_id || !issueId) { alert("Please fill all required fields"); return; }
+    if (!asset_id || !issueId) { toast.warning("Please fill all required fields"); return; }
     try {
       const res = await fetch("/api/faculty/approveIssueResolve", {
         method: "POST",
@@ -110,13 +111,13 @@ const [viewingQR, setViewingQR] = useState(null);
         body: JSON.stringify({ asset_id, issueId }),
       });
       const data = await res.json();
-      if (!res.ok) { alert(data.error || "Something went wrong!"); return; }
-      alert("Resolve Approved successfully!");
+      if (!res.ok) { toast.error(data.error || "Something went wrong!"); return; }
+      toast.success("Resolve approved successfully!");
       setViewingIssue(null);
       await fetchPC();
     } catch (err) {
       console.error("Update Asset Error:", err);
-      alert("Something went wrong while updating asset.");
+      toast.error("Something went wrong while updating asset.");
     }
   };
 
@@ -399,7 +400,7 @@ const [viewingQR, setViewingQR] = useState(null);
                 <>
                   {[
                     { label: 'Asset Name',        value: viewingIssue.Asset_Name },
-                    { label: 'Faculty Name',       value: issue.FacultyDetails?.Name || "N/A" },
+                    { label: 'Faculty Name',       value: issue.FacultyDetails?.UserDetails?.Name || "N/A" },
                     { label: 'Issue Description',  value: issue.IssueDescription },
                     ...(issue.Status === 'resolved by technician' ? [{ label: 'Resolve Description', value: issue.ResolveDescription }] : []),
                   ].map((row, i) => (

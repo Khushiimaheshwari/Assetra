@@ -2,6 +2,8 @@
 import { usePathname } from "next/navigation";
 import Providers from "./providers";
 import Navbar from "./components/navbar";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
@@ -24,6 +26,7 @@ export default function RootLayout({ children }) {
         <Providers>
           {!shouldHideNavbar && <Navbar />}
           {children}
+          <ToastContainer position="top-right" autoClose={3000} pauseOnHover />
         </Providers>
       </body>
     </html>

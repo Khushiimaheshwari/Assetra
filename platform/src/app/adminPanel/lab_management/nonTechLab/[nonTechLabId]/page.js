@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Upload, ChevronDown, ChevronUp, Loader2, X, Edit, Trash2, Calendar, Clock, AlertCircle, Cpu, Sparkles, QrCode, AlertTriangle, PackagePlus } from 'lucide-react';
 import { useParams } from 'next/navigation';
+import { toast } from 'react-toastify';
 
 const LabInfo = () => {
   const { nonTechLabId: id } = useParams();  
@@ -39,7 +40,6 @@ const LabInfo = () => {
     Financial_Details: {
       purchase_year: "",
       purchase_cost: "",
-      scrap_value: "",
       useful_life: "",
       breakdown_frequency: 0,
       total_maintenance_cost: 0,
@@ -110,7 +110,7 @@ const LabInfo = () => {
 
   const handleSubmitNotification = async () => {
     if(!notifyFormData.eventType || !notifyFormData.date || !notifyFormData.startTime || !notifyFormData.endTime || !notifyFormData.description) {
-      alert("Please fill in all required fields!");
+      toast.warning("Please fill in all required fields!");
       return;
     }
     const payload = {
@@ -128,17 +128,17 @@ const LabInfo = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Event Notification added successfully!");
+        toast.success("Event notification added successfully!");
         setNotifications(data.eventNotify);
         setNotifyFormData({ eventType: '', date: '', startTime: '', endTime: '', description: '' });
         setShowNotifyForm(false);
         fetchLab();
       } else {
-        alert(data.error || "Failed to add info");
+        toast.error(data.error || "Failed to add info");
       }
     } catch (error) {
       console.error("Error adding info:", error);
-      alert("Something went wrong while adding the info.");
+      toast.error("Something went wrong while adding the info.");
     }
   };
 
@@ -151,7 +151,7 @@ const LabInfo = () => {
       Asset_Name: "",
       Assest_Status: "Yes",
       Financial_Details: {
-        purchase_year: "", purchase_cost: "", scrap_value: "",
+        purchase_year: "", purchase_cost: "",
         useful_life: "", breakdown_frequency: "", total_maintenance_cost: "", usage_frequency: "", warranty: ""
       }
     });
@@ -159,7 +159,7 @@ const LabInfo = () => {
 
   const handleAddAsset = async () => {
     if (!newAsset.Asset_Name || !newAsset.Assest_Status) {
-      alert("Please fill all required fields"); return;
+      toast.warning("Please fill all required fields"); return;
     }
     setSavingAsset(true);
     try {
@@ -173,7 +173,6 @@ const LabInfo = () => {
           Financial_Details: {
             purchase_year: Number(newAsset.Financial_Details.purchase_year),
             purchase_cost: Number(newAsset.Financial_Details.purchase_cost),
-            scrap_value: Number(newAsset.Financial_Details.scrap_value),
             useful_life: Number(newAsset.Financial_Details.useful_life),
             breakdown_frequency: Number(newAsset.Financial_Details.breakdown_frequency || 0),
             total_maintenance_cost: Number(newAsset.Financial_Details.total_maintenance_cost || 0),
@@ -183,14 +182,14 @@ const LabInfo = () => {
         }),
       });
       const data = await res.json();
-      if (!res.ok) { alert(data.error || "Something went wrong!"); return; }
-      alert("Asset added successfully!");
+      if (!res.ok) { toast.error(data.error || "Something went wrong!"); return; }
+      toast.success("Asset added successfully!");
       setShowAddAssetModal(false);
       resetAssetForm();
       await fetchLab();
     } catch (err) {
       console.error("Asset Error:", err);
-      alert("Something went wrong while adding asset.");
+      toast.error("Something went wrong while adding asset.");
     } finally {
       setSavingAsset(false);
     }
@@ -204,7 +203,7 @@ const LabInfo = () => {
 
   const handleUpdateAsset = async () => {
     if (!newAsset.Asset_Name || !newAsset.Asset_Type || !newAsset.Assest_Status) {
-      alert("Please fill all required fields"); return;
+      toast.warning("Please fill all required fields"); return;
     }
     setSavingAsset(true);
     try {
@@ -219,15 +218,15 @@ const LabInfo = () => {
         }),
       });
       const data = await res.json();
-      if (!res.ok) { alert(data.error || "Something went wrong!"); return; }
-      alert("Asset updated successfully!");
+      if (!res.ok) { toast.error(data.error || "Something went wrong!"); return; }
+      toast.success("Asset updated successfully!");
       setShowAddAssetModal(false);
       setEditingAsset(null);
       resetAssetForm();
       await fetchLab();
     } catch (err) {
       console.error("Update Asset Error:", err);
-      alert("Something went wrong while updating asset.");
+      toast.error("Something went wrong while updating asset.");
     } finally {
       setSavingAsset(false);
     }
@@ -242,12 +241,12 @@ const LabInfo = () => {
         body: JSON.stringify({ id: assetId }),
       });
       const data = await res.json();
-      if (!res.ok) { alert(data.error || "Failed to delete asset"); return; }
-      alert("Asset deleted successfully!");
+      if (!res.ok) { toast.error(data.error || "Failed to delete asset"); return; }
+      toast.success("Asset deleted successfully!");
       await fetchLab();
     } catch (err) {
       console.error("Delete Asset Error:", err);
-      alert("Something went wrong while deleting asset.");
+      toast.error("Something went wrong while deleting asset.");
     }
   };
 
@@ -269,11 +268,11 @@ const LabInfo = () => {
         body: JSON.stringify({ assetId: viewingAI._id })
       });
       const data = await response.json();
-      if (!response.ok) { alert(data.error || "AI generation failed"); return; }
+      if (!response.ok) { toast.error(data.error || "AI generation failed"); return; }
       setViewingAI(prev => ({ ...prev, AI_Predictions: data.AI_Predictions }));
     } catch (error) {
       console.error("AI generation error:", error);
-      alert("Something went wrong while generating AI report.");
+      toast.error("Something went wrong while generating AI report.");
     } finally {
       setAiLoading(false);
     }
@@ -918,7 +917,7 @@ const LabInfo = () => {
                 <>
                   {[
                     { label: 'Asset Name', value: viewingIssue.Asset_Name },
-                    { label: 'Faculty Name', value: issue?.FacultyDetails?.Name || "N/A" },
+                    { label: 'Faculty Name', value: issue?.FacultyDetails?.UserDetails?.Name || "N/A" },
                     { label: 'Issue Description', value: issue?.IssueDescription },
                     ...(issue?.Status === 'resolved by technician' ? [{ label: 'Resolve Description', value: issue?.ResolveDescription }] : []),
                   ].map((row, i) => (
@@ -1105,7 +1104,6 @@ const LabInfo = () => {
                 {[
                   { label: 'Purchase Year', key: 'purchase_year', placeholder: 'e.g., 2021' },
                   { label: 'Purchase Cost (₹)', key: 'purchase_cost', placeholder: 'e.g., 15000' },
-                  { label: 'Scrap Value (₹)', key: 'scrap_value', placeholder: 'e.g., 500' },
                   { label: 'Useful Life (Years)', key: 'useful_life', placeholder: 'e.g., 5' },
                   { label: 'Breakdown Frequency', key: 'breakdown_frequency', placeholder: 'e.g., 2' },
                   { label: 'Maintenance Cost (₹)', key: 'total_maintenance_cost', placeholder: 'e.g., 2000' },

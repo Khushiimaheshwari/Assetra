@@ -120,6 +120,8 @@ function AssetsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedType, setSelectedType] = useState("All");
   const [viewingQR, setViewingQR] = useState(null);
+  const [viewingAI, setViewingAI] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const [viewingFinancial, setViewingFinancial] = useState(null);
   const [editingAsset, setEditingAsset] = useState(null);
   const [isMobile, setIsMobile] = useState(false); 
@@ -136,7 +138,6 @@ function AssetsPage() {
     Financial_Details: {
       purchase_year: "",
       purchase_cost: "",
-      scrap_value: "",
       useful_life: "",
       breakdown_frequency: 0,
       total_maintenance_cost: 0,
@@ -206,7 +207,6 @@ function AssetsPage() {
           Financial_Details: {
             purchase_year: Number(newAsset.Financial_Details.purchase_year),
             purchase_cost: Number(newAsset.Financial_Details.purchase_cost),
-            scrap_value: Number(newAsset.Financial_Details.scrap_value),
             useful_life: Number(newAsset.Financial_Details.useful_life),
             breakdown_frequency: Number(newAsset.Financial_Details.breakdown_frequency || 0),
             total_maintenance_cost: Number(newAsset.Financial_Details.total_maintenance_cost || 0),
@@ -304,7 +304,7 @@ function AssetsPage() {
       Brand: "",
       Issue_Reported: "",
       Financial_Details: {
-        purchase_year: "", purchase_cost: "", scrap_value: "", useful_life: "",
+        purchase_year: "", purchase_cost: "", useful_life: "",
         breakdown_frequency: "", total_maintenance_cost: "", usage_frequency: "", warranty: ""
       }
     });
@@ -336,6 +336,38 @@ function AssetsPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleGenerateAI = async () => {
+    if (!viewingAI?._id) return;
+    setAiLoading(true);
+    try {
+      const response = await fetch("/api/ai/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetId: viewingAI._id }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        toast.error(data.error || "AI generation failed");
+        return;
+      }
+
+      setViewingAI((prev) => prev ? { ...prev, AI_Predictions: data.AI_Predictions } : prev);
+      setAssets((prev) =>
+        prev.map((a) =>
+          String(a._id) === String(viewingAI._id)
+            ? { ...a, AI_Predictions: data.AI_Predictions }
+            : a
+        )
+      );
+      toast.success("AI report generated successfully");
+    } catch (error) {
+      console.error("AI generation error:", error);
+      toast.error("Something went wrong while generating AI report.");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -573,6 +605,18 @@ function AssetsPage() {
                 </div>
 
                 <div style={styles.assetDetail}>
+                  <div style={styles.detailLabel}><Sparkles size={14} color={C.primary} />AI Insights</div>
+                  <div
+                    onClick={() => setViewingAI(asset)}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.primary; e.currentTarget.style.color = 'white'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = C.ice; e.currentTarget.style.color = C.primary; }}
+                    style={{ padding: '3px 12px', backgroundColor: C.ice, borderRadius: '20px', fontSize: '12px', fontWeight: '700', color: C.primary, cursor: 'pointer', transition: 'all 0.2s' }}
+                  >
+                    View Report
+                  </div>
+                </div>
+
+                <div style={styles.assetDetail}>
                   <div style={styles.detailLabel}><IndianRupee size={14} color={C.primary} />Financial</div>
                   <div onClick={() => setViewingFinancial(asset)}
                     onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.primary; e.currentTarget.style.color = 'white'; }}
@@ -630,7 +674,6 @@ function AssetsPage() {
               {[
                 { label: 'Purchase Year',        value: viewingFinancial.Financial_Details?.purchase_year        || '—' },
                 { label: 'Purchase Cost (₹)',     value: viewingFinancial.Financial_Details?.purchase_cost        ? `₹${viewingFinancial.Financial_Details.purchase_cost}`        : '—' },
-                { label: 'Scrap Value (₹)',       value: viewingFinancial.Financial_Details?.scrap_value          ? `₹${viewingFinancial.Financial_Details.scrap_value}`          : '—' },
                 { label: 'Useful Life (Years)',   value: viewingFinancial.Financial_Details?.useful_life          ? `${viewingFinancial.Financial_Details.useful_life} yrs`        : '—' },
                 { label: 'Breakdown Frequency',  value: viewingFinancial.Financial_Details?.breakdown_frequency  ?? '0' },
                 { label: 'Maintenance Cost (₹)', value: viewingFinancial.Financial_Details?.total_maintenance_cost ? `₹${viewingFinancial.Financial_Details.total_maintenance_cost}` : '₹0' },
@@ -818,6 +861,78 @@ function AssetsPage() {
         </div>
       )}
 
+      {/* ── AI Insights Modal ── */}
+      {viewingAI && (
+        <div style={styles.qrModal} onClick={() => setViewingAI(null)}>
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: isMobile ? '0 1.25rem 1.25rem' : '0 2rem 1.5rem',
+              maxWidth: '500px',
+              width: isMobile ? '100%' : '90%',
+              position: 'relative',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              boxShadow: '0 20px 60px rgba(8,131,149,0.2)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 10, display: 'flex', alignItems: 'center', gap: '0.75rem', padding: isMobile ? '1.25rem 0 1rem' : '1.5rem 0 1rem', borderBottom: `2px solid ${C.ice}`, marginBottom: '1.25rem' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '10px', backgroundColor: C.ice, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Sparkles size={20} color={C.primary} />
+              </div>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: C.dark }}>AI Asset Intelligence</h2>
+                <p style={{ margin: 0, fontSize: '12px', color: C.primary, fontWeight: '500' }}>{viewingAI.Asset_Name}</p>
+              </div>
+              <button style={{ marginLeft: 'auto', background: C.ice, border: 'none', width: 32, height: 32, borderRadius: '8px', cursor: 'pointer', color: C.dark, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setViewingAI(null)}>✕</button>
+            </div>
+
+            {viewingAI.AI_Predictions ? (
+              <div>
+                {[
+                  { label: 'Failure Probability', value: `${((viewingAI.AI_Predictions.failureProbability || 0) * 100).toFixed(2)}%`, accent: (viewingAI.AI_Predictions.failureProbability || 0) > 0.6 ? '#fee2e2' : C.mint, textColor: (viewingAI.AI_Predictions.failureProbability || 0) > 0.6 ? '#991b1b' : '#065f46' },
+                  { label: 'Failure Prediction', value: viewingAI.AI_Predictions.failurePrediction === 1 ? 'High Risk' : 'Low Risk', accent: viewingAI.AI_Predictions.failurePrediction === 1 ? '#fee2e2' : C.mint, textColor: viewingAI.AI_Predictions.failurePrediction === 1 ? '#991b1b' : '#065f46' },
+                  { label: 'Remaining Life', value: `${(viewingAI.AI_Predictions.remainingLifePrediction || 0).toFixed(1)} Years`, accent: C.ice, textColor: C.dark },
+                  { label: 'Predicted Book Value', value: `₹${(viewingAI.AI_Predictions.depreciationPrediction || 0).toFixed(0)}`, accent: C.ice, textColor: C.dark },
+                  { label: 'Next Year Maintenance', value: `₹${(viewingAI.AI_Predictions.maintenanceCostPrediction || 0).toFixed(0)}`, accent: C.ice, textColor: C.dark },
+                ].map((row, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '10px', marginBottom: '8px', backgroundColor: row.accent }}>
+                    <span style={{ fontSize: '13px', color: C.dark, fontWeight: '600' }}>{row.label}</span>
+                    <span style={{ fontSize: '15px', fontWeight: '800', color: row.textColor }}>{row.value}</span>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderRadius: '10px', marginBottom: '1.25rem', backgroundColor: viewingAI.AI_Predictions.recommendation === 'Replace' ? '#fee2e2' : C.mint, border: `2px solid ${viewingAI.AI_Predictions.recommendation === 'Replace' ? '#fca5a5' : '#6ee7b7'}` }}>
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: C.dark }}>Recommendation</span>
+                  <span style={{ fontSize: '15px', fontWeight: '800', color: viewingAI.AI_Predictions.recommendation === 'Replace' ? '#991b1b' : '#065f46' }}>
+                    {viewingAI.AI_Predictions.recommendation}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '2rem', color: C.primary, fontSize: '14px', fontWeight: '500' }}>
+                <Sparkles size={36} color={C.sky} style={{ margin: '0 auto 0.75rem', display: 'block' }} />
+                No AI predictions yet. Generate a report below.
+              </div>
+            )}
+
+            <button
+              onClick={handleGenerateAI}
+              disabled={aiLoading}
+              onMouseEnter={(e) => { if (!aiLoading) e.currentTarget.style.backgroundColor = C.dark; }}
+              onMouseLeave={(e) => { if (!aiLoading) e.currentTarget.style.backgroundColor = C.primary; }}
+              style={{ width: '100%', padding: '11px', backgroundColor: aiLoading ? '#9ca3af' : C.primary, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: aiLoading ? 'not-allowed' : 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'background 0.2s', boxShadow: aiLoading ? 'none' : '0 2px 8px rgba(8,131,149,0.25)' }}
+            >
+              {aiLoading
+                ? (<><Loader2 size={16} className="animate-spin" /> Processing...</>)
+                : (<><Sparkles size={16} />{viewingAI.AI_Predictions ? 'Regenerate AI Report' : 'Generate AI Report'}</>)
+              }
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Add / Edit Asset Modal ── */}
       {showAddModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: isMobile ? '1rem' : '0' }}
@@ -869,7 +984,6 @@ function AssetsPage() {
                 {[
                   { label: 'Purchase Year', key: 'purchase_year', placeholder: 'e.g., 2021' },
                   { label: 'Purchase Cost (₹)', key: 'purchase_cost', placeholder: 'e.g., 15000' },
-                  { label: 'Scrap Value (₹)', key: 'scrap_value', placeholder: 'e.g., 500' },
                   { label: 'Useful Life (Years)', key: 'useful_life', placeholder: 'e.g., 5' },
                   { label: 'Breakdown Frequency', key: 'breakdown_frequency', placeholder: 'e.g., 2' },
                   { label: 'Maintenance Cost (₹)', key: 'total_maintenance_cost', placeholder: 'e.g., 2000' },

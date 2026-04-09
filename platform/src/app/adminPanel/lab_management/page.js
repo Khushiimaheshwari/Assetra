@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 export default function LabManagement() {
   const [labs, setLabs] = useState([]);
@@ -106,7 +107,7 @@ export default function LabManagement() {
 
   const handleAddLab = async () => {
     if (!newLab.name || !newLab.block || !newLab.capacity) {
-      alert("Please fill in all required fields!");
+      toast.warning("Please fill in all required fields!");
       return;
     }
 
@@ -133,16 +134,16 @@ export default function LabManagement() {
       const data = await res.json();
 
       if (res.ok) {
-        alert("Lab added successfully!");
+        toast.success("Lab added successfully!");
         setShowAddModal(false);
         resetForm();
         await fetchLab();
       } else {
-        alert(data.error || "Failed to add lab");
+        toast.error(data.error || "Failed to add lab");
       }
     } catch (error) {
       console.error("Error adding lab:", error);
-      alert("Something went wrong while adding the lab.");
+      toast.error("Something went wrong while adding the lab.");
     } finally {
       setSaving(false);
     }
@@ -166,7 +167,7 @@ export default function LabManagement() {
 
   const handleUpdateLab = async () => {
     if (!newLab.name || !newLab.block || !newLab.capacity) {
-      alert("Please fill in all required fields!");
+      toast.warning("Please fill in all required fields!");
       return;
     }
 
@@ -193,17 +194,17 @@ export default function LabManagement() {
       const data = await res.json();
 
       if (res.ok) {
-        alert("Lab updated successfully!");
+        toast.success("Lab updated successfully!");
         setShowAddModal(false);
         setEditingLab(null);
         resetForm();
         await fetchLab();
       } else {
-        alert(data.error || "Failed to update lab");
+        toast.error(data.error || "Failed to update lab");
       }
     } catch (err) {
       console.error("Error updating lab:", err);
-      alert("Something went wrong while updating the lab.");
+      toast.error("Something went wrong while updating the lab.");
     } finally {
       setSaving(false);
     }
@@ -222,14 +223,14 @@ export default function LabManagement() {
       const data = await res.json();
 
       if (res.ok) {
-        alert("Lab deleted successfully!");
+        toast.success("Lab deleted successfully!");
         await fetchLab();
       } else {
-        alert(data.error || "Failed to delete lab");
+        toast.error(data.error || "Failed to delete lab");
       }
     } catch (err) {
       console.error("Error deleting lab:", err);
-      alert("Something went wrong while deleting the lab.");
+      toast.error("Something went wrong while deleting the lab.");
     }
   };
 

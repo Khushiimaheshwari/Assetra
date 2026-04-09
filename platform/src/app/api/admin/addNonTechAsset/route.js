@@ -18,6 +18,15 @@ export async function POST(req) {
       Lab: LabId,
       Financial_Details
     } = body;
+    const cleanFinancialDetails = {
+      purchase_year: Number(Financial_Details?.purchase_year || 0),
+      purchase_cost: Number(Financial_Details?.purchase_cost || 0),
+      useful_life: Number(Financial_Details?.useful_life || 0),
+      breakdown_frequency: Number(Financial_Details?.breakdown_frequency || 0),
+      total_maintenance_cost: Number(Financial_Details?.total_maintenance_cost || 0),
+      usage_frequency: Financial_Details?.usage_frequency || "",
+      warranty: Number(Financial_Details?.warranty || 0),
+    };
 
     if (!Asset_Name || !Assest_Status || !LabId) {
       return NextResponse.json(
@@ -38,7 +47,7 @@ export async function POST(req) {
       Assest_Status,
       Lab_Name: new mongoose.Types.ObjectId(LabId),
       QR_Code: "",
-      Financial_Details,
+      Financial_Details: cleanFinancialDetails,
     });
 
     await Lab.findByIdAndUpdate(LabId, {
@@ -51,16 +60,32 @@ export async function POST(req) {
 
     await generateQRCodeForNonTechAsset(newAsset._id, baseUrl);
 
-    const aiResponse = await fetch(
-      `${baseUrl}/api/ai/predict`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assetId: newAsset._id }),
+    let aiData = null;
+    try {
+      const pythonServiceURL = process.env.PYTHON_AI_SERVICE_URL;
+      if (pythonServiceURL) {
+        const targetURL = pythonServiceURL.endsWith("/predict")
+          ? pythonServiceURL
+          : `${pythonServiceURL.replace(/\/$/, "")}/predict`;
+        const aiResponse = await fetch(targetURL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newAsset.Financial_Details || {}),
+        });
+        if (aiResponse.ok) {
+          aiData = await aiResponse.json();
+          newAsset.AI_Predictions = aiData;
+          await newAsset.save();
+        } else {
+          aiData = { error: "AI service failed during auto-prediction" };
+        }
+      } else {
+        aiData = { error: "PYTHON_AI_SERVICE_URL not configured" };
       }
-    );
-
-    const aiData = await aiResponse.json();
+    } catch (aiErr) {
+      console.error("AI prediction while adding non-tech asset failed:", aiErr);
+      aiData = { error: "AI prediction failed during asset creation" };
+    }
 
     return NextResponse.json({
       message: "Asset added successfully",

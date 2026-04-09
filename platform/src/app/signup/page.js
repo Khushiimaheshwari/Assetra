@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import styles from "./signup.module.css";
+import { toast } from "react-toastify";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -22,7 +23,8 @@ export default function SignupPage() {
     setLoading(true);
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match!");
+      toast.warning("Passwords do not match!");
+      setLoading(false);
       return;
     }
     console.log("Signup details:", { email, password });

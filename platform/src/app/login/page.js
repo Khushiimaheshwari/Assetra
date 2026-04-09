@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./login.module.css";
 import { signIn } from "next-auth/react";
+import { toast } from "react-toastify";
 
 export default function LoginPage({ searchParams }) {
   const [email, setEmail] = useState("");
@@ -29,12 +30,12 @@ export default function LoginPage({ searchParams }) {
 
     if (res?.error) {
       setError(res.error);
-      alert("Login Failed! Wrong Credentials");
+      toast.error("Login failed! Wrong credentials");
       setLoading(false);
       return;
     }
 
-    alert("Login Successful!");
+    toast.success("Login successful!");
 
     const sessionRes = await fetch("/api/auth/session");
     const sessionData = await sessionRes.json();

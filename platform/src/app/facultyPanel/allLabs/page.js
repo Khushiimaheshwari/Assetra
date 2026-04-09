@@ -473,7 +473,7 @@ export default function LabManagement() {
                   lab={lab}
                   techName={
                     lab?.LabTechnician?.length > 0 && lab.LabTechnician
-                      ? lab.LabTechnician[0]?.Name
+                      ? lab.LabTechnician[0]?.UserDetails?.Name
                       : null
                   }
                 />

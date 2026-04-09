@@ -43,6 +43,7 @@ export default function LabManagement() {
       const data = await res.json();
       if (res.ok) {
         setLabs(data.labs);
+        console.log(data.labs);
       } else {
         console.error("Failed to fetch lab:", data.error);
       }
@@ -398,7 +399,7 @@ export default function LabManagement() {
                           <span style={{ ...styles.detailValue, fontStyle: 'italic', color: '#a8cdd5' }}>Not Assigned</span>
                         ) : (
                           lab.LabTechnician ? (
-                            <span style={styles.detailValue}>{lab?.LabTechnician[0]?.Name}</span>
+                            <span style={styles.detailValue}>{lab?.LabTechnician[0]?.UserDetails?.Name}</span>
                           ) : (
                             <span style={{ ...styles.detailValue, fontStyle: 'italic', color: '#a8cdd5' }}>Not Assigned</span>
                           )

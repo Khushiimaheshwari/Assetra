@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import AdminSidebar from "@/app/adminPanel/components/Admin_Sidebar";
+import { toast } from "react-toastify";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function daysLeft(end) {
@@ -260,7 +261,7 @@ export default function AMCDashboard() {
       await loadMaintenance();
       setTimeout(() => setSaveOk(false), 3000);
     } catch {
-      alert("Failed to save maintenance record. Please try again.");
+      toast.error("Failed to save maintenance record. Please try again.");
     } finally {
       setSaving(false);
     }

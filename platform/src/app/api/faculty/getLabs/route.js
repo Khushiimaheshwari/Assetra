@@ -46,7 +46,7 @@ export async function GET(req) {
         path: "LabTechnician",
         populate: {
           path: "UserDetails",
-          model: "User",
+          select: "Name Email",
         },
       })
       .lean();

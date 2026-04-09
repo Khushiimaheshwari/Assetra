@@ -33,7 +33,11 @@ export async function GET() {
       path: "Labs",
       populate: {
         path: "LabTechnician",
-        select: "UserDetails",
+        populate: {
+          path: "UserDetails",
+          model: "User",
+          select: "Name Email",
+        },
       },
     });
 
