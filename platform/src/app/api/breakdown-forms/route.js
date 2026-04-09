@@ -20,9 +20,15 @@ export async function GET() {
   try {
     const auth = await getSessionStaff();
     if (auth.error) return auth.error;
+    const { user } = auth;
 
     await connectDB();
-    const breakdownForms = await BreakdownForm.find()
+    const query =
+      user.Role === "lab_technician"
+        ? { createdByUserId: user._id, createdByRole: "lab_technician" }
+        : {};
+
+    const breakdownForms = await BreakdownForm.find(query)
       .sort({ createdAt: -1 })
       .lean();
 

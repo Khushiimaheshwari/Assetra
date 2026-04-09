@@ -405,6 +405,7 @@ function AssetsPage() {
 
   const handleMoveAsset = async () => {
     if (!moveForm.To_Lab) { toast.warning("Please select a destination lab."); return; }
+    if (!moveForm.To_PC) { toast.warning("Please select a destination PC."); return; }
     setMoveSaving(true);
     try {
       const res = await fetch("/api/admin/moveAsset", {
@@ -724,7 +725,7 @@ function AssetsPage() {
               </div>
               <div>
                 <label style={{ ...styles.label, color: '#94a3b8' }}>Moved By</label>
-                <div style={styles.readonlyInput}>You (logged-in technician)</div>
+                <div style={styles.readonlyInput}>You (logged-in admin)</div>
               </div>
             </div>
 
@@ -735,7 +736,7 @@ function AssetsPage() {
                 onFocus={(e) => e.target.style.borderColor = C.primary}
                 onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}>
                 <option value="">Select destination lab…</option>
-                {labs.filter(lab => lab._id !== (pcData.Lab?._id || pcData.Lab)).map(lab => (
+                {labs.filter((lab) => lab.Lab_Type === "Technical_Lab").map(lab => (
                   <option key={lab._id} value={lab._id}>{lab.Lab_ID}{lab.Lab_Name ? ` — ${lab.Lab_Name}` : ""}</option>
                 ))}
               </select>
@@ -743,7 +744,7 @@ function AssetsPage() {
 
             {moveForm.To_Lab && (
               <div style={styles.formGroup}>
-                <label style={styles.label}>To PC <span style={{ fontWeight: '400', textTransform: 'none', color: '#94a3b8', fontSize: '10px' }}>(Optional)</span></label>
+              <label style={styles.label}>To PC *</label>
                 {labPCsLoading ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '14px', border: `2px solid rgba(8,131,149,0.2)`, borderRadius: '10px', fontSize: '14px', color: C.dark }}>
                     <Loader2 size={14} className="animate-spin" color={C.primary} /> Loading PCs…
@@ -753,7 +754,7 @@ function AssetsPage() {
                     onChange={(e) => setMoveForm(prev => ({ ...prev, To_PC: e.target.value }))}
                     onFocus={(e) => e.target.style.borderColor = C.primary}
                     onBlur={(e) => e.target.style.borderColor = 'rgba(8, 131, 149, 0.2)'}>
-                    <option value="">No specific PC (lab-level)</option>
+                    <option value="">Select destination PC…</option>
                     {labPCs.map(pc => <option key={pc._id} value={pc._id}>{pc.PC_Name}</option>)}
                     {labPCs.length === 0 && <option disabled>No PCs found in this lab</option>}
                   </select>
@@ -782,8 +783,8 @@ function AssetsPage() {
                 Cancel
               </button>
               <button
-                style={{ ...styles.saveButton, background: (moveSaving || !moveForm.To_Lab) ? '#9ca3af' : 'linear-gradient(135deg, #3674B5 0%, #088395 100%)', cursor: (moveSaving || !moveForm.To_Lab) ? 'not-allowed' : 'pointer', boxShadow: (moveSaving || !moveForm.To_Lab) ? 'none' : '0 4px 6px rgba(54,116,181,0.3)' }}
-                onClick={handleMoveAsset} disabled={moveSaving || !moveForm.To_Lab}>
+                style={{ ...styles.saveButton, background: (moveSaving || !moveForm.To_Lab || !moveForm.To_PC) ? '#9ca3af' : 'linear-gradient(135deg, #3674B5 0%, #088395 100%)', cursor: (moveSaving || !moveForm.To_Lab || !moveForm.To_PC) ? 'not-allowed' : 'pointer', boxShadow: (moveSaving || !moveForm.To_Lab || !moveForm.To_PC) ? 'none' : '0 4px 6px rgba(54,116,181,0.3)' }}
+                onClick={handleMoveAsset} disabled={moveSaving || !moveForm.To_Lab || !moveForm.To_PC}>
                 {moveSaving ? (<><Loader2 size={16} className="animate-spin" /> Moving…</>) : (
                   <><svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/></svg>Confirm Move</>
                 )}

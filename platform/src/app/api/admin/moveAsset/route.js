@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "../../utils/db";
 import Assets from "../../../../models/Asset";
 import PCs from "../../../../models/Lab_PCs";
+import Lab from "../../../../models/Labs";
 import { User } from "../../../../models/User";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/authOptions";
@@ -16,6 +17,9 @@ export async function POST(req) {
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    if (session.user.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const user = await User.findOne({ Email: session.user.email });
 
@@ -25,9 +29,9 @@ export async function POST(req) {
 
     const { assetId, To_Lab, To_PC, Reason } = await req.json();
 
-    if (!assetId || !To_Lab) {
+    if (!assetId || !To_Lab || !To_PC) {
       return NextResponse.json(
-        { error: "assetId and To_Lab are required." },
+        { error: "assetId, To_Lab and To_PC are required." },
         { status: 400 }
       );
     }
@@ -39,7 +43,7 @@ export async function POST(req) {
     }
 
     const toLabId = new mongoose.Types.ObjectId(To_Lab);
-    const toPCId = To_PC ? new mongoose.Types.ObjectId(To_PC) : null;
+    const toPCId = new mongoose.Types.ObjectId(To_PC);
 
     const fromLabId = asset.Lab_Name;
     const fromPCId = asset.PC_Name;
@@ -52,6 +56,28 @@ export async function POST(req) {
     if (sameDestination) {
       return NextResponse.json(
         { error: "Asset already exists in selected Lab/PC" },
+        { status: 400 }
+      );
+    }
+
+    const destinationLab = await Lab.findById(toLabId).select("_id Lab_Type PCs").lean();
+    if (!destinationLab) {
+      return NextResponse.json({ error: "Destination lab not found." }, { status: 404 });
+    }
+    if (destinationLab.Lab_Type !== "Technical_Lab") {
+      return NextResponse.json(
+        { error: "Technical assets can only be moved to a technical lab." },
+        { status: 400 }
+      );
+    }
+
+    const destinationPC = await PCs.findById(toPCId).select("_id Lab_Name").lean();
+    if (!destinationPC) {
+      return NextResponse.json({ error: "Destination PC not found." }, { status: 404 });
+    }
+    if (String(destinationPC.Lab_Name) !== String(toLabId)) {
+      return NextResponse.json(
+        { error: "Selected PC does not belong to the selected lab." },
         { status: 400 }
       );
     }

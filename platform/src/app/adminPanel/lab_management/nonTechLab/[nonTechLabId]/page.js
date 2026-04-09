@@ -34,6 +34,10 @@ const LabInfo = () => {
   const [viewingIssue, setViewingIssue] = useState(null);
   const [currentIssueIndex, setCurrentIssueIndex] = useState(0);
   const [assetSearch, setAssetSearch] = useState("");
+  const [movingAsset, setMovingAsset] = useState(null);
+  const [moveSaving, setMoveSaving] = useState(false);
+  const [labs, setLabs] = useState([]);
+  const [moveForm, setMoveForm] = useState({ To_Lab: "", Reason: "" });
   const [newAsset, setNewAsset] = useState({
     Asset_Name: "",
     Assest_Status: "Yes",
@@ -247,6 +251,57 @@ const LabInfo = () => {
     } catch (err) {
       console.error("Delete Asset Error:", err);
       toast.error("Something went wrong while deleting asset.");
+    }
+  };
+
+  const openMoveModal = async (asset) => {
+    setMovingAsset(asset);
+    setMoveForm({ To_Lab: "", Reason: "" });
+    try {
+      const res = await fetch("/api/admin/getLabs");
+      const data = await res.json();
+      if (res.ok) {
+        setLabs((data.labs || []).filter((lab) => lab.Lab_Type === "Non_Technical_Lab"));
+      } else {
+        toast.error(data.error || "Failed to load labs");
+      }
+    } catch (err) {
+      console.error("Error fetching labs for move:", err);
+      toast.error("Failed to load destination labs.");
+    }
+  };
+
+  const handleMoveAsset = async () => {
+    if (!movingAsset?._id) return;
+    if (!moveForm.To_Lab) {
+      toast.warning("Please select a destination lab.");
+      return;
+    }
+
+    setMoveSaving(true);
+    try {
+      const res = await fetch("/api/admin/moveNonTechAsset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assetId: movingAsset._id,
+          To_Lab: moveForm.To_Lab,
+          Reason: moveForm.Reason,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to move asset.");
+        return;
+      }
+      toast.success("Asset moved successfully!");
+      setMovingAsset(null);
+      await fetchLab();
+    } catch (err) {
+      console.error("Move asset error:", err);
+      toast.error("Something went wrong while moving asset.");
+    } finally {
+      setMoveSaving(false);
     }
   };
 
@@ -866,6 +921,17 @@ const LabInfo = () => {
                       <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
                     </button>
                     <button
+                      style={{ ...styles.assetIconButton, color: '#3674B5' }}
+                      onClick={() => openMoveModal(asset)}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dbeafe'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#EBF4F6'}
+                      title="Move Asset"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+                      </svg>
+                    </button>
+                    <button
                       style={{ ...styles.assetIconButton, color: '#ef4444' }}
                       onClick={() => handleDeleteAsset(asset._id || asset.id)}
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
@@ -966,6 +1032,75 @@ const LabInfo = () => {
               </svg>
               Download QR Code
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════
+          MOVE NON-TECH ASSET MODAL
+      ══════════════════════════════════════════ */}
+      {movingAsset && (
+        <div style={styles.modal} onClick={() => setMovingAsset(null)}>
+          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h2 style={styles.modalHeader}>Move Asset</h2>
+
+            <div style={{ backgroundColor: '#EBF4F6', borderRadius: '8px', padding: '10px 14px', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#176B87' }}>{movingAsset.Asset_Name}</div>
+              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                Current Lab: {labData?.Lab_ID || "—"} {labData?.Lab_Name ? `— ${labData.Lab_Name}` : ""}
+              </div>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>To Lab *</label>
+              <select
+                style={styles.select}
+                value={moveForm.To_Lab}
+                onChange={(e) => setMoveForm((prev) => ({ ...prev, To_Lab: e.target.value }))}
+              >
+                <option value="">Select destination lab...</option>
+                {labs
+                  .filter((lab) => String(lab._id) !== String(id))
+                  .map((lab) => (
+                    <option key={lab._id} value={lab._id}>
+                      {lab.Lab_ID}{lab.Lab_Name ? ` — ${lab.Lab_Name}` : ""}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Reason for Move</label>
+              <textarea
+                style={styles.input}
+                value={moveForm.Reason}
+                onChange={(e) => setMoveForm((prev) => ({ ...prev, Reason: e.target.value }))}
+                placeholder="Why are you moving this asset?"
+              />
+            </div>
+
+            <div style={styles.modalActions}>
+              <button
+                style={styles.cancelButton}
+                onClick={() => setMovingAsset(null)}
+              >
+                Cancel
+              </button>
+              <button
+                style={styles.saveButton}
+                onClick={handleMoveAsset}
+                disabled={moveSaving || !moveForm.To_Lab}
+              >
+                {moveSaving ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Moving...
+                  </>
+                ) : (
+                  "Move Asset"
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
