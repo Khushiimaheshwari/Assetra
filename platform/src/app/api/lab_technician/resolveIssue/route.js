@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import { connectDB } from "../../../../app/api/utils/db";
 import Assets from "../../../../models/Asset";
 import appEventEmitter, { ISSUE_EVENTS } from "../../../../events/appEventEmitter";
@@ -14,6 +15,12 @@ export async function POST(req) {
     if (!assetId || !issueId || !resolveDescription) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
+
+    if (!mongoose.Types.ObjectId.isValid(assetId) || !mongoose.Types.ObjectId.isValid(issueId)) {
+      return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+    }
+
+    const issueObjectId = new mongoose.Types.ObjectId(issueId);
 
     const assetBefore = await Assets.findById(assetId)
       .populate({
@@ -55,7 +62,7 @@ export async function POST(req) {
       },
       {
         new: true,
-        arrayFilters: [{ "elem._id": issueId }],
+        arrayFilters: [{ "elem._id": issueObjectId }],
       }
     ).populate("Issue_Reported.FacultyDetails", "Name Email");
 

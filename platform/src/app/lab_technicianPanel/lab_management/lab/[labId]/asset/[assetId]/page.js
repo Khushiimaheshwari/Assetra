@@ -261,7 +261,8 @@ function AssetsPage() {
     const map = {
       "pending": "Pending",
       "resolved by technician": "Resolved By Technician",
-      "accepted": "Accepted"
+      "approved": "Approved",
+      "accepted": "Approved",
     };
     return map[status] || status;
   }
@@ -316,7 +317,8 @@ function AssetsPage() {
     switch(status) {      
       case "pending":                return { backgroundColor: '#fef3c7', color: '#92400e' };
       case "resolved by technician": return { backgroundColor: C.mint,   color: C.dark   };
-      case "accepted":               return { backgroundColor: '#fee2e2', color: '#991b1b' };
+      case "approved":
+      case "accepted":               return { backgroundColor: '#d1fae5', color: '#065f46' };
       default:                       return { backgroundColor: C.ice,    color: C.dark   };
     }
   };

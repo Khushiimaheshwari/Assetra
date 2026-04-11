@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "../../../../app/api/utils/db";
 import Assets from "../../../../models/Asset";
 import NonTechAssets from "../../../../models/NonTechAssets";
+import { explainAiFetchFailure, getPythonPredictUrl } from "../../utils/aiService";
 
 export async function POST(req) {
   try {
@@ -38,18 +39,14 @@ export async function POST(req) {
       );
     }
 
-    const pythonServiceURL = process.env.PYTHON_AI_SERVICE_URL;
+    const targetURL = getPythonPredictUrl();
 
-    if (!pythonServiceURL) {
+    if (!targetURL) {
       return NextResponse.json(
         { error: "Python service URL not configured" },
         { status: 500 }
       );
     }
-
-    const targetURL = pythonServiceURL.endsWith("/predict")
-      ? pythonServiceURL
-      : `${pythonServiceURL.replace(/\/$/, "")}/predict`;
 
     const aiResponse = await fetch(targetURL, {
       method: "POST",
@@ -80,7 +77,13 @@ export async function POST(req) {
 
   } catch (error) {
     console.error("AI Prediction Error:", error);
-
+    const code = error?.cause?.code ?? error?.code;
+    if (code === "ECONNREFUSED") {
+      return NextResponse.json(
+        { error: explainAiFetchFailure(error) },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

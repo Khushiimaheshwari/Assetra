@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import joblib
 import numpy as np
+import os
 from datetime import datetime
 from pathlib import Path
 import traceback
@@ -150,4 +151,7 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    # Default 5000 matches typical PYTHON_AI_SERVICE_URL (e.g. http://127.0.0.1:5000/predict).
+    # Override with PORT=5001 if port 5000 is in use (e.g. macOS AirPlay Receiver).
+    port = int(os.environ.get("PORT", "5000"))
+    app.run(host="0.0.0.0", port=port, debug=True)

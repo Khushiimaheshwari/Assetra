@@ -129,6 +129,7 @@ function AssetsPage() {
   const [saving, setSaving] = useState(false);
   const [viewingIssue, setViewingIssue] = useState(null);
   const [currentIssueIndex, setCurrentIssueIndex] = useState(0);
+  const [approveIssueSaving, setApproveIssueSaving] = useState(false);
   const [newAsset, setNewAsset] = useState({
     Asset_Name: "",
     Asset_Type: "Monitor",
@@ -314,6 +315,34 @@ function AssetsPage() {
   const nextIssue = () => { if (!viewingIssue) return; setCurrentIssueIndex((prev) => prev + 1 < viewingIssue.Issue_Reported.length ? prev + 1 : prev); };
   const prevIssue = () => { if (!viewingIssue) return; setCurrentIssueIndex((prev) => prev - 1 >= 0 ? prev - 1 : prev); };
 
+  const handleApproveIssue = async (issueId, assetId) => {
+    if (!assetId || !issueId) {
+      toast.warning("Please fill all required fields");
+      return;
+    }
+    setApproveIssueSaving(true);
+    try {
+      const res = await fetch("/api/faculty/approveIssueResolve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assetId, issueId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Something went wrong!");
+        return;
+      }
+      toast.success("Resolve approved successfully!");
+      setViewingIssue(null);
+      await fetchPC();
+    } catch (err) {
+      console.error("Approve issue error:", err);
+      toast.error("Something went wrong while approving.");
+    } finally {
+      setApproveIssueSaving(false);
+    }
+  };
+
   function formatStatus(status) {
     if (!status) return "Pending";
     const map = { "pending": "Pending", "resolved by technician": "Resolved By Technician", "approved": "Approved" };
@@ -472,6 +501,7 @@ function AssetsPage() {
     issueDetailLabel: { fontSize: '11px', fontWeight: '700', color: C.dark, textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.05em' },
     issueDetailValue: { fontSize: '14px', color: '#374151', lineHeight: '1.6' },
     issueStatusBadge: { display: 'inline-block', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' },
+    approveIssueButton: { padding: '11px', background: approveIssueSaving ? '#9ca3af' : `linear-gradient(135deg, ${C.primary} 0%, #0a9fb5 100%)`, color: 'white', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: approveIssueSaving ? 'not-allowed' : 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', marginTop: '12px', boxShadow: approveIssueSaving ? 'none' : '0 2px 8px rgba(8,131,149,0.25)', transition: 'background 0.2s' },
     navButtons: { display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', gap: '0.5rem' },
     navBtn: { fontSize: '14px', fontWeight: '700', padding: '6px 14px', borderRadius: '8px', border: `2px solid ${C.ice}`, cursor: 'pointer', background: C.ice, color: C.dark, transition: 'all 0.15s' },
     formGroup: { marginBottom: '16px' },
@@ -818,7 +848,7 @@ function AssetsPage() {
                 <>
                   {[
                     { label: 'Asset Name', value: viewingIssue.Asset_Name },
-                    { label: 'Faculty Name', value: issue.FacultyDetails?.Name || "N/A" },
+                    { label: 'Faculty Name', value: issue.FacultyDetails?.UserDetails?.Name || "N/A" },
                     { label: 'Issue Description', value: issue.IssueDescription },
                     ...(issue.Status === 'resolved by technician' ? [{ label: 'Resolve Description', value: issue.ResolveDescription }] : []),
                   ].map((row, i) => (
@@ -831,6 +861,22 @@ function AssetsPage() {
                     <div style={styles.issueDetailLabel}>Status</div>
                     <span style={{ ...styles.issueStatusBadge, ...getIssueStatusColor(issue.Status) }}>{formatStatus(issue.Status)}</span>
                   </div>
+                  {issue.Status === 'resolved by technician' && (
+                    <button
+                      type="button"
+                      style={styles.approveIssueButton}
+                      disabled={approveIssueSaving}
+                      onClick={() => handleApproveIssue(issue._id, viewingIssue._id)}
+                      onMouseEnter={(e) => {
+                        if (!approveIssueSaving) e.currentTarget.style.background = C.dark;
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!approveIssueSaving) e.currentTarget.style.background = `linear-gradient(135deg, ${C.primary} 0%, #0a9fb5 100%)`;
+                      }}
+                    >
+                      {approveIssueSaving ? (<><Loader2 size={16} className="animate-spin" /> Approving…</>) : 'Approve Resolution'}
+                    </button>
+                  )}
                 </>
               );
             })()}

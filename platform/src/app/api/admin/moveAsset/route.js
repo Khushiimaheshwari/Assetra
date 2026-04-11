@@ -75,12 +75,6 @@ export async function POST(req) {
     if (!destinationPC) {
       return NextResponse.json({ error: "Destination PC not found." }, { status: 404 });
     }
-    if (String(destinationPC.Lab_Name) !== String(toLabId)) {
-      return NextResponse.json(
-        { error: "Selected PC does not belong to the selected lab." },
-        { status: 400 }
-      );
-    }
 
     // Movement history
     const movementEntry = {

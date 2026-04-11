@@ -102,13 +102,13 @@ const [viewingQR, setViewingQR] = useState(null);
   };
 
   // ── Approve Issue (faculty logic — unchanged) ──
-  const handleApproveIssue = async (issueId, asset_id) => {
-    if (!asset_id || !issueId) { toast.warning("Please fill all required fields"); return; }
+  const handleApproveIssue = async (issueId, assetId) => {
+    if (!assetId || !issueId) { toast.warning("Please fill all required fields"); return; }
     try {
       const res = await fetch("/api/faculty/approveIssueResolve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ asset_id, issueId }),
+        body: JSON.stringify({ assetId, issueId }),
       });
       const data = await res.json();
       if (!res.ok) { toast.error(data.error || "Something went wrong!"); return; }

@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import Lab from "../../../../models/Labs";
 import NonTechAssets from "../../../../models/NonTechAssets";
 import { generateQRCodeForNonTechAsset } from "../../utils/nonTechgenerateQR";
+import { explainAiFetchFailure, getPythonPredictUrl } from "../../utils/aiService";
 
 export async function POST(req) {
   try {
@@ -62,11 +63,8 @@ export async function POST(req) {
 
     let aiData = null;
     try {
-      const pythonServiceURL = process.env.PYTHON_AI_SERVICE_URL;
-      if (pythonServiceURL) {
-        const targetURL = pythonServiceURL.endsWith("/predict")
-          ? pythonServiceURL
-          : `${pythonServiceURL.replace(/\/$/, "")}/predict`;
+      const targetURL = getPythonPredictUrl();
+      if (targetURL) {
         const aiResponse = await fetch(targetURL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -84,7 +82,7 @@ export async function POST(req) {
       }
     } catch (aiErr) {
       console.error("AI prediction while adding non-tech asset failed:", aiErr);
-      aiData = { error: "AI prediction failed during asset creation" };
+      aiData = { error: explainAiFetchFailure(aiErr) };
     }
 
     return NextResponse.json({
