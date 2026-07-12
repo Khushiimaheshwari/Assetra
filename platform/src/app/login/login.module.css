@@ -258,18 +258,58 @@
   transform: translateY(-1px);
 }
 
-.passwordInput {
-  padding-right: 42px !important;
+.fieldWrap {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid #c8e4ea;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(8,131,149,0.04);
+  transition: all 0.25s ease;
+}
+
+.fieldWrap:focus-within {
+  border-color: #088395;
+  box-shadow: 0 0 0 3px rgba(8,131,149,0.1), 0 4px 14px rgba(8,131,149,0.07);
+  transform: translateY(-1px);
+}
+
+.fieldWrap .inputIcon {
+  position: static;
+  transform: none;
+  margin-left: 13px;
+  flex-shrink: 0;
+}
+
+.fieldWrap input {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 13px 16px 13px 10px;
+  transform: none;
+}
+
+.fieldWrap input:focus {
+  border: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.fieldWrap:focus-within .inputIcon {
+  opacity: 1;
 }
 
 .passwordToggle {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: auto;
+  min-width: 0;
+  margin-right: 12px;
   padding: 4px;
   border: none;
   background: transparent;
@@ -283,7 +323,7 @@
   opacity: 0.85;
 }
 
-.inputWrap:focus-within .passwordToggle {
+.fieldWrap:focus-within .passwordToggle {
   opacity: 0.85;
 }
 

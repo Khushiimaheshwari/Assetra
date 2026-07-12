@@ -6,15 +6,13 @@ import styles from "./login.module.css";
 import { signIn } from "next-auth/react";
 import { toast } from "react-toastify";
 
-export default function LoginPage({ searchParams }) {
+export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const callbackUrl = searchParams?.callbackUrl;
 
   // ── Backend logic (with QR callback support) ──
   const handleLogin = async (e) => {
@@ -55,6 +53,7 @@ export default function LoginPage({ searchParams }) {
     }
 
     // If we came here from a QR scan, go back to that URL
+    const callbackUrl = new URLSearchParams(window.location.search).get("callbackUrl");
     if (callbackUrl) {
       window.location.href = callbackUrl;
       return;
@@ -147,7 +146,7 @@ export default function LoginPage({ searchParams }) {
             {/* Email */}
             <div className={styles.inputGroup}>
               <label>Email</label>
-              <div className={styles.inputWrap}>
+              <div className={`${styles.inputWrap} ${styles.fieldWrap}`}>
                 <svg className={styles.inputIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                   <polyline points="22,6 12,13 2,6"/>
@@ -165,7 +164,7 @@ export default function LoginPage({ searchParams }) {
             {/* Password */}
             <div className={styles.inputGroup}>
               <label>Password</label>
-              <div className={styles.inputWrap}>
+              <div className={`${styles.inputWrap} ${styles.fieldWrap}`}>
                 <svg className={styles.inputIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="11" width="18" height="11" rx="2"/>
                   <path d="M7 11V7a5 5 0 0110 0v4"/>
@@ -175,7 +174,6 @@ export default function LoginPage({ searchParams }) {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={styles.passwordInput}
                   required
                 />
                 <button
