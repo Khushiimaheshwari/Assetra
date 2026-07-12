@@ -22,7 +22,7 @@
 
 The platform replaces traditional spreadsheets and manual record keeping with a centralized digital ecosystem that enables **real-time asset tracking, QR-based identification, maintenance management, warranty monitoring, analytics dashboards, and predictive AI insights.**
 
-Designed with a scalable full-stack architecture, Assetra helps administrators, faculty, and lab technicians efficiently manage the complete lifecycle of institutional assets—from procurement to maintenance, depreciation, and audit reporting. The project emphasizes centralized management, automation, transparency, and data-driven decision making. :contentReference[oaicite:1]{index=1}
+Designed with a scalable full-stack architecture, Assetra helps administrators, faculty, and lab technicians efficiently manage the complete lifecycle of institutional assets—from procurement to maintenance, depreciation, and audit reporting. The project emphasizes centralized management, automation, transparency, and data-driven decision making. 
 
 <br/>
 
@@ -34,7 +34,7 @@ Designed with a scalable full-stack architecture, Assetra helps administrators, 
 - Maintain complete issue resolution and maintenance history.
 - Provide analytical dashboards for administrators.
 - Introduce AI-driven predictive maintenance and utilization insights.
-- Generate audit-ready reports for institutional compliance. :contentReference[oaicite:2]{index=2}
+- Generate audit-ready reports for institutional compliance. 
 
 <br/>
 
@@ -138,7 +138,7 @@ Users
  Predictive Analytics & Insights
 ```
 
-The system follows a centralized workflow where institutional data is collected, stored in MongoDB, processed through secure APIs, and enhanced using AI-powered analytics before being presented through interactive dashboards. :contentReference[oaicite:3]{index=3}
+The system follows a centralized workflow where institutional data is collected, stored in MongoDB, processed through secure APIs, and enhanced using AI-powered analytics before being presented through interactive dashboards.
 
 <br/>
 
@@ -224,7 +224,7 @@ The system follows a centralized workflow where institutional data is collected,
 - Breakdown Forms
 - AI Analytics
 
-These modules collectively provide complete lifecycle management of institutional assets and maintenance workflows. :contentReference[oaicite:4]{index=4}
+These modules collectively provide complete lifecycle management of institutional assets and maintenance workflows.
 
 <br/>
 
@@ -250,7 +250,7 @@ These modules collectively provide complete lifecycle management of institutiona
 - Improved institutional transparency
 - Faster audits & compliance
 - Better resource utilization
-- AI-assisted decision making :contentReference[oaicite:5]{index=5}
+- AI-assisted decision making 
 
 <br/>
 
@@ -264,7 +264,7 @@ These modules collectively provide complete lifecycle management of institutiona
 - Government Institutions
 - Training Centers
 
-The project is designed to scale from individual schools to large universities and organizations. :contentReference[oaicite:6]{index=6}
+The project is designed to scale from individual schools to large universities and organizations.
 
 <br/>
 
