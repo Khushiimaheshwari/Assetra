@@ -79,15 +79,15 @@ export default function ProfilePage() {
     })();
   }, []);
 
-  if (loading) return <><AdminSidebar /><SkeletonLoader /></>;
-  if (!user)   return <><AdminSidebar /><div style={{marginLeft:"255px",padding:"3rem",color:"#176B87"}}>No user data found.</div></>;
+  if (loading) return <><Sidebar /><SkeletonLoader /></>; 
+  if (!user)   return <><Sidebar /><div style={{marginLeft:"255px",padding:"3rem",color:"#176B87"}}>No user data found.</div></>;
 
   const initials   = (user.Name||"?").split(" ").map(n=>n[0]).join("").slice(0,2).toUpperCase();
   const memberDays = Math.floor((new Date()-new Date(user.createdAt))/86400000);
 
   return (
     <>
-      <AdminSidebar />
+      <Sidebar />
       <div className={styles.profileContainer}>
 
         {/* Page Title */}

@@ -258,6 +258,35 @@
   transform: translateY(-1px);
 }
 
+.passwordInput {
+  padding-right: 42px !important;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: #088395;
+  opacity: 0.45;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.passwordToggle:hover {
+  opacity: 0.85;
+}
+
+.inputWrap:focus-within .passwordToggle {
+  opacity: 0.85;
+}
+
 /* Submit */
 .submitBtn {
   width: 100%;

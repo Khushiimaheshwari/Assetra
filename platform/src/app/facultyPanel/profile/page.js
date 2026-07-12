@@ -5,7 +5,7 @@ import styles from "./profile.module.css";
 import { useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import AdminSidebar from "@/app/facultyPanel/components/Faculty_Sidebar.js";
+import Sidebar from "@/app/facultyPanel/components/Faculty_Sidebar.js";
 
 const Icons = {
   User:     () => <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
@@ -79,15 +79,15 @@ export default function ProfilePage() {
     })();
   }, []);
 
-  if (loading) return <><AdminSidebar /><SkeletonLoader /></>;
-  if (!user)   return <><AdminSidebar /><div style={{marginLeft:"255px",padding:"3rem",color:"#176B87"}}>No user data found.</div></>;
+  if (loading) return <><Sidebar /><SkeletonLoader /></>;
+  if (!user)   return <><Sidebar /><div style={{marginLeft:"255px",padding:"3rem",color:"#176B87"}}>No user data found.</div></>;
 
   const initials   = (user.Name||"?").split(" ").map(n=>n[0]).join("").slice(0,2).toUpperCase();
   const memberDays = Math.floor((new Date()-new Date(user.createdAt))/86400000);
 
   return (
     <>
-      <AdminSidebar />
+      <Sidebar />
       <div className={styles.profileContainer}>
 
         {/* Page Title */}
